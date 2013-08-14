@@ -1,0 +1,73 @@
+.outline.ace_tree{
+    border: none;
+    background: transparent;
+    color: #e1e1e1;
+}
+.outline.ace_tree .toggler{
+    margin: 4px 0 0 3px;
+}
+.outline.ace_tree .toggler:not(.empty){
+    background-image: url(images/tree_close_arrow_small.png);
+}
+
+.outline.ace_tree .ace_tree_cell-layer>div>span{
+    vertical-align: top;
+    font-size: 11px;
+    font-family: Tahoma, Arial;
+    line-height: 10px;
+}
+.outline.ace_tree .ace_tree_cell-layer>div>span:first-child{
+    padding : 0 0 0 0;
+}
+
+.outline.ace_tree .tree-row strong{
+    color: #9FB814;
+    /*font-weight: normal;*/
+}
+.outline.ace_tree .tree-row.selected strong{
+    color : white;
+}
+
+.outline.ace_tree .tree-row{
+    border-radius: 2px;
+    cursor: pointer;
+}
+.outline.ace_tree .tree-row:hover{
+    background: #2E2E2E;
+}
+.outline.ace_tree .tree-row.selected{
+    background: #252525;
+}
+.outline.ace_tree.focus .tree-row.selected{
+    background: #748512;
+}
+
+.outline.ace_tree .tree-row .icon{
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 1px -4px 0 0;
+}
+
+.outline.ace_tree .tree-row .icon.event{
+    background: url(images/event.png) no-repeat 4px;
+}
+.outline.ace_tree .tree-row .icon.method{
+    background: url(images/method.png) no-repeat 4px;
+}
+.outline.ace_tree .tree-row .icon.method2{
+    background: url(images/method2.png) no-repeat 4px;
+}
+.outline.ace_tree .tree-row .icon.package{
+    background: url(images/package.png) no-repeat 4px;
+}
+.outline.ace_tree .tree-row .icon.property{
+    background: url(images/property.png) no-repeat 4px;
+}
+.outline.ace_tree .tree-row .icon.property2{
+    background: url(images/property2.png) no-repeat 4px;
+}
+
+.outline.ace_tree .message{
+    font-size : 11px;
+}

@@ -1,0 +1,7 @@
+<a:application xmlns:a="http://ajax.org/2005/aml">
+    <a:bar id="winOutline" skin="panel-bar">
+        <a:codebox id="textbox" realtime="true" skin="codebox" clearbutton="true"
+          focusselect="true" height="27" left="10" top="10" right="10" />
+        <a:bar id="outlineTree" top="47" right="10" left="10" bottom="0" class="outline" />
+    </a:bar>
+</a:application>
