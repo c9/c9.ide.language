@@ -123,8 +123,7 @@ define(function(require, exports, module) {
                 if (originalPage) {
                     session = originalPage.document.getSession().session;
                     session && session.removeListener("changeMode", changeHandler);
-                    originalPage.document.undoManager
-                        .off("change", changeHandler);
+                    originalPage.document.undoManager.off("change", changeHandler);
                     if (originalPage.editor.ace)
                         originalPage.editor.ace.selection
                             .removeListener("changeSelection", cursorHandler);
@@ -359,7 +358,7 @@ define(function(require, exports, module) {
             var editor = page && page.editor;
             if (!page || !page.path && !page.document.meta.newfile || !editor.ace)
                 return;
-            
+            originalPage = page;
             draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
