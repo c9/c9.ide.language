@@ -60,6 +60,7 @@ define(function(require, exports, module) {
         const EXTRA_LINE_HEIGHT = 4;
         
         const deferredInvoker = lang.deferredCall(function() {
+            isInvokeScheduled = false;
             var editor = deferredInvoker.ace;
             var pos = editor.getCursorPosition();
             var line = editor.getSession().getDocument().getLine(pos.row);
@@ -74,7 +75,6 @@ define(function(require, exports, module) {
             else {
                 closeCompletionBox();
             }
-            isInvokeScheduled = false;
         });
         const drawDocInvoke = lang.deferredCall(function() {
             if (isPopupVisible() && matches[selectedIdx].doc) {
@@ -202,7 +202,7 @@ define(function(require, exports, module) {
         /***** Helper Functions *****/
         
         function isPopupVisible() {
-            return barCompleterCont && barCompleterCont.style.display !== "none";
+            return barCompleterCont && barCompleterCont.style.display === "block";
         }
         
         function getSyntax(ace) {
@@ -239,7 +239,6 @@ define(function(require, exports, module) {
                 newText = "require(\"^^\")";
                 if (!isInvokeScheduled)
                     setTimeout(deferredInvoke, 0);
-                isInvokeScheduled = true;
             }
         
             newText = newText.replace(/\t/g, session.getTabString());
@@ -530,24 +529,20 @@ define(function(require, exports, module) {
             }
         }
         
-        function invoke(fb) {
+        function invoke(forceBox) {
             var page = tabs.focussedPage;
             if (!page || page.editor.type != "ace") return;
             
-            var editor = lastAce = page.editor.ace;
+            var ace = lastAce = page.ace.ace;
             
-            if (editor.inMultiSelectMode) {
+            if (ace.inMultiSelectMode) {
                 closeCompletionBox();
                 return;
             }
-            forceBox = fb;
-            editor.addEventListener("change", deferredInvoke);
-            // This is required to ensure the updated document text has been sent to the worker before the 'complete' message
-            setTimeout(function() {
-                var pos = editor.getCursorPosition();
-                var line = editor.getSession().getLine(pos.row);
-                worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line }});
-            });
+            ace.addEventListener("change", deferredInvoke);
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getLine(pos.row);
+            worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }
@@ -594,16 +589,16 @@ define(function(require, exports, module) {
          * Incrementally update completion results while waiting for the worker.
          */
         function onCompleteUpdate() {
-            var editor = lastAce;
+            var ace = lastAce;
             if (!isPopupVisible() || !eventMatches)
                 return;
-            var pos = editor.getCursorPosition();
-            var line = editor.getSession().getLine(pos.row);
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             var matches = filterMatches(eventMatches, line, pos);
             if (matches.length)
-                showCompletionBox({ace: editor}, matches, prefix);
+                showCompletionBox({ace: ace}, matches, prefix);
         }
         
         function filterMatches(matches, line, pos) {
