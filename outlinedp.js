@@ -22,7 +22,7 @@ define(function(require, exports, module) {
         
         this.getEmptyMessage = function(){
             return "No outline available for the active view";
-        }
+        };
         
         this.setRoot = function(root){
             if (Array.isArray(root))
@@ -34,11 +34,11 @@ define(function(require, exports, module) {
             
             // @TODO Deal with selection
             this._signal("change");
-        }
+        };
         
         this.select = function(index) {
             this.selectNode(index === 0 ? this.root : {index: index});
-        }
+        };
         
         this.getIconHTML = function(node) {
             return "<span class='icon " + node.icon + "'></span>";
@@ -59,7 +59,7 @@ define(function(require, exports, module) {
                 (!!node.meta 
                     ? "<code style='color:gray;'>" + node.meta + "</code>" 
                     : "");
-        }
+        };
         
         // this.renderRow = function(row, html) {
         //     debugger;
@@ -70,7 +70,7 @@ define(function(require, exports, module) {
         // this.sort = function(children, compare) {
         //     return children;
         // }
-    }).call(DataProvider.prototype)
+    }).call(DataProvider.prototype);
  
     return DataProvider;
 });
