@@ -533,7 +533,7 @@ define(function(require, exports, module) {
             var page = tabs.focussedPage;
             if (!page || page.editor.type != "ace") return;
             
-            var ace = lastAce = page.ace.ace;
+            var ace = lastAce = page.editor.ace;
             
             if (ace.inMultiSelectMode) {
                 closeCompletionBox();
