@@ -35,9 +35,6 @@ define(function(require, exports, module) {
             aceHandle.on("create", function(e){
                 var editor = e.editor;
                 
-                if (editor.type != "ace")
-                    return;
-            
                 editor.on("draw", function(){
                     var kb = editor.ace.keyBinding;
                     var defaultHandler          = kb.onTextInput.bind(kb);
