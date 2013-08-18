@@ -426,7 +426,7 @@ define(function(require, exports, module) {
             ldSearch.isInferAvailable = language.isInferAvailable();
             ldSearch.calcPrefix       = function(regex){
                 completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
-            }
+            };
             
             //@Harutyun set scrolltop to 0
             
