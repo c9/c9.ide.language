@@ -542,7 +542,7 @@ define(function(require, exports, module) {
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
-            worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line }});
+            worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line, forceBox: true }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }
@@ -564,7 +564,7 @@ define(function(require, exports, module) {
             if (event.data.line !== line)
                 matches = filterMatches(matches, line, pos);
             
-            if (matches.length === 1 && !forceBox) {
+            if (matches.length === 1 && !event.data.forceBox) {
                 replaceText(editor.ace, matches[0]);
             }
             else if (matches.length > 0) {
