@@ -9,7 +9,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "plugin", "tabs", "ace", "language",
         "menus", "commands", "c9", "tabs",
-        "tabbehavior"
+        "tabbehavior", "ui"
     ];
     main.provides = ["language.jumptodef"];
     return main;
@@ -22,6 +22,7 @@ define(function(require, exports, module) {
         var tabbehavior = imports.tabbehavior;
         var ace = imports.ace;
         var tabs = imports.tabs;
+        var ui = imports.ui;
         var util = require("plugins/c9.ide.language.generic/complete_util");
         var menus = imports.menus;
         
@@ -51,20 +52,24 @@ define(function(require, exports, module) {
                 }, plugin);
         
                 // right click context item in ace
-                var mnuJumpToDef = new apf.item({
-                    id: "mnuCtxEditorJumpToDef",
+                var mnuJumpToDef = new ui.item({
+                    id: "mnuEditorJumpToDef",
                     caption: "Jump to Definition",
                     command: "jumptodef"
                 });
+                var mnuJumpToDef2 = new ui.item({
+                    caption: "Jump to Definition",
+                    command: "jumptodef",
+                    id: "mnuEditorJumpToDef2"
+                });
     
                 ace.getElement("menu", function(menu) {
-                    // menus.addItemByPath("~", new apf.divider(), 751, menu, plugin),
-                    menus.addItemByPath("Jump to Definition", mnuJumpToDef, 750, menu, plugin);
+                    menus.addItemToMenu(menu, mnuJumpToDef2, 750, plugin);
                     menu.on("prop.visible", function(e) {
                         // only fire when visibility is set to true
                         if (e.value) {
                             // because of delays we'll enable by default
-                            mnuJumpToDef.enable();
+                            mnuJumpToDef2.enable();
                             checkIsJumpToDefAvailable();
                         }
                     });
@@ -83,10 +88,10 @@ define(function(require, exports, module) {
                 // we'll disable/enable the jump to definition item in the ctx menu
                 worker.on("isJumpToDefinitionAvailableResult", function(ev) {
                     if (ev.data.value) {
-                        mnuJumpToDef.enable();
+                        mnuJumpToDef2.enable();
                     }
                     else {
-                        mnuJumpToDef.disable();
+                        mnuJumpToDef2.disable();
                     }
                 });
             });
