@@ -118,7 +118,7 @@ define(function(require, exports, module) {
                 
             var ace = tabs.focussedPage.editor.ace;
     
-            activateSpinner();
+            activateSpinner(tabs.focussedPage);
             onJumpStart(ace);
     
             var sel = ace.getSelection();
@@ -130,10 +130,10 @@ define(function(require, exports, module) {
         }
     
         function onDefinitions(e) {
-            clearSpinners();
-            
             var page = tabs.findPage(e.data.path);
             if (!page) return;
+            
+            clearSpinners(page);
     
             var results = e.data.results;
     
@@ -230,31 +230,17 @@ define(function(require, exports, module) {
             ace.getSelection().setSelectionRange({ start: startPos, end: endPos });
         }
     
-        function activateSpinner() {
-            try {
-                var node = ide.getActivePage().$doc.getNode();
-                apf.xmldb.setAttribute(node, "lookup", "1");
-                removeSpinnerNodes.push(node);
-                var _self = this;
-                setTimeout(function() {
-                    _self.clearSpinners();
-                }, CRASHED_JOB_TIMEOUT);
-            } catch (e) {
-                // Whatever, some missing non-critical UI
-                console.error(e);
-            }
+        function activateSpinner(page) {
+            page.className.add("loading");
+            clearTimeout(page.$jumpToDefReset);
+            page.$jumpToDefReset = setTimeout(function() {
+                clearSpinners(page);
+            }, CRASHED_JOB_TIMEOUT);
         }
     
-        function clearSpinners() {
-            try {
-                removeSpinnerNodes.forEach(function(node) {
-                    apf.xmldb.removeAttribute(node, "lookup");
-                });
-                removeSpinnerNodes = [];
-            } catch (e) {
-                // Whatever, some missing non-critical UI
-                console.error(e);
-            }
+        function clearSpinners(page) {
+            clearTimeout(page.$jumpToDefReset);
+            page.className.remove("loading");
         }
         
         plugin.on("load", function(){
