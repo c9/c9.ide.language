@@ -1009,7 +1009,8 @@ function asyncParForEach(array, fn, callback) {
                         matches: matches,
                         isUpdate: event.data.isUpdate,
                         line: _self.doc.getLine(pos.row),
-                        path: _self.$path
+                        path: _self.$path,
+                        forceBox: event.data.forceBox
                     });
                 });
             });

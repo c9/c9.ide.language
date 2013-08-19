@@ -189,8 +189,8 @@ define(function(require, exports, module) {
             }, false);
             txtCompleter.addEventListener("click", function() {
                 var match = ldSearch.matches[ldSearch.selectedRow];
-                replaceText(ldSearch.editor, match);
-                ldSearch.editor.focus();
+                replaceText(ldSearch.ace, match);
+                ldSearch.ace.focus();
             }, false);
             ldSearch.on("select", function(){
                 updateDoc(true);
@@ -226,16 +226,16 @@ define(function(require, exports, module) {
          * If the prefix is already followed by an identifier substring, that string
          * is deleted.
          */
-        function replaceText(editor, match) {
+        function replaceText(ace, match) {
             var newText = match.replaceText;
-            var pos = editor.getCursorPosition();
-            var session = editor.getSession();
+            var pos = ace.getCursorPosition();
+            var session = ace.getSession();
             var line = session.getLine(pos.row);
             var doc = session.getDocument();
-            var idRegex = match.identifierRegex || getIdentifierRegex(null, editor) || DEFAULT_ID_REGEX;
+            var idRegex = match.identifierRegex || getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
-            if (match.replaceText === "require(^^)" && isJavaScript(editor)) {
+            if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
                 newText = "require(\"^^\")";
                 if (!isInvokeScheduled)
                     setTimeout(deferredInvoke, 0);
@@ -255,7 +255,7 @@ define(function(require, exports, module) {
             
             // Remove HTML duplicate '<' completions
             var preId = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            if (isHtml(editor) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
+            if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
                 newText = newText.substring(1);
         
             var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
@@ -264,7 +264,7 @@ define(function(require, exports, module) {
             var paddedLines = newText.split("\n").join("\n" + prefixWhitespace);
             var splitPaddedLines = paddedLines.split("\n");
             var colOffset = -1, colOffset2 = -1, rowOffset, rowOffset2;
-            for (var i = 0; i < splitPaddedLines.length; i++) {
+            for (i = 0; i < splitPaddedLines.length; i++) {
                 if (colOffset === -1)
                     colOffset = splitPaddedLines[i].indexOf("^^");
                 if (colOffset !== -1)
@@ -296,7 +296,7 @@ define(function(require, exports, module) {
             }
             var cursorPos = { row: pos.row + rowOffset, column: cursorCol };
             var cursorPos2 = { row: pos.row + rowOffset2, column: cursorCol2 };
-            editor.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
+            ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
         }
         
         function showCompletionBox(editor, m, prefix, line, column) {
@@ -409,18 +409,18 @@ define(function(require, exports, module) {
             lastAce = null;
         }
             
-        function populateCompletionBox(editor, matches) {
+        function populateCompletionBox(ace, matches) {
             // Populate the completion box
             ldSearch.updateData(matches);
             
             // Get context info
-            var pos = editor.getCursorPosition();
-            var line = editor.getSession().getLine(pos.row);
-            var idRegex = getIdentifierRegex(null, editor) || DEFAULT_ID_REGEX;
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getLine(pos.row);
+            var idRegex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
             // Set the highlight metadata
-            ldSearch.editor           = editor;
+            ldSearch.ace              = ace;
             ldSearch.matches          = matches;
             ldSearch.prefix           = prefix;
             ldSearch.isInferAvailable = language.isInferAvailable();
@@ -505,14 +505,14 @@ define(function(require, exports, module) {
                     break;
                 case 13: // Enter
                 case 9: // Tab
-                    var editor = lastAce;
+                    var ace = lastAce;
                     if (!enterCompletion && keyCode === 13) {
                         oldCommandKey(e, hashKey, keyCode);
                         closeCompletionBox();
                         break;
                     }
                     closeCompletionBox();
-                    replaceText(editor, matches[ldSearch.selectedRow]);
+                    replaceText(ace, matches[ldSearch.selectedRow]);
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     break;
@@ -565,7 +565,7 @@ define(function(require, exports, module) {
                 matches = filterMatches(matches, line, pos);
             
             if (matches.length === 1 && !forceBox) {
-                replaceText(editor, matches[0]);
+                replaceText(editor.ace, matches[0]);
             }
             else if (matches.length > 0) {
                 var idRegex = matches[0].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
