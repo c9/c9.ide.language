@@ -22,7 +22,7 @@ define(function(require, exports, module) {
         var tabbehavior = imports.tabbehavior;
         var ace = imports.ace;
         var tabs = imports.tabs;
-        var util = require("plugins/c9.language.generic/complete_util");
+        var util = require("plugins/c9.ide.language.generic/complete_util");
         var menus = imports.menus;
         
         var CRASHED_JOB_TIMEOUT = 30000;
@@ -92,11 +92,8 @@ define(function(require, exports, module) {
             });
         }
         
-        function getFirstColumn(row) {
-            var editor = editors.currentEditor;
-            if (!editor || editor.path != "ext/code/code" || !editor.amlEditor)
-                return 0;
-            var line = editor.getDocument().getLine(row);
+        function getFirstColumn(ace, row) {
+            var line = ace.document.getLine(row);
             if (!line)
                 return 0;
             return line.match(/^(\s*)/)[1].length;
@@ -134,15 +131,16 @@ define(function(require, exports, module) {
     
         function onDefinitions(e) {
             clearSpinners();
+            
+            var page = tabs.findPage(e.data.path);
+            if (!page) return;
     
             var results = e.data.results;
     
-            var editor = editors.currentEditor;
-            if (!editor || editor.path != "ext/code/code" || !editor.amlEditor)
-                return;
+            var editor = page.editor;
     
             if (!results.length)
-                return onJumpFailure(e, editor);
+                return onJumpFailure(e, editor.ace);
     
             // We have no UI for multi jumptodef; we just take the last for now
             var lastResult;
@@ -153,8 +151,9 @@ define(function(require, exports, module) {
             }
     
             var _self = this;
-            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : undefined;
+            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : page.path;
     
+            /*
             editors.gotoDocument({
                 getColumn: function() {
                     return lastResult.column !== undefined ? lastResult.column : _self.getFirstColumn(lastResult.row);
@@ -164,14 +163,47 @@ define(function(require, exports, module) {
                 animate: true,
                 path: path
             });
+            */
+            
+            tabs.open(
+                {
+                    path: path,
+                    document: {
+                        ace: {
+                            jump: {
+                                row: lastResult.row,
+                                column: lastResult.column
+                            }
+                        }
+                    }
+                },
+                function(err, page) {
+                    if (lastResult.column !== undefined || err)
+                        return;
+                    tabs.open(
+                        {
+                            path: path,
+                            document: {
+                                ace: {
+                                    jump: {
+                                        row: lastResult.row,
+                                        column: _self.getFirstColumn(page.editor.ace, lastResult.row)
+                                    }
+                                }
+                            }
+                        },
+                        function() {}
+                    );
+                }
+            );
         }
     
-        function onJumpFailure(event, editor) {
-            var cursor = editor.getSelection().getCursor();
+        function onJumpFailure(event, ace) {
+            var cursor = ace.getSelection().getCursor();
             var oldPos = event.data.pos;
             if (oldPos.row !== cursor.row || oldPos.column !== cursor.column)
                 return;
-            var line = editor.getDocument().getLine(oldPos.row);
+            var line = ace.getSession().getLine(oldPos.row);
             if (!line)
                 return;
             var preceding = util.retrievePrecedingIdentifier(line, cursor.column);
@@ -179,7 +211,7 @@ define(function(require, exports, module) {
             if (column === oldPos.column)
                 column = getFirstColumn(cursor.row);
             var newPos = { row: cursor.row, column: column };
-            editor.getSelection().setSelectionRange({ start: newPos, end: newPos });
+            ace.getSelection().setSelectionRange({ start: newPos, end: newPos });
         }
     
         function onJumpStart(ace) {
