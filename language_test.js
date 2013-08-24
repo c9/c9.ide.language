@@ -48,7 +48,13 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.ide.language.javascript/javascript",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.fs/proc",
-        "plugins/c9.fs/vfs",
+        {
+            packagePath: "plugins/c9.vfs.client/vfs_client",
+            smithIo     : {
+                "prefix": "/smith.io/server"
+            }
+        },
+        "plugins/c9.ide.auth/auth",
         "plugins/c9.fs/fs",
         "plugins/c9.ide.browsersupport/browsersupport",
         
