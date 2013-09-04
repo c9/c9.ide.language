@@ -47,19 +47,19 @@ define(function(require, exports, module) {
         
         var idRegexes         = {};
         var completionRegexes = {}; 
+      
+        var DEFAULT_ID_REGEX = /[a-zA-Z_0-9\$\/]/;
         
-        const DEFAULT_ID_REGEX = /[a-zA-Z_0-9\$\/]/;
+        var SHOW_DOC_DELAY = 1500;
+        var SHOW_DOC_DELAY_MOUSE_OVER = 100;
+        var HIDE_DOC_DELAY = 1000;
+        var AUTO_UPDATE_DELAY = 200;
+        var CRASHED_COMPLETION_TIMEOUT = 6000;
+        var MENU_WIDTH = 330;
+        var MENU_SHOWN_ITEMS = 8;
+        var EXTRA_LINE_HEIGHT = 4;
         
-        const SHOW_DOC_DELAY = 1500;
-        const SHOW_DOC_DELAY_MOUSE_OVER = 100;
-        const HIDE_DOC_DELAY = 1000;
-        const AUTO_UPDATE_DELAY = 200;
-        const CRASHED_COMPLETION_TIMEOUT = 6000;
-        const MENU_WIDTH = 330;
-        const MENU_SHOWN_ITEMS = 8;
-        const EXTRA_LINE_HEIGHT = 4;
-        
-        const deferredInvoker = lang.deferredCall(function() {
+        var deferredInvoker = lang.deferredCall(function() {
             isInvokeScheduled = false;
             var editor = deferredInvoker.ace;
             var pos = editor.getCursorPosition();
@@ -76,23 +76,23 @@ define(function(require, exports, module) {
                 closeCompletionBox();
             }
         });
-        const drawDocInvoke = lang.deferredCall(function() {
+        var drawDocInvoke = lang.deferredCall(function() {
             if (isPopupVisible() && matches[selectedIdx].doc) {
                 isDocShown = true;
                 txtCompleterDoc.parentNode.style.display = "block";
             }
             isDrawDocInvokeScheduled = false;
         });
-        const isDrawDocInvokeScheduled = false;
+        var isDrawDocInvokeScheduled = false;
         
-        const undrawDocInvoke = lang.deferredCall(function() {
+        var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
                 isDocShown = false;
                 txtCompleterDoc.parentNode.style.display = "none";
             }
         });
         
-        const killCrashedCompletionInvoke = lang.deferredCall(function() {
+        var killCrashedCompletionInvoke = lang.deferredCall(function() {
             closeCompletionBox();
         });
         

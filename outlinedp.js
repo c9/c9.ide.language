@@ -2,8 +2,8 @@ define(function(require, exports, module) {
     var oop          = require("ace/lib/oop");
     var BaseClass    = require("ace_tree/data_provider");
     
-    const CLASS_SELECTED   = "item selected";
-    const CLASS_UNSELECTED = "item";
+    var CLASS_SELECTED   = "item selected";
+    var CLASS_UNSELECTED = "item";
     
     var DataProvider = function(root) {
         BaseClass.call(this, root || {});

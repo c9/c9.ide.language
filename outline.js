@@ -39,7 +39,7 @@ define(function(require, exports, module) {
         var originalLine, originalColumn, originalPage;
         var worker, focussed, isActive, outline, timer, dirty;
         
-        const COLLAPSE_AREA = 14;
+        var COLLAPSE_AREA = 14;
         
         var loaded = false;
         function load(){

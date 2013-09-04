@@ -2,8 +2,8 @@ define(function(require, exports, module) {
     var oop          = require("ace/lib/oop");
     var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
     
-    const CLASS_SELECTED   = "item selected";
-    const CLASS_UNSELECTED = "item";
+    var CLASS_SELECTED   = "item selected";
+    var CLASS_UNSELECTED = "item";
     
     var ListData = function(array) {
         this.visibleItems = array || [];
