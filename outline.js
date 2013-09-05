@@ -309,7 +309,7 @@ define(function(require, exports, module) {
             offlineHandler({ state: c9.status });
             
             timer = setInterval(function(){
-                if (dirty) {
+                if (dirty && worker) {
                     worker.emit("outline", { data : { ignoreFilter: false } });
                     dirty = false;
                 }
