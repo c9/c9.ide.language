@@ -425,7 +425,7 @@ define(function(require, exports, module) {
             ldSearch.prefix           = prefix;
             ldSearch.isInferAvailable = language.isInferAvailable();
             ldSearch.calcPrefix       = function(regex){
-                completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
+                return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             
             //@Harutyun set scrolltop to 0
@@ -549,7 +549,6 @@ define(function(require, exports, module) {
         
         function onComplete(event, editor) {
             var pos = editor.ace.getCursorPosition();
-            var eventPos = event.data.pos;
             var line = editor.ace.getSession().getLine(pos.row);
             
             editor.ace.removeEventListener("change", deferredInvoke);
