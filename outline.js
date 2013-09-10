@@ -146,7 +146,7 @@ define(function(require, exports, module) {
                     updateOutline();
             });
             
-            tabs.on("page.destroy", function(e){
+            tabs.on("pageDestroy", function(e){
                 if (isActive && e.last)
                     clear();
             });

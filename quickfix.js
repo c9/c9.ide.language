@@ -60,7 +60,7 @@ module.exports = {
         var _self = this;
         quickfix = this;
                   
-        ide.addEventListener("tab.afterswitch", function(e) {
+        ide.addEventListener("paneAfterswitch", function(e) {
             var page = e.nextPage;
             if (!page || !page.$editor || page.$editor.path != "ext/code/code")
                 return;

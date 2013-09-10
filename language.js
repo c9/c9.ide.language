@@ -169,7 +169,7 @@ define(function(require, exports, module) {
                 
             } 
 
-            tabs.on("page.destroy", function(e){
+            tabs.on("pageDestroy", function(e){
                 var path = e.page.path;
                 if (path)
                     worker.emit("documentClose", {data: path});
