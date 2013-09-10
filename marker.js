@@ -31,7 +31,7 @@ define(function(require, exports, module) {
             this.column = column;
         };
 
-        language.on("worker.init", function(e){
+        language.on("workerInit", function(e){
             ui.insertCss(require("text!./marker.css"), language);
 
             e.worker.on("markers", function(event) {

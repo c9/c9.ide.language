@@ -188,7 +188,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
 //                
 //                it('should change a theme', function(done) {
 //                    var editor = tabs.focussedPage.editor;
-//                    ace.on("theme.init", function setTheme(){
+//                    ace.on("themeInit", function setTheme(){
 //                        ace.off("theme.init", setTheme);
 //                        expect.html(getPageHtml(tabs.focussedPage).childNodes[1]).className("ace-monokai");
 //                        editor.setOption("theme", "ace/theme/textmate");

@@ -39,7 +39,7 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            language.on("worker.init", function(e) {
+            language.on("workerInit", function(e) {
                 worker = e.worker;
         
                 commands.addCommand({
@@ -65,7 +65,7 @@ define(function(require, exports, module) {
     
                 ace.getElement("menu", function(menu) {
                     menus.addItemToMenu(menu, mnuJumpToDef2, 750, plugin);
-                    menu.on("prop.visible", function(e) {
+                    menu.on("propVisible", function(e) {
                         // only fire when visibility is set to true
                         if (e.value) {
                             // because of delays we'll enable by default

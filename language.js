@@ -185,14 +185,14 @@ define(function(require, exports, module) {
             });
             
             // Switch to any active file
-            tabs.on("focus.sync", function(e){
+            tabs.on("focusSync", function(e){
                 if (e.page.editor.type !== "ace")
                     return;
                 
                 notifyWorker("switchFile", e);
             });
             
-            emit("worker.init", {worker: worker});
+            emit("workerInit", {worker: worker});
             plugin.on("newListener", function(type, listener){
                 if (type == "worker.init") listener({worker: worker});
             });
@@ -305,7 +305,7 @@ define(function(require, exports, module) {
             // editor.on("unload", function h2(){
             //     editor.ace.selection.off("changeCursor", onCursorChangeDefer);
             // }, editor);
-            editor.on("document.load", function(e){
+            editor.on("documentLoad", function(e){
                 var session = e.doc.getSession().session;
                 
                 updateSettings(e); //@todo
@@ -315,7 +315,7 @@ define(function(require, exports, module) {
                 });
 
             });
-            editor.on("document.unload", function(e){
+            editor.on("documentUnload", function(e){
             });
         });
         

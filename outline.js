@@ -72,7 +72,7 @@ define(function(require, exports, module) {
                 draw         : draw
             });
             
-            panels.on("showpanel.outline", function(e){
+            panels.on("showpanelOutline", function(e){
                 isActive = true;
                 
                 textbox.focus();
@@ -81,7 +81,7 @@ define(function(require, exports, module) {
                 
                 updateOutline();
             });
-            panels.on("hidepanel.outline", function(e){
+            panels.on("hidepanelOutline", function(e){
                 // tree.clearSelection();
                 isActive = false;
             });
@@ -112,7 +112,7 @@ define(function(require, exports, module) {
                 updateOutline();
             });
             
-            tabs.on("focus.sync", function(e){
+            tabs.on("focusSync", function(e){
                 var page = e.page;
                 var session;
                 
@@ -305,7 +305,7 @@ define(function(require, exports, module) {
             textbox.ace.on("blur", onblur);
             
             // Offline
-            c9.on("state.change", offlineHandler, plugin);
+            c9.on("stateChange", offlineHandler, plugin);
             offlineHandler({ state: c9.status });
             
             timer = setInterval(function(){
