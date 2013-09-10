@@ -101,7 +101,7 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            language.on("workerInit", function(e){
+            language.on("initWorker", function(e){
                 worker = e.worker;
                 
                 worker.on("setIdentifierRegex", function(event) {

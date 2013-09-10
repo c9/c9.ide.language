@@ -102,7 +102,7 @@ define(function(require, exports, module) {
          */
         function notifyWorker(type, e){
             if (!worker)
-                return plugin.once("worker.init", notifyWorker.bind(null, type, e));
+                return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
             var page    = e.page;
             var path    = page && page.path;
@@ -192,9 +192,9 @@ define(function(require, exports, module) {
                 notifyWorker("switchFile", e);
             });
             
-            emit("workerInit", {worker: worker});
+            emit("initWorker", {worker: worker});
             plugin.on("newListener", function(type, listener){
-                if (type == "worker.init") listener({worker: worker});
+                if (type == "initWorker") listener({worker: worker});
             });
 
             settings.on("read", function() {
@@ -326,7 +326,7 @@ define(function(require, exports, module) {
         
         function updateSettings(e) {
             if (!worker)
-                return plugin.once("worker.init", updateSettings.bind(null, e));
+                return plugin.once("initWorker", updateSettings.bind(null, e));
             
             ["jshint", "instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
               .forEach(function(s){
@@ -370,7 +370,7 @@ define(function(require, exports, module) {
             if (worker)
                 return worker.call("register", [modulePath, contents]);
                 
-            plugin.once("worker.init", function(e) {
+            plugin.once("initWorker", function(e) {
                 worker.on("registered", function reply(e) {
                     if (e.data.path !== modulePath)
                         return;

@@ -93,7 +93,7 @@ define(function(require, exports, module) {
                 new apf.item({ command : "outline" }), 110, plugin);
             
             // Get the worker
-            language.once("worker.init", function(e){
+            language.once("initWorker", function(e){
                 worker = e.worker;
                 worker.on("outline", openOutline); 
             });
