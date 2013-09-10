@@ -281,7 +281,7 @@ define(function(require, exports, module) {
                                 var value = page.document.value;
                                 if (value)
                                     return notifyWorker("documentOpen", { page: page, value: value });
-                                page.document.once("value.set", function(e) {
+                                page.document.once("valueSet", function(e) {
                                     notifyWorker("documentOpen", { page: page, value: e.value });
                                 });
                             }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
