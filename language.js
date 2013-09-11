@@ -91,22 +91,22 @@ define(function(require, exports, module) {
             //@todo marker.onChange(session, e);
         }
         function onChangeMode() {
-            notifyWorker("switchFile", { page: worker.$doc.c9doc.page });
+            notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
         }
         
         /**
          * Notify the worker that the document changed
          *
          * @param type  the event type, documentOpen or switchFile
-         * @param e     the originating event, should have an e.page.path and e.page.editor.ace
+         * @param e     the originating event, should have an e.tab.path and e.tab.editor.ace
          */
         function notifyWorker(type, e){
             if (!worker)
                 return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
-            var page    = e.page;
-            var path    = page && page.path;
-            var session = page && page.editor.ace && page.editor.ace.session;
+            var tab    = e.tab;
+            var path    = tab && tab.path;
+            var session = tab && tab.editor.ace && tab.editor.ace.session;
             if (!session)
                 return;
             
@@ -169,24 +169,24 @@ define(function(require, exports, module) {
                 
             } 
 
-            tabs.on("pageDestroy", function(e){
-                var path = e.page.path;
+            tabs.on("tabDestroy", function(e){
+                var path = e.tab.path;
                 if (path)
                     worker.emit("documentClose", {data: path});
             });
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (e.page.editorType === "ace") {
+                if (e.tab.editorType === "ace") {
                     notifyWorker("documentOpen", e);
-                    if (!tabs.getTabs) // single-pane minimal UI
-                        notifyWorker("switchFile", { page: e.page });
+                    if (!tabs.getPanes) // single-pane minimal UI
+                        notifyWorker("switchFile", { tab: e.tab });
                 }
             });
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (e.page.editor.type !== "ace")
+                if (e.tab.editor.type !== "ace")
                     return;
                 
                 notifyWorker("switchFile", e);
@@ -271,25 +271,25 @@ define(function(require, exports, module) {
         aceHandle.on("create", function(e){
             var editor = e.editor;
             
-            if (!initedPages && tabs.getTabs) { // not in single-pane minimal UI
-                tabs.getTabs().forEach(function(pane){
-                    pane.getPages().forEach(function(page){
-                        if (page.editorType === "ace") {
+            if (!initedPages && tabs.getPanes) { // not in single-pane minimal UI
+                tabs.getPanes().forEach(function(pane){
+                    pane.getPages().forEach(function(tab){
+                        if (tab.editorType === "ace") {
                             setTimeout(function() {
-                                if (page.value)
-                                    return notifyWorker("documentOpen", { page: page });
-                                var value = page.document.value;
+                                if (tab.value)
+                                    return notifyWorker("documentOpen", { tab: tab });
+                                var value = tab.document.value;
                                 if (value)
-                                    return notifyWorker("documentOpen", { page: page, value: value });
-                                page.document.once("valueSet", function(e) {
-                                    notifyWorker("documentOpen", { page: page, value: e.value });
+                                    return notifyWorker("documentOpen", { tab: tab, value: value });
+                                tab.document.once("valueSet", function(e) {
+                                    notifyWorker("documentOpen", { tab: tab, value: e.value });
                                 });
                             }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
                         }
                     });
                 });
                 if (tabs.focussedPage && tabs.focussedPage.path && tabs.focussedPage.editor.ace)
-                    notifyWorker("switchFile", { page: tabs.focussedPage });
+                    notifyWorker("switchFile", { tab: tabs.focussedPage });
                 
                 initedPages = true;
             }
@@ -310,8 +310,8 @@ define(function(require, exports, module) {
                 
                 updateSettings(e); //@todo
                 session.once("changeMode", function() {
-                    if (tabs.focussedPage === e.doc.page)
-                        notifyWorker("switchFile", { page: e.doc.page });
+                    if (tabs.focussedPage === e.doc.tab)
+                        notifyWorker("switchFile", { tab: e.doc.tab });
                 });
 
             });
@@ -345,7 +345,7 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = 
                 settings.getBool("user/language/@continuousCompletion");
             if (tabs.focussedPage)
-                notifyWorker("switchFile", { page: tabs.focussedPage });
+                notifyWorker("switchFile", { tab: tabs.focussedPage });
         }
         
         /***** Methods *****/

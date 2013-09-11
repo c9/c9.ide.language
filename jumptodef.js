@@ -135,14 +135,14 @@ define(function(require, exports, module) {
         }
     
         function onDefinitions(e) {
-            var page = tabs.findPage(e.data.path);
-            if (!page) return;
+            var tab = tabs.findPage(e.data.path);
+            if (!tab) return;
             
-            clearSpinners(page);
+            clearSpinners(tab);
     
             var results = e.data.results;
     
-            var editor = page.editor;
+            var editor = tab.editor;
     
             if (!results.length)
                 return onJumpFailure(e, editor.ace);
@@ -156,7 +156,7 @@ define(function(require, exports, module) {
             }
     
             var _self = this;
-            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : page.path;
+            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : tab.path;
     
             /*
             editors.gotoDocument({
@@ -182,7 +182,7 @@ define(function(require, exports, module) {
                         }
                     }
                 },
-                function(err, page) {
+                function(err, tab) {
                     if (lastResult.column !== undefined || err)
                         return;
                     tabs.open(
@@ -192,7 +192,7 @@ define(function(require, exports, module) {
                                 ace: {
                                     jump: {
                                         row: lastResult.row,
-                                        column: _self.getFirstColumn(page.editor.ace, lastResult.row)
+                                        column: _self.getFirstColumn(tab.editor.ace, lastResult.row)
                                     }
                                 }
                             }
@@ -235,17 +235,17 @@ define(function(require, exports, module) {
             ace.getSelection().setSelectionRange({ start: startPos, end: endPos });
         }
     
-        function activateSpinner(page) {
-            page.className.add("loading");
-            clearTimeout(page.$jumpToDefReset);
-            page.$jumpToDefReset = setTimeout(function() {
-                clearSpinners(page);
+        function activateSpinner(tab) {
+            tab.className.add("loading");
+            clearTimeout(tab.$jumpToDefReset);
+            tab.$jumpToDefReset = setTimeout(function() {
+                clearSpinners(tab);
             }, CRASHED_JOB_TIMEOUT);
         }
     
-        function clearSpinners(page) {
-            clearTimeout(page.$jumpToDefReset);
-            page.className.remove("loading");
+        function clearSpinners(tab) {
+            clearTimeout(tab.$jumpToDefReset);
+            tab.className.remove("loading");
         }
         
         plugin.on("load", function(){

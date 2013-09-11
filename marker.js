@@ -37,17 +37,17 @@ define(function(require, exports, module) {
             e.worker.on("markers", function(event) {
                 if (language.disabled) return;
                 
-                var page = tabs.findPage(event.data.path);
-                if (!page) return;
+                var tab = tabs.findPage(event.data.path);
+                if (!tab) return;
                 
-                var editor = page.editor;
+                var editor = tab.editor;
                 addMarkers(event, editor.ace);
             });
             e.worker.on("hint", function(event) {
-                var page = tabs.findPage(event.data.path);
-                if (!page) return;
+                var tab = tabs.findPage(event.data.path);
+                if (!tab) return;
                 
-                var editor = page.editor;
+                var editor = tab.editor;
                 onHint(event, editor.ace);
             });
         });

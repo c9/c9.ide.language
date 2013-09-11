@@ -61,10 +61,10 @@ module.exports = {
         quickfix = this;
                   
         ide.addEventListener("paneAfterswitch", function(e) {
-            var page = e.nextPage;
-            if (!page || !page.$editor || page.$editor.path != "ext/code/code")
+            var tab = e.nextPage;
+            if (!tab || !tab.$editor || tab.$editor.path != "ext/code/code")
                 return;
-            var ace = page.$editor.amlEditor.$editor;
+            var ace = tab.$editor.amlEditor.$editor;
             
             if (!ace.$markerListener)
                 _self.initEditor(ace);           

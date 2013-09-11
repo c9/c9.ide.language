@@ -114,10 +114,10 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var page = tabs.findPage(event.data.path);
-                    if (!page) return;
+                    var tab = tabs.findPage(event.data.path);
+                    if (!tab) return;
                     
-                    var editor = page.editor;
+                    var editor = tab.editor;
                     onComplete(event, editor);
                 });
             });
@@ -530,10 +530,10 @@ define(function(require, exports, module) {
         }
         
         function invoke(forceBox) {
-            var page = tabs.focussedPage;
-            if (!page || page.editor.type != "ace") return;
+            var tab = tabs.focussedPage;
+            if (!tab || tab.editor.type != "ace") return;
             
-            var ace = lastAce = page.editor.ace;
+            var ace = lastAce = tab.editor.ace;
             
             if (ace.inMultiSelectMode) {
                 closeCompletionBox();

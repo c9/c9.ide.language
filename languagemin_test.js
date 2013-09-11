@@ -39,7 +39,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         },
         "plugins/c9.ide.keys/commands",
         
-        "plugins/c9.ide.ace/min/page",
+        "plugins/c9.ide.ace/min/tab",
         "plugins/c9.ide.ace/min/settings",
         "plugins/c9.ide.ace/min/ui",
         "plugins/c9.ide.ace/min/api",
@@ -88,15 +88,15 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                         value : "function foo(){}",
                         ace : { customType : "javascript" }
                     });
-                    doc.page = page;
+                    doc.tab = tab;
 
-                    page.document = doc;
-                    page.editor.loadDocument(doc);
+                    tab.document = doc;
+                    tab.editor.loadDocument(doc);
                     
-                    tabs.emit("open", {page: page});
+                    tabs.emit("open", {tab: tab});
                     
                     setTimeout(function(){
-                        expect.html(page.editor.ace, "document value").text(/function foo\(\)\{\}/);
+                        expect.html(tab.editor.ace, "document value").text(/function foo\(\)\{\}/);
                         done();
                     });
                 });

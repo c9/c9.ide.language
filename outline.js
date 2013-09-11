@@ -98,25 +98,25 @@ define(function(require, exports, module) {
                 worker.on("outline", openOutline); 
             });
             
-            // Hook events to get the focussed page
+            // Hook events to get the focussed tab
             tabs.on("open", function(e){
-                var page = e.page;
+                var tab = e.tab;
                 if (!isActive 
-                  || !page.path && !page.document.meta.newfile 
-                  || !page.editor.ace || page != tabs.focussedPage)
+                  || !tab.path && !tab.document.meta.newfile 
+                  || !tab.editor.ace || tab != tabs.focussedPage)
                     return;
                 
                 if (!originalPage) 
-                    originalPage = e.page;
+                    originalPage = e.tab;
                 
                 updateOutline();
             });
             
             tabs.on("focusSync", function(e){
-                var page = e.page;
+                var tab = e.tab;
                 var session;
                 
-                if (originalPage == page)
+                if (originalPage == tab)
                     return;
                 
                 // Remove change listener
@@ -129,24 +129,24 @@ define(function(require, exports, module) {
                             .removeListener("changeSelection", cursorHandler);
                 }
                 
-                if (!page.path && !page.document.meta.newfile || !page.editor.ace) {
+                if (!tab.path && !tab.document.meta.newfile || !tab.editor.ace) {
                     originalPage = null;
                     return clear();
                 }
                     
                 // Add change listener
-                session = page.document.getSession().session;
+                session = tab.document.getSession().session;
                 session && session.on("changeMode", changeHandler);
-                page.document.undoManager.on("change", changeHandler);
-                page.editor.ace.selection.on("changeSelection", cursorHandler);
+                tab.document.undoManager.on("change", changeHandler);
+                tab.editor.ace.selection.on("changeSelection", cursorHandler);
                 
-                originalPage = page;
+                originalPage = tab;
                 
                 if (isActive)
                     updateOutline();
             });
             
-            tabs.on("pageDestroy", function(e){
+            tabs.on("tabDestroy", function(e){
                 if (isActive && e.last)
                     clear();
             });
@@ -288,8 +288,8 @@ define(function(require, exports, module) {
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
-                var page = tabs.focussedPage;
-                var ace  = page && page.editor.ace;
+                var tab = tabs.focussedPage;
+                var ace  = tab && tab.editor.ace;
                 if (!ace) return;
                 
                 var cursor     = ace.getCursorPosition();
@@ -343,9 +343,9 @@ define(function(require, exports, module) {
                 return;
             }
             
-            var page   = tabs.focussedPage;
-            var editor = page && page.editor;
-            if (!page || !page.path && !page.document.meta.newfile || !editor.ace)
+            var tab   = tabs.focussedPage;
+            var editor = tab && tab.editor;
+            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
             
             fullOutline = event.data.body;
@@ -354,11 +354,11 @@ define(function(require, exports, module) {
         }
         
         function renderOutline(ignoreFilter) {
-            var page   = tabs.focussedPage;
-            var editor = page && page.editor;
-            if (!page || !page.path && !page.document.meta.newfile || !editor.ace)
+            var tab   = tabs.focussedPage;
+            var editor = tab && tab.editor;
+            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
-            originalPage = page;
+            originalPage = tab;
             draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
