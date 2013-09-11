@@ -148,7 +148,7 @@ define(function(require, exports, module) {
             // this is needed because with concorde changeSession event is fired when document is still empty
             worker.call(type, [
                 path, syntax, value, null, 
-                c9.workspaceDir || ""
+                options.workspaceDir
             ]);
         }
 
