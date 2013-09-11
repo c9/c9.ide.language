@@ -36,7 +36,7 @@ define(function(require, exports, module) {
         var staticPrefix        = options.staticPrefix;
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
-        var originalLine, originalColumn, originalPage;
+        var originalLine, originalColumn, originalTab;
         var worker, focussed, isActive, outline, timer, dirty;
         
         var COLLAPSE_AREA = 14;
@@ -103,11 +103,11 @@ define(function(require, exports, module) {
                 var tab = e.tab;
                 if (!isActive 
                   || !tab.path && !tab.document.meta.newfile 
-                  || !tab.editor.ace || tab != tabs.focussedPage)
+                  || !tab.editor.ace || tab != tabs.focussedTab)
                     return;
                 
-                if (!originalPage) 
-                    originalPage = e.tab;
+                if (!originalTab) 
+                    originalTab = e.tab;
                 
                 updateOutline();
             });
@@ -116,21 +116,21 @@ define(function(require, exports, module) {
                 var tab = e.tab;
                 var session;
                 
-                if (originalPage == tab)
+                if (originalTab == tab)
                     return;
                 
                 // Remove change listener
-                if (originalPage) {
-                    session = originalPage.document.getSession().session;
+                if (originalTab) {
+                    session = originalTab.document.getSession().session;
                     session && session.removeListener("changeMode", changeHandler);
-                    originalPage.document.undoManager.off("change", changeHandler);
-                    if (originalPage.editor.ace)
-                        originalPage.editor.ace.selection
+                    originalTab.document.undoManager.off("change", changeHandler);
+                    if (originalTab.editor.ace)
+                        originalTab.editor.ace.selection
                             .removeListener("changeSelection", cursorHandler);
                 }
                 
                 if (!tab.path && !tab.document.meta.newfile || !tab.editor.ace) {
-                    originalPage = null;
+                    originalTab = null;
                     return clear();
                 }
                     
@@ -140,7 +140,7 @@ define(function(require, exports, module) {
                 tab.document.undoManager.on("change", changeHandler);
                 tab.editor.ace.selection.on("changeSelection", cursorHandler);
                 
-                originalPage = tab;
+                originalTab = tab;
                 
                 if (isActive)
                     updateOutline();
@@ -151,18 +151,18 @@ define(function(require, exports, module) {
                     clear();
             });
             
-            if (isActive && tabs.focussedPage)
+            if (isActive && tabs.focussedTab)
                 updateOutline();
         }
         
         function changeHandler(){
-            if (isActive && originalPage == tabs.focussedPage)
+            if (isActive && originalTab == tabs.focussedTab)
                 updateOutline();
         }
         
         function cursorHandler(e){
-            if (isActive && originalPage == tabs.focussedPage) {
-                var ace = originalPage.editor.ace;
+            if (isActive && originalTab == tabs.focussedTab) {
+                var ace = originalTab.editor.ace;
                 if (!outline || !ace.selection.isEmpty())
                     return;
                     
@@ -241,11 +241,11 @@ define(function(require, exports, module) {
                 {
                     bindKey : "ESC",
                     exec    : function(){
-                        if (!originalPage.loaded) 
+                        if (!originalTab.loaded) 
                             return clear();
                         
                         if (originalLine) {
-                            var ace = originalPage && originalPage.editor.ace;
+                            var ace = originalTab && originalTab.editor.ace;
                             ace.gotoLine(originalLine, originalColumn, 
                                 settings.getBool("editors/code/@animatedscroll"));
                             
@@ -253,7 +253,7 @@ define(function(require, exports, module) {
                         }
                         
                         textbox.setValue("");
-                        tabs.focusPage(originalPage);
+                        tabs.focusTab(originalTab);
                     }
                 }, {
                     bindKey : "Up",
@@ -267,7 +267,7 @@ define(function(require, exports, module) {
                         onSelect();
                         
                         textbox.setValue("");
-                        originalPage.loaded && tabs.focusPage(originalPage);
+                        originalTab.loaded && tabs.focusTab(originalTab);
                     }
                 }
             ]);
@@ -288,7 +288,7 @@ define(function(require, exports, module) {
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
-                var tab = tabs.focussedPage;
+                var tab = tabs.focussedTab;
                 var ace  = tab && tab.editor.ace;
                 if (!ace) return;
                 
@@ -343,7 +343,7 @@ define(function(require, exports, module) {
                 return;
             }
             
-            var tab   = tabs.focussedPage;
+            var tab   = tabs.focussedTab;
             var editor = tab && tab.editor;
             if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
@@ -354,11 +354,11 @@ define(function(require, exports, module) {
         }
         
         function renderOutline(ignoreFilter) {
-            var tab   = tabs.focussedPage;
+            var tab   = tabs.focussedTab;
             var editor = tab && tab.editor;
             if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
-            originalPage = tab;
+            originalTab = tab;
             draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
@@ -397,11 +397,11 @@ define(function(require, exports, module) {
                 return;
             }
             
-            if (!originalPage.loaded) 
+            if (!originalTab.loaded) 
                 return clear();
             
             var pos = node.displayPos || node.pos;
-            var ace = originalPage.editor.ace; 
+            var ace = originalTab.editor.ace; 
             var range = new Range(pos.sl, pos.sc, pos.el, pos.ec);
             scrollToDefinition(ace, pos.sl, pos.elx || pos.el);
             ace.selection.setSelectionRange(range);

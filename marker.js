@@ -37,14 +37,14 @@ define(function(require, exports, module) {
             e.worker.on("markers", function(event) {
                 if (language.disabled) return;
                 
-                var tab = tabs.findPage(event.data.path);
+                var tab = tabs.findTab(event.data.path);
                 if (!tab) return;
                 
                 var editor = tab.editor;
                 addMarkers(event, editor.ace);
             });
             e.worker.on("hint", function(event) {
-                var tab = tabs.findPage(event.data.path);
+                var tab = tabs.findTab(event.data.path);
                 if (!tab) return;
                 
                 var editor = tab.editor;

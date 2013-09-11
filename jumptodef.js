@@ -110,7 +110,7 @@ define(function(require, exports, module) {
          * Fires an 'isJumpToDefinitionAvailableResult' event on the same channel when ready
          */
         function checkIsJumpToDefAvailable() {
-            var ace = tabs.focussedPage.editor.ace;
+            var ace = tabs.focussedTab.editor.ace;
             if (!ace)
                 return;
     
@@ -118,12 +118,12 @@ define(function(require, exports, module) {
         }
     
         function jumptodef() {
-            if (!tabs.focussedPage || !tabs.focussedPage.editor || !tabs.focussedPage.editor.ace)
+            if (!tabs.focussedTab || !tabs.focussedTab.editor || !tabs.focussedTab.editor.ace)
                 return;
                 
-            var ace = tabs.focussedPage.editor.ace;
+            var ace = tabs.focussedTab.editor.ace;
     
-            activateSpinner(tabs.focussedPage);
+            activateSpinner(tabs.focussedTab);
             onJumpStart(ace);
     
             var sel = ace.getSelection();
@@ -135,7 +135,7 @@ define(function(require, exports, module) {
         }
     
         function onDefinitions(e) {
-            var tab = tabs.findPage(e.data.path);
+            var tab = tabs.findTab(e.data.path);
             if (!tab) return;
             
             clearSpinners(tab);
@@ -164,7 +164,7 @@ define(function(require, exports, module) {
                     return lastResult.column !== undefined ? lastResult.column : _self.getFirstColumn(lastResult.row);
                 },
                 row: lastResult.row + 1,
-                node: path ? undefined : ide.getActivePage().xmlRoot,
+                node: path ? undefined : ide.getActiveTab().xmlRoot,
                 animate: true,
                 path: path
             });

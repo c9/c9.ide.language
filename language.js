@@ -32,7 +32,7 @@ define(function(require, exports, module) {
         var lang = require("ace/lib/lang");
         
         var isContinuousCompletionEnabledSetting;
-        var initedPages;
+        var initedTabs;
         
         /***** Initialization *****/
         
@@ -271,9 +271,9 @@ define(function(require, exports, module) {
         aceHandle.on("create", function(e){
             var editor = e.editor;
             
-            if (!initedPages && tabs.getPanes) { // not in single-pane minimal UI
+            if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
                 tabs.getPanes().forEach(function(pane){
-                    pane.getPages().forEach(function(tab){
+                    pane.getTabs().forEach(function(tab){
                         if (tab.editorType === "ace") {
                             setTimeout(function() {
                                 if (tab.value)
@@ -288,10 +288,10 @@ define(function(require, exports, module) {
                         }
                     });
                 });
-                if (tabs.focussedPage && tabs.focussedPage.path && tabs.focussedPage.editor.ace)
-                    notifyWorker("switchFile", { tab: tabs.focussedPage });
+                if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
+                    notifyWorker("switchFile", { tab: tabs.focussedTab });
                 
-                initedPages = true;
+                initedTabs = true;
             }
             
             editor.on("draw", function(){
@@ -310,7 +310,7 @@ define(function(require, exports, module) {
                 
                 updateSettings(e); //@todo
                 session.once("changeMode", function() {
-                    if (tabs.focussedPage === e.doc.tab)
+                    if (tabs.focussedTab === e.doc.tab)
                         notifyWorker("switchFile", { tab: e.doc.tab });
                 });
 
@@ -344,8 +344,8 @@ define(function(require, exports, module) {
             
             isContinuousCompletionEnabledSetting = 
                 settings.getBool("user/language/@continuousCompletion");
-            if (tabs.focussedPage)
-                notifyWorker("switchFile", { tab: tabs.focussedPage });
+            if (tabs.focussedTab)
+                notifyWorker("switchFile", { tab: tabs.focussedTab });
         }
         
         /***** Methods *****/

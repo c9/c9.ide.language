@@ -114,7 +114,7 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var tab = tabs.findPage(event.data.path);
+                    var tab = tabs.findTab(event.data.path);
                     if (!tab) return;
                     
                     var editor = tab.editor;
@@ -530,7 +530,7 @@ define(function(require, exports, module) {
         }
         
         function invoke(forceBox) {
-            var tab = tabs.focussedPage;
+            var tab = tabs.focussedTab;
             if (!tab || tab.editor.type != "ace") return;
             
             var ace = lastAce = tab.editor.ace;
