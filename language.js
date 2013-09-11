@@ -142,8 +142,8 @@ define(function(require, exports, module) {
         }
         
         function notifyWorkerTransferData(type, path, syntax, value) {
-            if (c9.workspaceDir === undefined)
-                console.error("c9.workspaceDir is undefined!")
+            if (options.workspaceDir === undefined)
+                console.error("options.workspaceDir is undefined!")
             // background tabs=open document, foreground tab=switch to file
             // this is needed because with concorde changeSession event is fired when document is still empty
             worker.call(type, [
