@@ -34,7 +34,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         },
         "plugins/c9.ide.editors/editor",
         "plugins/c9.ide.editors/tabs",
-        "plugins/c9.ide.editors/tab",
+        "plugins/c9.ide.editors/pane",
         "plugins/c9.ide.editors/page",
         {
             packagePath : "plugins/c9.ide.ace/ace",
@@ -83,7 +83,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         var ace     = imports.ace;
         
         function getPageHtml(page){
-            return page.tab.aml.getPage("editor::" + page.editorType).$ext
+            return page.pane.aml.getPage("editor::" + page.editorType).$ext
         }
         
         expect.html.setConstructor(function(page){
@@ -112,7 +112,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 this.timeout(10000);
                 
                 var sessId;
-                it('should open a tab with just an editor', function(done) {
+                it('should open a pane with just an editor', function(done) {
                     tabs.openFile("file.js", function(err, page){
                         expect(tabs.getPages()).length(1);
                         
@@ -120,7 +120,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                         done();
                     });
                 });
-//                it('should handle multiple documents in the same tab', function(done) {
+//                it('should handle multiple documents in the same pane', function(done) {
 //                    tabs.openFile("listing.json", function(err, page){
 //                        expect(tabs.getPages()).length(2);
 //                        
@@ -148,7 +148,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
 //                    tabs.clear(true, true); //Soft clear, not unloading the pages
 //                    expect(tabs.getPages(), "pages").length(0);
 //                    expect(tabs.getTabs(), "tabs").length(0);
-//                    //expect(tab.getPages(), "aml").length(0);
+//                    //expect(pane.getPages(), "aml").length(0);
 //                    done();
 //                });
 //                it('should restore the state', function(done) {
@@ -158,7 +158,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
 //                    var l = info.pages.length;
 //                    expect(tabs.getPages()).length(l);
 //                    expect(tabs.getTabs()[0].getPages()).length(l);
-//                    expect(tabs.focussedPage.tab.getPages()).length(l);
+//                    expect(tabs.focussedPage.pane.getPages()).length(l);
 //                    
 //                    expect(tabs.getPages().map(function(page){
 //                        return page.path || page.id;
@@ -166,17 +166,17 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
 //                    done();
 //                });
 //            });
-//            describe("split(), tab.unload()", function(){
-//                it('should split a tab horizontally, making the existing tab the left one', function(done) {
-//                    var tab = tabs.focussedPage.tab;
-//                    var righttab = tab.hsplit(true);
+//            describe("split(), pane.unload()", function(){
+//                it('should split a pane horizontally, making the existing pane the left one', function(done) {
+//                    var pane = tabs.focussedPage.pane;
+//                    var righttab = pane.hsplit(true);
 //                    tabs.focussedPage.attachTo(righttab);
 //                    done();
 //                });
-//                it('should remove the left tab from a horizontal split', function(done) {
-//                    var tab  = tabs.getTabs()[0];
+//                it('should remove the left pane from a horizontal split', function(done) {
+//                    var pane  = tabs.getTabs()[0];
 //                    var page = tabs.getTabs()[1].getPage();
-//                    tab.unload();
+//                    pane.unload();
 //                    expect(tabs.getTabs()).length(1);
 //                    expect(tabs.getPages()).length(2);
 //                    tabs.focusPage(page);

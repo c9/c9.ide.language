@@ -83,7 +83,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 this.timeout(10000);
                 
                 var sessId;
-                it('should open a tab with just an editor', function(done) {
+                it('should open a pane with just an editor', function(done) {
                     var doc = new Document({
                         value : "function foo(){}",
                         ace : { customType : "javascript" }

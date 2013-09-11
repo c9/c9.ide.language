@@ -142,7 +142,7 @@ define(function(require, exports, module) {
         }
         
         function notifyWorkerTransferData(type, path, syntax, value) {
-            // background tabs=open document, foreground tab=switch to file
+            // background tabs=open document, foreground pane=switch to file
             // this is needed because with concorde changeSession event is fired when document is still empty
             worker.call(type, [
                 path, syntax, value, null, 
@@ -179,7 +179,7 @@ define(function(require, exports, module) {
             tabs.on("open", function(e){
                 if (e.page.editorType === "ace") {
                     notifyWorker("documentOpen", e);
-                    if (!tabs.getTabs) // single-tab minimal UI
+                    if (!tabs.getTabs) // single-pane minimal UI
                         notifyWorker("switchFile", { page: e.page });
                 }
             });
@@ -271,9 +271,9 @@ define(function(require, exports, module) {
         aceHandle.on("create", function(e){
             var editor = e.editor;
             
-            if (!initedPages && tabs.getTabs) { // not in single-tab minimal UI
-                tabs.getTabs().forEach(function(tab){
-                    tab.getPages().forEach(function(page){
+            if (!initedPages && tabs.getTabs) { // not in single-pane minimal UI
+                tabs.getTabs().forEach(function(pane){
+                    pane.getPages().forEach(function(page){
                         if (page.editorType === "ace") {
                             setTimeout(function() {
                                 if (page.value)
