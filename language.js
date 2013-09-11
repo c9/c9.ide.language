@@ -401,7 +401,7 @@ define(function(require, exports, module) {
         /**
          * Language foundation for Cloud9 
          * @event afterfilesave Fires after a file is saved
-         *   object:
+         * @param {Object} e
          *     node     {XMLNode} description
          *     oldpath  {String} description
          **/
