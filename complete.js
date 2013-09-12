@@ -6,8 +6,8 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "ui", "tabs", "ace", "language",
-        "menus", "commands", "c9", "tabs", "browsersupport"
+        "plugin", "ui", "tabManager", "ace", "language",
+        "menus", "commands", "c9", "tabManager", "browsersupport"
     ];
     main.provides = ["language.complete"];
     return main;
@@ -18,7 +18,7 @@ define(function(require, exports, module) {
         var c9         = imports.c9;
         var aceHandle  = imports.ace;
         var menus      = imports.menus;
-        var tabs       = imports.tabs;
+        var tabs       = imports.tabManager;
         var commands   = imports.commands;
         var language   = imports.language;
         var browsers   = imports.browsersupport;

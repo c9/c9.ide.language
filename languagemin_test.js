@@ -39,7 +39,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         },
         "plugins/c9.ide.keys/commands",
         
-        "plugins/c9.ide.ace/min/tab",
+        "plugins/c9.ide.ace/min/pane",
         "plugins/c9.ide.ace/min/settings",
         "plugins/c9.ide.ace/min/ui",
         "plugins/c9.ide.ace/min/api",

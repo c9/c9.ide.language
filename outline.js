@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "c9", "settings", "ui", "menus", "panels", "tabs", 
+        "plugin", "c9", "settings", "ui", "menus", "panels", "tabManager", 
         "language", "util"
     ];
     main.provides = ["outline"];
@@ -14,7 +14,7 @@ define(function(require, exports, module) {
         var util     = imports.util;
         var menus    = imports.menus;
         var panels   = imports.panels;
-        var tabs     = imports.tabs;
+        var tabs     = imports.tabManager;
         var language = imports.language;
         
         var Range    = require("ace/range").Range;

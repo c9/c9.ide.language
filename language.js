@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "c9", "settings", "ace", "tabs", "preferences", "browsersupport"
+        "plugin", "c9", "settings", "ace", "tabManager", "preferences", "browsersupport"
     ];
     main.provides = ["language"];
     return main;
@@ -16,7 +16,7 @@ define(function(require, exports, module) {
         var Plugin    = imports.plugin;
         var settings  = imports.settings;
         var aceHandle = imports.ace;
-        var tabs      = imports.tabs;
+        var tabs      = imports.tabManager;
         var prefs     = imports.preferences;
         var browsers  = imports.browsersupport;
         var BIG_FILE_LINES = 5000;

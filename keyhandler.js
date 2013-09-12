@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabs", "ace", "language", "language.marker", 
+        "plugin", "tabManager", "ace", "language", "language.marker", 
         "language.complete"
     ];
     main.provides = ["language.keyhandler"];

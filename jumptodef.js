@@ -7,8 +7,8 @@
 
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabs", "ace", "language",
-        "menus", "commands", "c9", "tabs",
+        "plugin", "tabManager", "ace", "language",
+        "menus", "commands", "c9", "tabManager",
         "tabbehavior", "ui"
     ];
     main.provides = ["language.jumptodef"];
@@ -21,7 +21,7 @@ define(function(require, exports, module) {
         var commands = imports.commands;
         var tabbehavior = imports.tabbehavior;
         var ace = imports.ace;
-        var tabs = imports.tabs;
+        var tabs = imports.tabManager;
         var ui = imports.ui;
         var util = require("plugins/c9.ide.language.generic/complete_util");
         var menus = imports.menus;
