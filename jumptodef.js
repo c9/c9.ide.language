@@ -7,7 +7,7 @@
 
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabManager", "ace", "language",
+        "Plugin", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager",
         "tabbehavior", "ui"
     ];
@@ -15,7 +15,7 @@ define(function(require, exports, module) {
     return main;
     
     function main(options, imports, register) {
-        var Plugin = imports.plugin;
+        var Plugin = imports.Plugin;
         var editors = imports.editors;
         var language = imports.language;
         var commands = imports.commands;

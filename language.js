@@ -6,14 +6,14 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "c9", "settings", "ace", "tabManager", "preferences", "browsersupport"
+        "Plugin", "c9", "settings", "ace", "tabManager", "preferences", "browsersupport"
     ];
     main.provides = ["language"];
     return main;
 
     function main(options, imports, register) {
         var c9        = imports.c9;
-        var Plugin    = imports.plugin;
+        var Plugin    = imports.Plugin;
         var settings  = imports.settings;
         var aceHandle = imports.ace;
         var tabs      = imports.tabManager;

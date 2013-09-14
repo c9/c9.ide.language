@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabManager", "language", "ui"
+        "Plugin", "tabManager", "language", "ui"
     ];
     main.provides = ["language.marker"];
     return main;
