@@ -60,7 +60,7 @@ define(function(require, exports, module) {
                 editor.session.on("changeScrollLeft", hide);
             }
             tooltipEl.innerHTML = html;
-            setTimeout(function() {
+            //setTimeout(function() {
                 var offset = editor.renderer.scroller.getBoundingClientRect();
                 var position = editor.renderer.textToScreenCoordinates(row, column);
                 var cursorConfig = editor.renderer.$cursorLayer.config;
@@ -79,7 +79,7 @@ define(function(require, exports, module) {
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
                 else
                     tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
-            });
+            //});
         }
             
         function hide() {
