@@ -5,8 +5,12 @@ var dom  = require("ace/lib/dom");
 var tooltipEl = dom.createElement("div");
 tooltipEl.className = "language_tooltip";
 
+var assert = require("plugins/c9.util/assert");
+
 module.exports = {
     show: function(row, column, html, editor) {
+        assert(editor);
+        
         this.editor = editor;
         
         if (!this.isVisible) {
