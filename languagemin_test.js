@@ -7,9 +7,25 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
     var expect = chai.expect;
     
     architect.resolveConfig([
+        {
+            packagePath : "plugins/c9.core/c9",
+            startdate   : new Date(),
+            debug       : false,
+            hosted      : true,
+            local       : false
+        },
+        {
+            packagePath: "plugins/c9.vfs.client/vfs_client",
+            smithIo     : {
+                "path": "/smith.io/server"
+            }
+        },
+        "plugins/c9.ide.ui/lib_apf",
         "plugins/c9.core/ext",
         "plugins/c9.core/events",
         "plugins/c9.core/util",
+        "plugins/c9.core/http",
+        "plugins/c9.ide.auth/auth",
         "plugins/c9.ide.editors/document",
         "plugins/c9.ide.editors/undomanager",
         {
@@ -44,6 +60,13 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.ide.ace/min/ui",
         "plugins/c9.ide.ace/min/api",
         "plugins/c9.ide.browsersupport/browsersupport",
+        {
+            provides : ["log"],
+            consumes: [],
+            setup    : function(options, imports, register) {
+                register(null, {log: {}});
+            }
+        },
         {
             consumes : ["ace", "c9", "commands", "language.keyhandler", "language.complete"],
             provides : [],
@@ -127,7 +150,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                             expect.html(document.querySelector(".code_complete_bar")).text("ancestor");
                             complete.closeCompletionBox();
                             done();
-                        }, 100)
+                        }, 100);
                         
                     }, 8000);
                 });
