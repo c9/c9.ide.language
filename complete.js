@@ -517,11 +517,15 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation();
                     break;
                 case 40: // Down
+                    if (tree.provider.selectedRow == tree.provider.matches.length - 1)
+                        return closeCompletionBox();
                     tree.execCommand("goDown");
                     e.stopPropagation();
                     e.preventDefault();
                     break;
                 case 38: // Up
+                    if (!tree.provider.selectedRow)
+                        return closeCompletionBox();
                     tree.execCommand("goUp");
                     e.stopPropagation();
                     e.preventDefault();
