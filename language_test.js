@@ -34,9 +34,9 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
             defaultEditor: "ace"
         },
         "plugins/c9.ide.editors/editor",
-        "plugins/c9.ide.editors/tabmanager",
-        "plugins/c9.ide.editors/pane",
+        "plugins/c9.ide.editors/tabs",
         "plugins/c9.ide.editors/tab",
+        "plugins/c9.ide.editors/page",
         {
             packagePath : "plugins/c9.ide.ace/ace",
             staticPrefix : "plugins/c9.ide.layout.classic"
@@ -73,7 +73,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
             setup    : expect.html.mocked
         },
         {
-            consumes : ["tabManager", "ace"],
+            consumes : ["tabs", "ace"],
             provides : [],
             setup    : main
         }
@@ -84,23 +84,23 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
     });
     
     function main(options, imports, register) {
-        var tabs    = imports.tabManager;
+        var tabs    = imports.tabs;
         var ace     = imports.ace;
         
-        function getTabHtml(tab){
-            return tab.pane.aml.getPage("editor::" + tab.editorType).$ext
+        function getPageHtml(page){
+            return page.tab.aml.getPage("editor::" + page.editorType).$ext
         }
         
-        expect.html.setConstructor(function(tab){
-            if (typeof tab == "object")
-                return getTabHtml(tab);
+        expect.html.setConstructor(function(page){
+            if (typeof page == "object")
+                return getPageHtml(page);
         });
         
         describe('ace', function() {
             before(function(done){
                 apf.config.setProperty("allow-select", false);
                 apf.config.setProperty("allow-blur", false);
-                tabs.getPanes()[0].focus();
+                tabs.getTabs()[0].focus();
                 
                 bar.$ext.style.background = "rgba(220, 220, 220, 0.93)";
                 bar.$ext.style.position = "fixed";
@@ -117,21 +117,21 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
                 this.timeout(10000);
                 
                 var sessId;
-                it('should open a pane with just an editor', function(done) {
-                    tabs.openFile("file.js", function(err, tab){
-                        expect(tabs.getTabs()).length(1);
+                it('should open a tab with just an editor', function(done) {
+                    tabs.openFile("file.js", function(err, page){
+                        expect(tabs.getPages()).length(1);
                         
-                        expect(tab.document.title).equals("file.js");
+                        expect(page.document.title).equals("file.js");
                         done();
                     });
                 });
-//                it('should handle multiple documents in the same pane', function(done) {
-//                    tabs.openFile("listing.json", function(err, tab){
-//                        expect(tabs.getTabs()).length(2);
+//                it('should handle multiple documents in the same tab', function(done) {
+//                    tabs.openFile("listing.json", function(err, page){
+//                        expect(tabs.getPages()).length(2);
 //                        
-//                        tab.activate();
+//                        page.activate();
 //                        
-//                        var doc = tab.document;
+//                        var doc = page.document;
 //                        expect(doc.title).match(new RegExp("listing.json"));
 //                        done();
 //                    });
@@ -142,18 +142,18 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
 //                
 //                it('should retrieve the state', function(done) {
 //                    state = tabs.getState();
-//                    info.pages = tabs.getTabs().map(function(tab){
-//                        return tab.path || tab.id;
+//                    info.pages = tabs.getPages().map(function(page){
+//                        return page.path || page.id;
 //                    });
 //                    done();
 //                });
 //                it('should clear all tabs and pages', function(done) {
-//                    tabs.getPanes()[0];
-//                    var pages = tabs.getTabs();
+//                    tabs.getTabs()[0];
+//                    var pages = tabs.getPages();
 //                    tabs.clear(true, true); //Soft clear, not unloading the pages
-//                    expect(tabs.getTabs(), "pages").length(0);
-//                    expect(tabs.getPanes(), "tabManager").length(0);
-//                    //expect(pane.getTabs(), "aml").length(0);
+//                    expect(tabs.getPages(), "pages").length(0);
+//                    expect(tabs.getTabs(), "tabs").length(0);
+//                    //expect(tab.getPages(), "aml").length(0);
 //                    done();
 //                });
 //                it('should restore the state', function(done) {
@@ -161,30 +161,30 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
 //                        if (err) throw err.message;
 //                    });
 //                    var l = info.pages.length;
-//                    expect(tabs.getTabs()).length(l);
-//                    expect(tabs.getPanes()[0].getTabs()).length(l);
-//                    expect(tabs.focussedTab.pane.getTabs()).length(l);
+//                    expect(tabs.getPages()).length(l);
+//                    expect(tabs.getTabs()[0].getPages()).length(l);
+//                    expect(tabs.focussedPage.tab.getPages()).length(l);
 //                    
-//                    expect(tabs.getTabs().map(function(tab){
-//                        return tab.path || tab.id;
+//                    expect(tabs.getPages().map(function(page){
+//                        return page.path || page.id;
 //                    })).to.deep.equal(info.pages);
 //                    done();
 //                });
 //            });
-//            describe("split(), pane.unload()", function(){
-//                it('should split a pane horizontally, making the existing pane the left one', function(done) {
-//                    var pane = tabs.focussedTab.pane;
-//                    var righttab = pane.hsplit(true);
-//                    tabs.focussedTab.attachTo(righttab);
+//            describe("split(), tab.unload()", function(){
+//                it('should split a tab horizontally, making the existing tab the left one', function(done) {
+//                    var tab = tabs.focussedPage.tab;
+//                    var righttab = tab.hsplit(true);
+//                    tabs.focussedPage.attachTo(righttab);
 //                    done();
 //                });
-//                it('should remove the left pane from a horizontal split', function(done) {
-//                    var pane  = tabs.getPanes()[0];
-//                    var tab = tabs.getPanes()[1].getTab();
-//                    pane.unload();
-//                    expect(tabs.getPanes()).length(1);
-//                    expect(tabs.getTabs()).length(2);
-//                    tabs.focusTab(tab);
+//                it('should remove the left tab from a horizontal split', function(done) {
+//                    var tab  = tabs.getTabs()[0];
+//                    var page = tabs.getTabs()[1].getPage();
+//                    tab.unload();
+//                    expect(tabs.getTabs()).length(1);
+//                    expect(tabs.getPages()).length(2);
+//                    tabs.focusPage(page);
 //                    done();
 //                });
 //            });
@@ -192,10 +192,10 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
 //                this.timeout(10000);
 //                
 //                it('should change a theme', function(done) {
-//                    var editor = tabs.focussedTab.editor;
-//                    ace.on("themeInit", function setTheme(){
+//                    var editor = tabs.focussedPage.editor;
+//                    ace.on("theme.init", function setTheme(){
 //                        ace.off("theme.init", setTheme);
-//                        expect.html(getTabHtml(tabs.focussedTab).childNodes[1]).className("ace-monokai");
+//                        expect.html(getPageHtml(tabs.focussedPage).childNodes[1]).className("ace-monokai");
 //                        editor.setOption("theme", "ace/theme/textmate");
 //                        done();
 //                    });

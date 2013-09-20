@@ -6,17 +6,17 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "settings", "ace", "tabManager", "preferences", "browsersupport"
+        "plugin", "c9", "settings", "ace", "tabs", "preferences", "browsersupport"
     ];
     main.provides = ["language"];
     return main;
 
     function main(options, imports, register) {
         var c9        = imports.c9;
-        var Plugin    = imports.Plugin;
+        var Plugin    = imports.plugin;
         var settings  = imports.settings;
         var aceHandle = imports.ace;
-        var tabs      = imports.tabManager;
+        var tabs      = imports.tabs;
         var prefs     = imports.preferences;
         var browsers  = imports.browsersupport;
         var BIG_FILE_LINES = 5000;
@@ -32,7 +32,7 @@ define(function(require, exports, module) {
         var lang = require("ace/lib/lang");
         
         var isContinuousCompletionEnabledSetting;
-        var initedTabs;
+        var initedPages;
         
         /***** Initialization *****/
         
@@ -91,22 +91,22 @@ define(function(require, exports, module) {
             //@todo marker.onChange(session, e);
         }
         function onChangeMode() {
-            notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
+            notifyWorker("switchFile", { page: worker.$doc.c9doc.page });
         }
         
         /**
          * Notify the worker that the document changed
          *
          * @param type  the event type, documentOpen or switchFile
-         * @param e     the originating event, should have an e.tab.path and e.tab.editor.ace
+         * @param e     the originating event, should have an e.page.path and e.page.editor.ace
          */
         function notifyWorker(type, e){
             if (!worker)
-                return plugin.once("initWorker", notifyWorker.bind(null, type, e));
+                return plugin.once("worker.init", notifyWorker.bind(null, type, e));
             
-            var tab    = e.tab;
-            var path    = tab && tab.path;
-            var session = tab && tab.editor.ace && tab.editor.ace.session;
+            var page    = e.page;
+            var path    = page && page.path;
+            var session = page && page.editor.ace && page.editor.ace.session;
             if (!session)
                 return;
             
@@ -171,32 +171,32 @@ define(function(require, exports, module) {
                 
             } 
 
-            tabs.on("tabDestroy", function(e){
-                var path = e.tab.path;
+            tabs.on("page.destroy", function(e){
+                var path = e.page.path;
                 if (path)
                     worker.emit("documentClose", {data: path});
             });
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (e.tab.editorType === "ace") {
+                if (e.page.editorType === "ace") {
                     notifyWorker("documentOpen", e);
-                    if (!tabs.getPanes) // single-pane minimal UI
-                        notifyWorker("switchFile", { tab: e.tab });
+                    if (!tabs.getTabs) // single-tab minimal UI
+                        notifyWorker("switchFile", { page: e.page });
                 }
             });
             
             // Switch to any active file
-            tabs.on("focusSync", function(e){
-                if (e.tab.editor.type !== "ace")
+            tabs.on("focus.sync", function(e){
+                if (e.page.editor.type !== "ace")
                     return;
                 
                 notifyWorker("switchFile", e);
             });
             
-            emit("initWorker", {worker: worker});
+            emit("worker.init", {worker: worker});
             plugin.on("newListener", function(type, listener){
-                if (type == "initWorker") listener({worker: worker});
+                if (type == "worker.init") listener({worker: worker});
             });
 
             settings.on("read", function() {
@@ -273,27 +273,27 @@ define(function(require, exports, module) {
         aceHandle.on("create", function(e){
             var editor = e.editor;
             
-            if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
-                tabs.getPanes().forEach(function(pane){
-                    pane.getTabs().forEach(function(tab){
-                        if (tab.editorType === "ace") {
+            if (!initedPages && tabs.getTabs) { // not in single-tab minimal UI
+                tabs.getTabs().forEach(function(tab){
+                    tab.getPages().forEach(function(page){
+                        if (page.editorType === "ace") {
                             setTimeout(function() {
-                                if (tab.value)
-                                    return notifyWorker("documentOpen", { tab: tab });
-                                var value = tab.document.value;
+                                if (page.value)
+                                    return notifyWorker("documentOpen", { page: page });
+                                var value = page.document.value;
                                 if (value)
-                                    return notifyWorker("documentOpen", { tab: tab, value: value });
-                                tab.document.once("valueSet", function(e) {
-                                    notifyWorker("documentOpen", { tab: tab, value: e.value });
+                                    return notifyWorker("documentOpen", { page: page, value: value });
+                                page.document.once("value.set", function(e) {
+                                    notifyWorker("documentOpen", { page: page, value: e.value });
                                 });
                             }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
                         }
                     });
                 });
-                if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
-                    notifyWorker("switchFile", { tab: tabs.focussedTab });
+                if (tabs.focussedPage && tabs.focussedPage.path && tabs.focussedPage.editor.ace)
+                    notifyWorker("switchFile", { page: tabs.focussedPage });
                 
-                initedTabs = true;
+                initedPages = true;
             }
             
             editor.on("draw", function(){
@@ -307,17 +307,17 @@ define(function(require, exports, module) {
             // editor.on("unload", function h2(){
             //     editor.ace.selection.off("changeCursor", onCursorChangeDefer);
             // }, editor);
-            editor.on("documentLoad", function(e){
+            editor.on("document.load", function(e){
                 var session = e.doc.getSession().session;
                 
                 updateSettings(e); //@todo
                 session.once("changeMode", function() {
-                    if (tabs.focussedTab === e.doc.tab)
-                        notifyWorker("switchFile", { tab: e.doc.tab });
+                    if (tabs.focussedPage === e.doc.page)
+                        notifyWorker("switchFile", { page: e.doc.page });
                 });
 
             });
-            editor.on("documentUnload", function(e){
+            editor.on("document.unload", function(e){
             });
         });
         
@@ -328,7 +328,7 @@ define(function(require, exports, module) {
         
         function updateSettings(e) {
             if (!worker)
-                return plugin.once("initWorker", updateSettings.bind(null, e));
+                return plugin.once("worker.init", updateSettings.bind(null, e));
             
             ["jshint", "instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
               .forEach(function(s){
@@ -346,8 +346,8 @@ define(function(require, exports, module) {
             
             isContinuousCompletionEnabledSetting = 
                 settings.getBool("user/language/@continuousCompletion");
-            if (tabs.focussedTab)
-                notifyWorker("switchFile", { tab: tabs.focussedTab });
+            if (tabs.focussedPage)
+                notifyWorker("switchFile", { page: tabs.focussedPage });
         }
         
         /***** Methods *****/
@@ -372,7 +372,7 @@ define(function(require, exports, module) {
             if (worker)
                 return worker.call("register", [modulePath, contents]);
                 
-            plugin.once("initWorker", function(e) {
+            plugin.once("worker.init", function(e) {
                 worker.on("registered", function reply(e) {
                     if (e.data.path !== modulePath)
                         return;
@@ -403,7 +403,7 @@ define(function(require, exports, module) {
         /**
          * Language foundation for Cloud9 
          * @event afterfilesave Fires after a file is saved
-         * @param {Object} e
+         *   object:
          *     node     {XMLNode} description
          *     oldpath  {String} description
          **/

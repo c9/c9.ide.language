@@ -54,7 +54,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         },
         "plugins/c9.ide.keys/commands",
         
-        "plugins/c9.ide.ace/min/pane",
+        "plugins/c9.ide.ace/min/page",
         "plugins/c9.ide.ace/min/settings",
         "plugins/c9.ide.ace/min/ui",
         "plugins/c9.ide.ace/min/api",
@@ -105,20 +105,20 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 this.timeout(10000);
                 
                 var sessId;
-                it('should open a pane with just an editor', function(done) {
+                it('should open a tab with just an editor', function(done) {
                     var doc = new Document({
                         value : "function foo(){}",
                         ace : { customType : "javascript" }
                     });
-                    doc.tab = tab;
+                    doc.page = page;
 
-                    tab.document = doc;
-                    tab.editor.loadDocument(doc);
+                    page.document = doc;
+                    page.editor.loadDocument(doc);
                     
-                    tabs.emit("open", {tab: tab});
+                    tabs.emit("open", {page: page});
                     
                     setTimeout(function(){
-                        expect.html(tab.editor.ace, "document value").text(/function foo\(\)\{\}/);
+                        expect.html(page.editor.ace, "document value").text(/function foo\(\)\{\}/);
                         done();
                     });
                 });

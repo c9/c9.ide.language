@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "settings", "ui", "menus", "panels", "tabManager", 
+        "plugin", "c9", "settings", "ui", "menus", "panels", "tabs", 
         "language", "util"
     ];
     main.provides = ["outline"];
@@ -8,13 +8,13 @@ define(function(require, exports, module) {
 
     function main(options, imports, register) {
         var c9       = imports.c9;
-        var Plugin   = imports.Plugin;
+        var Plugin   = imports.plugin;
         var settings = imports.settings;
         var ui       = imports.ui;
         var util     = imports.util;
         var menus    = imports.menus;
         var panels   = imports.panels;
-        var tabs     = imports.tabManager;
+        var tabs     = imports.tabs;
         var language = imports.language;
         
         var Range    = require("ace/range").Range;
@@ -36,7 +36,7 @@ define(function(require, exports, module) {
         var staticPrefix        = options.staticPrefix;
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
-        var originalLine, originalColumn, originalTab;
+        var originalLine, originalColumn, originalPage;
         var worker, focussed, isActive, outline, timer, dirty;
         
         var COLLAPSE_AREA = 14;
@@ -72,7 +72,7 @@ define(function(require, exports, module) {
                 draw         : draw
             });
             
-            panels.on("showpanelOutline", function(e){
+            panels.on("showpanel.outline", function(e){
                 isActive = true;
                 
                 textbox.focus();
@@ -81,7 +81,7 @@ define(function(require, exports, module) {
                 
                 updateOutline();
             });
-            panels.on("hidepanelOutline", function(e){
+            panels.on("hidepanel.outline", function(e){
                 // tree.clearSelection();
                 isActive = false;
             });
@@ -93,76 +93,76 @@ define(function(require, exports, module) {
                 new apf.item({ command : "outline" }), 110, plugin);
             
             // Get the worker
-            language.once("initWorker", function(e){
+            language.once("worker.init", function(e){
                 worker = e.worker;
                 worker.on("outline", openOutline); 
             });
             
-            // Hook events to get the focussed tab
+            // Hook events to get the focussed page
             tabs.on("open", function(e){
-                var tab = e.tab;
+                var page = e.page;
                 if (!isActive 
-                  || !tab.path && !tab.document.meta.newfile 
-                  || !tab.editor.ace || tab != tabs.focussedTab)
+                  || !page.path && !page.document.meta.newfile 
+                  || !page.editor.ace || page != tabs.focussedPage)
                     return;
                 
-                if (!originalTab) 
-                    originalTab = e.tab;
+                if (!originalPage) 
+                    originalPage = e.page;
                 
                 updateOutline();
             });
             
-            tabs.on("focusSync", function(e){
-                var tab = e.tab;
+            tabs.on("focus.sync", function(e){
+                var page = e.page;
                 var session;
                 
-                if (originalTab == tab)
+                if (originalPage == page)
                     return;
                 
                 // Remove change listener
-                if (originalTab) {
-                    session = originalTab.document.getSession().session;
+                if (originalPage) {
+                    session = originalPage.document.getSession().session;
                     session && session.removeListener("changeMode", changeHandler);
-                    originalTab.document.undoManager.off("change", changeHandler);
-                    if (originalTab.editor.ace)
-                        originalTab.editor.ace.selection
+                    originalPage.document.undoManager.off("change", changeHandler);
+                    if (originalPage.editor.ace)
+                        originalPage.editor.ace.selection
                             .removeListener("changeSelection", cursorHandler);
                 }
                 
-                if (!tab.path && !tab.document.meta.newfile || !tab.editor.ace) {
-                    originalTab = null;
+                if (!page.path && !page.document.meta.newfile || !page.editor.ace) {
+                    originalPage = null;
                     return clear();
                 }
                     
                 // Add change listener
-                session = tab.document.getSession().session;
+                session = page.document.getSession().session;
                 session && session.on("changeMode", changeHandler);
-                tab.document.undoManager.on("change", changeHandler);
-                tab.editor.ace.selection.on("changeSelection", cursorHandler);
+                page.document.undoManager.on("change", changeHandler);
+                page.editor.ace.selection.on("changeSelection", cursorHandler);
                 
-                originalTab = tab;
+                originalPage = page;
                 
                 if (isActive)
                     updateOutline();
             });
             
-            tabs.on("tabDestroy", function(e){
+            tabs.on("page.destroy", function(e){
                 if (isActive && e.last)
                     clear();
             });
             
-            if (isActive && tabs.focussedTab)
+            if (isActive && tabs.focussedPage)
                 updateOutline();
         }
         
         function changeHandler(){
-            if (isActive && originalTab == tabs.focussedTab)
+            if (isActive && originalPage == tabs.focussedPage)
                 updateOutline();
         }
         
         function cursorHandler(e){
-            if (isActive && originalTab == tabs.focussedTab) {
-                var ace = originalTab.editor.ace;
+            if (isActive && originalPage == tabs.focussedPage) {
+                var ace = originalPage.editor.ace;
                 if (!outline || !ace.selection.isEmpty())
                     return;
                     
@@ -241,11 +241,11 @@ define(function(require, exports, module) {
                 {
                     bindKey : "ESC",
                     exec    : function(){
-                        if (!originalTab.loaded) 
+                        if (!originalPage.loaded) 
                             return clear();
                         
                         if (originalLine) {
-                            var ace = originalTab && originalTab.editor.ace;
+                            var ace = originalPage && originalPage.editor.ace;
                             ace.gotoLine(originalLine, originalColumn, 
                                 settings.getBool("editors/code/@animatedscroll"));
                             
@@ -253,7 +253,7 @@ define(function(require, exports, module) {
                         }
                         
                         textbox.setValue("");
-                        tabs.focusTab(originalTab);
+                        tabs.focusPage(originalPage);
                     }
                 }, {
                     bindKey : "Up",
@@ -267,7 +267,7 @@ define(function(require, exports, module) {
                         onSelect();
                         
                         textbox.setValue("");
-                        originalTab.loaded && tabs.focusTab(originalTab);
+                        originalPage.loaded && tabs.focusPage(originalPage);
                     }
                 }
             ]);
@@ -288,8 +288,8 @@ define(function(require, exports, module) {
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
-                var tab = tabs.focussedTab;
-                var ace  = tab && tab.editor.ace;
+                var page = tabs.focussedPage;
+                var ace  = page && page.editor.ace;
                 if (!ace) return;
                 
                 var cursor     = ace.getCursorPosition();
@@ -305,7 +305,7 @@ define(function(require, exports, module) {
             textbox.ace.on("blur", onblur);
             
             // Offline
-            c9.on("stateChange", offlineHandler, plugin);
+            c9.on("state.change", offlineHandler, plugin);
             offlineHandler({ state: c9.status });
             
             timer = setInterval(function(){
@@ -343,9 +343,9 @@ define(function(require, exports, module) {
                 return;
             }
             
-            var tab   = tabs.focussedTab;
-            var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
+            var page   = tabs.focussedPage;
+            var editor = page && page.editor;
+            if (!page || !page.path && !page.document.meta.newfile || !editor.ace)
                 return;
             
             fullOutline = event.data.body;
@@ -354,11 +354,11 @@ define(function(require, exports, module) {
         }
         
         function renderOutline(ignoreFilter) {
-            var tab   = tabs.focussedTab;
-            var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
+            var page   = tabs.focussedPage;
+            var editor = page && page.editor;
+            if (!page || !page.path && !page.document.meta.newfile || !editor.ace)
                 return;
-            originalTab = tab;
+            originalPage = page;
             draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
@@ -397,11 +397,11 @@ define(function(require, exports, module) {
                 return;
             }
             
-            if (!originalTab.loaded) 
+            if (!originalPage.loaded) 
                 return clear();
             
             var pos = node.displayPos || node.pos;
-            var ace = originalTab.editor.ace; 
+            var ace = originalPage.editor.ace; 
             var range = new Range(pos.sl, pos.sc, pos.el, pos.ec);
             scrollToDefinition(ace, pos.sl, pos.elx || pos.el);
             ace.selection.setSelectionRange(range);

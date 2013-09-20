@@ -6,14 +6,14 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui"
+        "plugin", "tabs", "language", "ui"
     ];
     main.provides = ["language.marker"];
     return main;
 
     function main(options, imports, register) {
         var language = imports.language;
-        var tabs = imports.tabManager;
+        var tabs = imports.tabs;
         var ui = imports.ui;
 
         var Range = require("ace/range").Range;
@@ -30,16 +30,16 @@ define(function(require, exports, module) {
             this.column = column;
         };
 
-        language.on("initWorker", function(e){
+        language.on("worker.init", function(e){
             ui.insertCss(require("text!./marker.css"), language);
 
             e.worker.on("markers", function(event) {
                 if (language.disabled) return;
                 
-                var tab = tabs.findTab(event.data.path);
-                if (!tab) return;
+                var page = tabs.findPage(event.data.path);
+                if (!page) return;
                 
-                var editor = tab.editor;
+                var editor = page.editor;
                 addMarkers(event, editor.ace);
             });
         });
