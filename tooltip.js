@@ -16,6 +16,7 @@ define(function(require, exports, module) {
         var tabs = imports.tabs;
         var dom  = require("ace/lib/dom");
         var ui = imports.ui;
+        var editor;
         var isVisible;
         
         var tooltipEl = dom.createElement("div");
@@ -46,10 +47,8 @@ define(function(require, exports, module) {
                 hide();
         }
         
-        function show(row, column, html, editor) {
-            assert(editor);
-            
-            this.editor = editor;
+        function show(row, column, html, _editor) {
+            editor = _editor;
             
             if (!isVisible) {
                 isVisible = true;
@@ -83,7 +82,6 @@ define(function(require, exports, module) {
         }
             
         function hide() {
-            var editor  = this.editor;
             if (isVisible) {
                 editor.renderer.scroller.removeChild(tooltipEl);
                 //editor.selection.removeListener("changeCursor", hide);
