@@ -429,8 +429,10 @@ function asyncParForEach(array, fn, callback) {
         asyncForEach(_self.handlers, function(handler, next) {
             if (handler.handlesLanguage(_self.$language) && docLength < handler.getMaxFileSizeSupported()) {
                 handler.codeFormat(_self.doc, function(newSource) {
-                    if(newSource)
+                    if (newSource)
                         return _self.sender.emit("code_format", newSource);
+                    else
+                        next();
                 });
             }
             else
@@ -786,6 +788,7 @@ function asyncParForEach(array, fn, callback) {
                     if (response) {
                         commited = true;
                         _self.sender.emit("refactorResult", response);
+                        // only one handler gets to do this; don't call next();
                     } else {
                         next();
                     }
@@ -793,10 +796,12 @@ function asyncParForEach(array, fn, callback) {
             }
             else
                 next();
-            }, function() {
-            if (!commited)
-                _self.sender.emit("refactorResult", {success: true});
-            });
+            },
+            function() {
+                if (!commited)
+                    _self.sender.emit("refactorResult", {success: true});
+            }
+        );
     };
 
     this.onRenameCancel = function(event) {
@@ -806,9 +811,10 @@ function asyncParForEach(array, fn, callback) {
                 handler.onRenameCancel(function() {
                     next();
                 });
-        }
-            else
+            }
+            else {
                 next();
+            }
         });
     };
 
