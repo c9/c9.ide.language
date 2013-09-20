@@ -1,6 +1,6 @@
 /*global describe it before after  =*/
 
-require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai) {
+require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (architect, chai, baseProc) {
     var expect = chai.expect;
     
     architect.resolveConfig([
@@ -19,7 +19,10 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/c9.core/http",
         "plugins/c9.core/util",
         "plugins/c9.ide.ui/lib_apf",
-        "plugins/c9.core/settings",
+        {
+            packagePath: "plugins/c9.core/settings",
+            testing: true
+        },
         {
             packagePath  : "plugins/c9.ide.ui/ui",
             staticPrefix : "plugins/c9.ide.ui"
@@ -38,7 +41,10 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             packagePath : "plugins/c9.ide.ace/ace",
             staticPrefix : "plugins/c9.ide.layout.classic"
         },
-        "plugins/c9.ide.language/language",
+        {
+            packagePath: "plugins/c9.ide.language/language",
+            workspaceDir : baseProc
+        },
         "plugins/c9.ide.language/keyhandler",
         "plugins/c9.ide.language/complete",
         "plugins/c9.ide.language/marker",
@@ -52,6 +58,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
                 "path": "/smith.io/server"
             }
         },
+        "plugins/c9.vfs.client/endpoint.standalone",
         "plugins/c9.ide.auth/auth",
         "plugins/c9.fs/fs",
         "plugins/c9.ide.browsersupport/browsersupport",
