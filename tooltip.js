@@ -6,16 +6,18 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabs", "language", "ui"
+        "Plugin", "tabManager", "language", "ui"
     ];
     main.provides = ["language.tooltip"];
     return main;
     
     function main(options, imports, register) {
         var language = imports.language;
-        var tabs = imports.tabs;
-        var dom  = require("ace/lib/dom");
-        var ui = imports.ui;
+        var tabs     = imports.tabManager;
+        var dom      = require("ace/lib/dom");
+        var Plugin   = imports.Plugin;
+        var ui       = imports.ui;
+        
         var editor;
         var isVisible;
         
