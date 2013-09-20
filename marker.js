@@ -18,7 +18,6 @@ define(function(require, exports, module) {
 
         var Range = require("ace/range").Range;
         var Anchor = require('ace/anchor').Anchor;
-        var tooltip = require('./tooltip');
 
         function SimpleAnchor(row, column) {
             this.row = row;
@@ -43,31 +42,9 @@ define(function(require, exports, module) {
                 var editor = tab.editor;
                 addMarkers(event, editor.ace);
             });
-            e.worker.on("hint", function(event) {
-                var tab = tabs.findTab(event.data.path);
-                if (!tab) return;
-                
-                var editor = tab.editor;
-                onHint(event, editor.ace);
-            });
         });
 
         var disabledMarkerTypes = {};
-    
-        function onHint(event, editor) {
-            var message = event.data.message;
-            var pos = event.data.pos;
-            var cursorPos = editor.getCursorPosition();
-            var displayPos = event.data.displayPos || cursorPos;
-            if (cursorPos.column === pos.column && cursorPos.row === pos.row && message)
-                tooltip.show(displayPos.row, displayPos.column, message, editor);
-            else
-                tooltip.hide();
-        }
-        
-        function hideToolTip() {
-            tooltip.hide();
-        }
     
         function removeMarkers(session) {
             var markers = session.markerAnchors;
@@ -217,7 +194,6 @@ define(function(require, exports, module) {
         
         register(null, {
             "language.marker": {
-                hideToolTip : hideToolTip,
                 disableMarkerType : disableMarkerType,
                 enableMarkerType : enableMarkerType
             }
