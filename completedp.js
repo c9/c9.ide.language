@@ -80,12 +80,12 @@ define(function(require, exports, module) {
             return {label:this.visibleItems[index], index: index};
         };
         
-        function guidToShortString(guid) {
+        var guidToShortString = this.guidToShortString = function(guid) {
             var result = guid && guid.replace(/^[^:]+:(([^\/]+)\/)*?([^\/]*?)(\[\d+[^\]]*\])?(\/prototype)?$|.*/, "$3");
             return result && result !== "Object" ? result : "";
         }
     
-        function guidToLongString(guid, name) {
+        var guidToLongString = this.guidToLongString = function(guid, name) {
             if (guid.substr(0, 6) === "local:")
                 return guidToShortString(guid);
             var result = guid && guid.replace(/^[^:]+:(([^\/]+\/)*)*?([^\/]*?)$|.*/, "$1$3");
@@ -111,14 +111,10 @@ define(function(require, exports, module) {
             else
                 html = "<span class='img'></span>";
             
-            var docHead;
             if (match.type) {
                 var shortType = guidToShortString(match.type);
-                if (shortType) {
+                if (shortType)
                     match.meta = shortType;
-                    docHead = match.name + " : " 
-                        + guidToLongString(match.type) + "</div>";
-                }
             }
             
             var prefix = match.identifierRegex
@@ -139,15 +135,6 @@ define(function(require, exports, module) {
             
             if (match.meta)
                 html += '<span class="meta"> - ' + match.meta + '</span>';
-            
-            // @TODO why isn't this done when the docs show up?
-            if (match.doc)
-                match.$doc = '<p>' + match.doc + '</p>';
-                
-            if (match.icon || match.type)
-                match.$doc = '<div class="code_complete_doc_head">' 
-                    + (match.docHead || docHead || match.name) + '</div>' 
-                    + (match.$doc || "");
             
             builder.push("<div class='" 
                 + (row == this.selectedRow ? CLASS_SELECTED : CLASS_UNSELECTED) 

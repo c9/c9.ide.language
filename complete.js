@@ -437,6 +437,24 @@ define(function(require, exports, module) {
             docElement.innerHTML = '<span class="code_complete_doc_body">';
             
             var selected = ldSearch.matches[ldSearch.selectedRow];
+            
+            var docHead;
+            if (selected.type) {
+                var shortType = ldSearch.guidToShortString(selected.type);
+                if (shortType) {
+                    docHead = selected.name + " : " 
+                        + ldSearch.guidToLongString(selected.type) + "</div>";
+                }
+            }
+            
+            if (selected.doc)
+                selected.$doc = '<p>' + selected.doc + '</p>';
+                
+            if (selected.icon || selected.type)
+                selected.$doc = '<div class="code_complete_doc_head">' 
+                    + (selected.docHead || docHead || selected.name) + '</div>' 
+                    + (selected.$doc || "");
+            
             if (selected && selected.$doc) {
                 if (isDocShown) {
                     txtCompleterDoc.parentNode.style.display = "block";
@@ -517,11 +535,15 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation();
                     break;
                 case 40: // Down
+                    if (tree.provider.selectedRow == tree.provider.matches.length - 1)
+                        return closeCompletionBox();
                     tree.execCommand("goDown");
                     e.stopPropagation();
                     e.preventDefault();
                     break;
                 case 38: // Up
+                    if (!tree.provider.selectedRow)
+                        return closeCompletionBox();
                     tree.execCommand("goUp");
                     e.stopPropagation();
                     e.preventDefault();
