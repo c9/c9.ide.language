@@ -7,21 +7,21 @@
 
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "tabs", "ace", "language",
-        "menus", "commands", "c9", "tabs",
+        "Plugin", "tabManager", "ace", "language",
+        "menus", "commands", "c9", "tabManager",
         "tabbehavior", "ui"
     ];
     main.provides = ["language.jumptodef"];
     return main;
     
     function main(options, imports, register) {
-        var Plugin = imports.plugin;
+        var Plugin = imports.Plugin;
         var editors = imports.editors;
         var language = imports.language;
         var commands = imports.commands;
         var tabbehavior = imports.tabbehavior;
         var ace = imports.ace;
-        var tabs = imports.tabs;
+        var tabs = imports.tabManager;
         var ui = imports.ui;
         var util = require("plugins/c9.ide.language.generic/complete_util");
         var menus = imports.menus;
@@ -39,7 +39,7 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            language.on("worker.init", function(e) {
+            language.on("initWorker", function(e) {
                 worker = e.worker;
         
                 commands.addCommand({
@@ -65,7 +65,7 @@ define(function(require, exports, module) {
     
                 ace.getElement("menu", function(menu) {
                     menus.addItemToMenu(menu, mnuJumpToDef2, 750, plugin);
-                    menu.on("prop.visible", function(e) {
+                    menu.on("propVisible", function(e) {
                         // only fire when visibility is set to true
                         if (e.value) {
                             // because of delays we'll enable by default
@@ -110,7 +110,7 @@ define(function(require, exports, module) {
          * Fires an 'isJumpToDefinitionAvailableResult' event on the same channel when ready
          */
         function checkIsJumpToDefAvailable() {
-            var ace = tabs.focussedPage.editor.ace;
+            var ace = tabs.focussedTab.editor.ace;
             if (!ace)
                 return;
     
@@ -118,12 +118,12 @@ define(function(require, exports, module) {
         }
     
         function jumptodef() {
-            if (!tabs.focussedPage || !tabs.focussedPage.editor || !tabs.focussedPage.editor.ace)
+            if (!tabs.focussedTab || !tabs.focussedTab.editor || !tabs.focussedTab.editor.ace)
                 return;
                 
-            var ace = tabs.focussedPage.editor.ace;
+            var ace = tabs.focussedTab.editor.ace;
     
-            activateSpinner(tabs.focussedPage);
+            activateSpinner(tabs.focussedTab);
             onJumpStart(ace);
     
             var sel = ace.getSelection();
@@ -135,14 +135,14 @@ define(function(require, exports, module) {
         }
     
         function onDefinitions(e) {
-            var page = tabs.findPage(e.data.path);
-            if (!page) return;
+            var tab = tabs.findTab(e.data.path);
+            if (!tab) return;
             
-            clearSpinners(page);
+            clearSpinners(tab);
     
             var results = e.data.results;
     
-            var editor = page.editor;
+            var editor = tab.editor;
     
             if (!results.length)
                 return onJumpFailure(e, editor.ace);
@@ -156,7 +156,7 @@ define(function(require, exports, module) {
             }
     
             var _self = this;
-            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : page.path;
+            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : tab.path;
     
             /*
             editors.gotoDocument({
@@ -164,7 +164,7 @@ define(function(require, exports, module) {
                     return lastResult.column !== undefined ? lastResult.column : _self.getFirstColumn(lastResult.row);
                 },
                 row: lastResult.row + 1,
-                node: path ? undefined : ide.getActivePage().xmlRoot,
+                node: path ? undefined : ide.getActiveTab().xmlRoot,
                 animate: true,
                 path: path
             });
@@ -182,7 +182,7 @@ define(function(require, exports, module) {
                         }
                     }
                 },
-                function(err, page) {
+                function(err, tab) {
                     if (lastResult.column !== undefined || err)
                         return;
                     tabs.open(
@@ -192,7 +192,7 @@ define(function(require, exports, module) {
                                 ace: {
                                     jump: {
                                         row: lastResult.row,
-                                        column: _self.getFirstColumn(page.editor.ace, lastResult.row)
+                                        column: _self.getFirstColumn(tab.editor.ace, lastResult.row)
                                     }
                                 }
                             }
@@ -235,17 +235,17 @@ define(function(require, exports, module) {
             ace.getSelection().setSelectionRange({ start: startPos, end: endPos });
         }
     
-        function activateSpinner(page) {
-            page.className.add("loading");
-            clearTimeout(page.$jumpToDefReset);
-            page.$jumpToDefReset = setTimeout(function() {
-                clearSpinners(page);
+        function activateSpinner(tab) {
+            tab.className.add("loading");
+            clearTimeout(tab.$jumpToDefReset);
+            tab.$jumpToDefReset = setTimeout(function() {
+                clearSpinners(tab);
             }, CRASHED_JOB_TIMEOUT);
         }
     
-        function clearSpinners(page) {
-            clearTimeout(page.$jumpToDefReset);
-            page.className.remove("loading");
+        function clearSpinners(tab) {
+            clearTimeout(tab.$jumpToDefReset);
+            tab.className.remove("loading");
         }
         
         plugin.on("load", function(){

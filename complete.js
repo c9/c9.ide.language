@@ -6,19 +6,19 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "plugin", "ui", "tabs", "ace", "language",
-        "menus", "commands", "c9", "tabs", "browsersupport"
+        "Plugin", "ui", "tabManager", "ace", "language",
+        "menus", "commands", "c9", "tabManager", "browsersupport"
     ];
     main.provides = ["language.complete"];
     return main;
 
     function main(options, imports, register) {
-        var Plugin     = imports.plugin;
+        var Plugin     = imports.Plugin;
         var ui         = imports.ui;
         var c9         = imports.c9;
         var aceHandle  = imports.ace;
         var menus      = imports.menus;
-        var tabs       = imports.tabs;
+        var tabs       = imports.tabManager;
         var commands   = imports.commands;
         var language   = imports.language;
         var browsers   = imports.browsersupport;
@@ -101,7 +101,7 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            language.on("worker.init", function(e){
+            language.on("initWorker", function(e){
                 worker = e.worker;
                 
                 worker.on("setIdentifierRegex", function(event) {
@@ -114,10 +114,10 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var page = tabs.findPage(event.data.path);
-                    if (!page) return;
+                    var tab = tabs.findTab(event.data.path);
+                    if (!tab) return;
                     
-                    var editor = page.editor;
+                    var editor = tab.editor;
                     onComplete(event, editor);
                 });
             });
@@ -552,10 +552,10 @@ define(function(require, exports, module) {
         }
         
         function invoke(forceBox) {
-            var page = tabs.focussedPage;
-            if (!page || page.editor.type != "ace") return;
+            var tab = tabs.focussedTab;
+            if (!tab || tab.editor.type != "ace") return;
             
-            var ace = lastAce = page.editor.ace;
+            var ace = lastAce = tab.editor.ace;
             
             if (ace.inMultiSelectMode) {
                 closeCompletionBox();
@@ -676,7 +676,7 @@ define(function(require, exports, module) {
         /**
          * Draws the file tree
          * @event afterfilesave Fires after a file is saved
-         *   object:
+         * @param {Object} e
          *     node     {XMLNode} description
          *     oldpath  {String} description
          **/
