@@ -65,7 +65,7 @@ define(function(require, exports, module) {
     
                 ace.getElement("menu", function(menu) {
                     menus.addItemToMenu(menu, mnuJumpToDef2, 750, plugin);
-                    menu.on("propVisible", function(e) {
+                    menu.on("prop.visible", function(e) {
                         // only fire when visibility is set to true
                         if (e.value) {
                             // because of delays we'll enable by default
