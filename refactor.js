@@ -230,7 +230,7 @@ module.exports = {
     },
 
     destroy : function(){
-        commands.removeCommandByName("renameVar");
+        commands.removeCommand("renameVar");
     }
 };
 
