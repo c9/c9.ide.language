@@ -94,7 +94,10 @@ define(function(require, exports, module) {
         }
         
         register(null, {
-            "language.tooltip": {}
+            "language.tooltip": {
+                hide: hide,
+                show: show
+            }
         });
     }
     
