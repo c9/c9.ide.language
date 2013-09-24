@@ -27,8 +27,8 @@ define(function(require, exports, module) {
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
         var completeUtil   = require("../c9.ide.language.generic/complete_util");
-        var Tree           = require("ace_tree/tree");
-        var ListData       = require("./completedp");
+        var Popup          = require("ace/autocomplete/popup").AcePopup;
+        var completedp     = require("./completedp");
         
         /***** Initialization *****/
         
@@ -43,7 +43,7 @@ define(function(require, exports, module) {
         var txtCompleter, barCompleterCont, txtCompleterHolder, txtCompleterDoc; // ui elements
         var selectedIdx, scrollIdx, matchEls, matches, completionElement;
         var docElement, cursorConfig, lineHeight, lastAce, forceBox, worker; 
-        var eventMatches, tree, ldSearch;
+        var eventMatches, popup;
         
         var idRegexes         = {};
         var completionRegexes = {}; 
@@ -61,15 +61,15 @@ define(function(require, exports, module) {
         
         var deferredInvoker = lang.deferredCall(function() {
             isInvokeScheduled = false;
-            var editor = deferredInvoker.ace;
-            var pos = editor.getCursorPosition();
-            var line = editor.getSession().getDocument().getLine(pos.row);
-            var regex = getIdentifierRegex(null, editor) || DEFAULT_ID_REGEX;
-            if (completeUtil.precededByIdentifier(line, pos.column) ||
+            var ace = deferredInvoker.ace;
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getDocument().getLine(pos.row);
+            var regex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
+            if (completeUtil.precededByIdentifier(line, pos.column, null, ace) ||
                (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(regex))) ||
                (line[pos.column - 1] && line[pos.column - 1].match(regex)
                ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
-               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", editor))) {
+               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke(true);
             }
             else {
@@ -157,23 +157,8 @@ define(function(require, exports, module) {
             txtCompleter       = txtCompleterHolder.firstElementChild;
             txtCompleterDoc    = barCompleterCont.lastElementChild.lastElementChild;
             
-            // Create the Ace Tree
-            tree      = new Tree(txtCompleter);
-            ldSearch  = new ListData();
-            
-            // Assign the dataprovider
-            tree.setDataProvider(ldSearch);
-            
-            // Some global render metadata
-            ldSearch.staticPrefix = options.staticPrefix;
-            
-            var ieStyle = "";
-            if (browsers.getIEVersion() === 9)
-                ieStyle = 'style="position: relative; top: -4px;"';
-            else if (browsers.getIEVersion() === 10)
-                ieStyle = 'style="position: relative; top: -5px;"';
-            ldSearch.ieStyle = ieStyle;
-            
+            popup = new Popup(document.body);
+            completedp(popup);
             //@TODO DEPRECATE: onKeyPress
             
             // Ace Tree Interaction
@@ -182,18 +167,17 @@ define(function(require, exports, module) {
                     ignoreMouseOnce = false;
                     return;
                 }
-                
                 // updateDoc();
                 // if (!isDrawDocInvokeScheduled)
                 //     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
-            txtCompleter.addEventListener("click", function() {
-                var match = ldSearch.matches[ldSearch.selectedRow];
-                replaceText(ldSearch.ace, match);
-                ldSearch.ace.focus();
-            }, false);
-            ldSearch.on("select", function(){
+            
+            popup.on("select", function(){
                 updateDoc(true);
+            });
+            popup.on("click", function(e) {
+                onKeyPress(e, 0, 13);
+                e.stop();
             });
             
             emit("draw");
@@ -202,7 +186,7 @@ define(function(require, exports, module) {
         /***** Helper Functions *****/
         
         function isPopupVisible() {
-            return barCompleterCont && barCompleterCont.style.display === "block";
+            return popup && popup.isOpen;
         }
         
         function getSyntax(ace) {
@@ -288,7 +272,7 @@ define(function(require, exports, module) {
             var cursorCol = rowOffset ? colOffset : pos.column + colOffset - prefix.length;
             var cursorCol2 = rowOffset2 ? colOffset2 : pos.column + colOffset2 - prefix.length;
         
-            if (line.substring(0, pos.column).match(/require\("[^\"]+$/) && isJavaScript()) {
+            if (line.substring(0, pos.column).match(/require\("[^\"]+$/) && isJavaScript(ace)) {
                 if (line.substr(pos.column + postfix.length, 1).match(/['"]/) || paddedLines.substr(0, 1) === '"')
                     cursorCol++;
                 if (line.substr(pos.column + postfix.length + 1, 1) === ')')
@@ -310,13 +294,8 @@ define(function(require, exports, module) {
             matchEls          = [];
             matches           = m;
             docElement        = txtCompleterDoc;
-            cursorConfig      = ace.renderer.$cursorLayer.config;
-            lineHeight        = cursorConfig.lineHeight + EXTRA_LINE_HEIGHT;
-            completionElement = txtCompleter;
-            
-            var style = dom.computedStyle(ace.container);
-            completionElement.style.fontSize = style.fontSize;
-            
+                       
+           
             // Monkey patch
             if (!oldCommandKey) {
                 oldCommandKey = ace.keyBinding.onCommandKey;
@@ -329,60 +308,28 @@ define(function(require, exports, module) {
             
             populateCompletionBox(ace, matches);
             document.addEventListener("click", closeCompletionBox);
-            ace.container.addEventListener("DOMMouseScroll", closeCompletionBox);
-            ace.container.addEventListener("mousewheel", closeCompletionBox);
+            ace.on("mousewheel", closeCompletionBox);
+
+            var renderer = ace.renderer;
+            popup.setFontSize(ace.getFontSize());
+
+            var lineHeight = renderer.layerConfig.lineHeight;
             
-            var boxLength = matches.length || 1;
-            var completionBoxHeight = 11 + Math.min(MENU_SHOWN_ITEMS * lineHeight + 0, boxLength * (lineHeight));
-            var cursorLayer = ace.renderer.$cursorLayer;
+            var base = ace.getCursorPosition();
+            base.column -= prefix.length;
             
-            var innerBoxLength = matches.length || 1;
-            var ieBonus;
-            if (browsers.getIEVersion() === 9) {
-                ieBonus = 8 * Math.min(MENU_SHOWN_ITEMS, innerBoxLength);
-            }
-            else if (browsers.getIEVersion() === 10) {
-                ieBonus = 7 * Math.min(MENU_SHOWN_ITEMS, innerBoxLength);
-            }
-            var innerCompletionBoxHeight = Math.min(MENU_SHOWN_ITEMS * lineHeight + 0, innerBoxLength * (lineHeight)) + ieBonus;
-            txtCompleterHolder.style.height = innerCompletionBoxHeight + "px";
+            var pos = renderer.$cursorLayer.getPixelPosition(base, true);
+            pos.left -= popup.getTextLeftOffset();
             
-            txtCompleterDoc.parentNode.style.left = innerCompletionBoxHeight < 100 ? "285px" : "275px";
+            var rect = ace.container.getBoundingClientRect();
+            pos.top += rect.top - renderer.layerConfig.offset;
+            pos.left += rect.left;
+            pos.left += renderer.$gutterLayer.gutterWidth;
+
+            popup.show(pos, lineHeight);
+            
             
             ignoreMouseOnce = !isPopupVisible();
-            
-            var pos = cursorLayer.cursor.getBoundingClientRect();
-            
-            barCompleterCont.style.height = completionBoxHeight + "px";
-            barCompleterCont.style.width  = MENU_WIDTH + "px";
-            
-            if (!isPopupVisible()) {
-                barCompleterCont.style.left   = (pos.left + (prefix.length * -cursorConfig.characterWidth) - 24) + "px";
-                barCompleterCont.style.display = "block";
-            }
-            
-            // Above the cursor
-            if (window.innerHeight < pos.top + cursorConfig.lineHeight + 1 + barCompleterCont.offsetHeight) {
-                barCompleterCont.style.top = (pos.top - barCompleterCont.offsetHeight + 6) + "px";
-                ui.addClass(barCompleterCont, "upward");
-                // txtCompleterDoc.parentNode.style.top = innerCompletionBoxHeight < 100 ? "auto" : "15px";
-                // txtCompleterDoc.parentNode.style.bottom = innerCompletionBoxHeight < 100 ? "7px" : "23px";
-            }
-            // Below the cursor
-            else {
-                barCompleterCont.style.top = (pos.top + cursorConfig.lineHeight + 1) + "px";
-                ui.removeClass(barCompleterCont, "upward");
-                // txtCompleterDoc.parentNode.style.top = innerCompletionBoxHeight < 100 ? "0" : "15px";
-                // txtCompleterDoc.parentNode.style.bottom = "23px";
-            }
-            
-//            barCompleterCont.setHeight(completionBoxHeight);
-//            barCompleterCont.$ext.style.height = completionBoxHeight + "px";
-//            // HACK: Need to set with non-falsy value first
-//            completionElement.scrollTop = 1;
-//            completionElement.scrollTop = 0;
-
-            tree.resize();
         }
     
         function closeCompletionBox(event) {
@@ -396,8 +343,7 @@ define(function(require, exports, module) {
                 
             var ace = lastAce;
             document.removeEventListener("click", closeCompletionBox);
-            ace.container.removeEventListener("DOMMouseScroll", closeCompletionBox);
-            ace.container.removeEventListener("mousewheel", closeCompletionBox);
+            ace.off("mousewheel", closeCompletionBox);
             
             if (oldCommandKey) {
                 ace.keyBinding.onCommandKey = oldCommandKey;
@@ -407,12 +353,14 @@ define(function(require, exports, module) {
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
             
             lastAce = null;
+            
+            popup.hide();
         }
             
         function populateCompletionBox(ace, matches) {
             // Populate the completion box
-            ldSearch.updateData(matches);
-            
+            popup.setData(matches);
+
             // Get context info
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
@@ -420,24 +368,23 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
             // Set the highlight metadata
-            ldSearch.ace              = ace;
-            ldSearch.matches          = matches;
-            ldSearch.prefix           = prefix;
-            ldSearch.isInferAvailable = language.isInferAvailable();
-            ldSearch.calcPrefix       = function(regex){
+            popup.ace              = ace;
+            popup.matches          = matches;
+            popup.prefix           = prefix;
+            popup.isInferAvailable = language.isInferAvailable();
+            popup.calcPrefix       = function(regex){
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             
-            //@Harutyun set scrolltop to 0
-            
-            ldSearch.select(0);
+            popup.setRow(0);
         }
         
         function updateDoc(delayPopup) {
             docElement.innerHTML = '<span class="code_complete_doc_body">';
             
-            var selected = ldSearch.matches[ldSearch.selectedRow];
-            
+            var selected = popup.matches && popup.matches[popup.getRow()];
+            if (!selected)
+                return;
             var docHead;
             if (selected.type) {
                 var shortType = ldSearch.guidToShortString(selected.type);
@@ -530,21 +477,21 @@ define(function(require, exports, module) {
                         break;
                     }
                     closeCompletionBox();
-                    replaceText(ace, matches[ldSearch.selectedRow]);
+                    replaceText(ace, matches[popup.getRow()]);
                     e.preventDefault();
-                    e.stopImmediatePropagation();
+                    e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
                 case 40: // Down
-                    if (tree.provider.selectedRow == tree.provider.matches.length - 1)
+                    if (popup.getRow() == popup.matches.length - 1)
                         return closeCompletionBox();
-                    tree.execCommand("goDown");
+                    popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
                 case 38: // Up
-                    if (!tree.provider.selectedRow)
+                    if (!popup.getRow())
                         return closeCompletionBox();
-                    tree.execCommand("goUp");
+                    popup.setRow(popup.getRow() - 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;

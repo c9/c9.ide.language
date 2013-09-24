@@ -1,85 +1,8 @@
 define(function(require, exports, module) {
-    var oop          = require("ace/lib/oop");
-    var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
+   
     
     var CLASS_SELECTED   = "item selected";
     var CLASS_UNSELECTED = "item";
-    
-    var ListData = function(array) {
-        this.visibleItems = array || [];
-        this.columns = 1;
-        this.x = [];
-        this.y = [];
-        this.innerRowHeight = 19;
-        this.rowHeight = 20;
-        
-        this.$selectedNode = this.root;
-        
-        Object.defineProperty(this, "loaded", {
-            get : function(){ return this.visibleItems.length; }
-        });
-    };
-    
-    (function() {
-        oop.implement(this, EventEmitter);
-        
-        this.updateData = function(array){
-            this.visibleItems = array || [];
-            
-            // @TODO Deal with selection
-            this._signal("change");
-        }
-        
-        // @Harutyun Help!
-        this.getEmptyMessage = function(){
-            if (!this.keyword)
-                return "Loading file list. One moment please...";
-            else
-                return "No files found that match '" + this.keyword + "'";
-        }
-    
-        this.getDataRange = function(rows, columns, callback) {
-            var view = this.visibleItems.slice(rows.start, rows.start + rows.length);        
-            callback(null, view, false);
-            return view;
-        };
-        
-        this.getRange = function(top, bottom) {
-            var start = Math.floor(top / this.rowHeight);
-            var end = Math.ceil(bottom / this.rowHeight) + 1;
-            var range = this.visibleItems.slice(start, end);
-            range.count = start;
-            range.size = this.rowHeight * range.count;
-            return range;
-        };
-        
-        this.getTotalHeight = function(top, bottom) {
-            return this.rowHeight * this.visibleItems.length;
-        };
-        // todo move selection stuff out of here
-        this.select = function(index) {
-            this.selectNode({index: index});
-        }
-        this.selectNode = function(node) {
-            if (!node) return;
-            this.$selectedNode = node;
-            this.selectedRow = node.index;
-            this._signal("change");
-            this._emit("select");
-        };
-        
-        this.getNodePosition = function(node) {
-            var i = node.index;
-            var top = i * this.rowHeight;
-            var height = this.rowHeight
-            return {top: top, height: height}
-        }
-        
-        this.findItemAtOffset = function(offset) {
-            var index = Math.floor(offset / this.rowHeight);
-            return {label:this.visibleItems[index], index: index};
-        };
-        
         var guidToShortString = this.guidToShortString = function(guid) {
             var result = guid && guid.replace(/^[^:]+:(([^\/]+)\/)*?([^\/]*?)(\[\d+[^\]]*\])?(\/prototype)?$|.*/, "$3");
             return result && result !== "Object" ? result : "";
@@ -97,19 +20,36 @@ define(function(require, exports, module) {
             return result;
         }
     
-        this.renderRow = function(row, builder, config) {
-            var match = this.visibleItems[row];
-            var html  = "";
+        function addStylesheetRule(cssText) {
+            var s = document.styleSheets[document.styleSheets.length - 1];
+            s.insertRule(cssText, s.cssRules.length);
+        }
+        
+        var iconClass = {};
+        function defineIcon(icon) {
+            var path = define.packaged ? "images/"
+                : (this.staticPrefix || "/static") + "/plugins/c9.ide.language/images/";
+                
+            iconClass[icon] = "lang-icon-" + icon;
+            
+            var cssText = ".ace_" + iconClass[icon] + "{"
+                + "background-image:url('" + path + icon + ".png')"
+                + "}";
+                
+            addStylesheetRule(cssText);
+            return iconClass[icon];
+        }
+        
 
-            if (match.icon) {
-                var path = define.packaged
-                    ? "images/" + match.icon
-                    : (this.staticPrefix || "/static") 
-                        + "/plugins/c9.ide.language/images/" + match.icon;
-                html = '<img src="' + path + '.png" ' + this.ieStyle + ' />';
-            }
-            else
-                html = "<span class='img'></span>";
+        function tokenizeRow() {
+            return [{}];
+        }
+        function renderLineInner(builder, row) {
+            var match = this.data[row];
+            
+            html = "<span class='img " + (match.icon 
+                ? iconClass[match.icon] || defineIcon(match.icon)
+                : "" ) + "'></span>";
             
             if (match.type) {
                 var shortType = guidToShortString(match.type);
@@ -137,26 +77,29 @@ define(function(require, exports, module) {
                 html += '<span class="meta"> - ' + match.meta + '</span>';
             
             builder.push("<div class='" 
-                + (row == this.selectedRow ? CLASS_SELECTED : CLASS_UNSELECTED) 
-                + "' style='height:" + this.innerRowHeight + "px'>"
+                + (row === this.getRow() ? CLASS_SELECTED : CLASS_UNSELECTED) 
+                + "'>"
                 + html + "</div>");
-        };
-        
-        this.navigate = function(dir, startNode) {        
-            if  (typeof startNode == "number")
-                var index = startNode;
-            else
-                index = this.selectedRow || 0
-            
-            if (dir == "up") {
-                index = Math.max(index - 1, 0)
-            } else if (dir == "down") {
-                index = Math.min(index + 1, this.visibleItems.length)
-            }
-            return {label:this.visibleItems[index], index: index};
         }
         
-    }).call(ListData.prototype);
-    
-    return ListData;
+        function renderLine(stringBuilder, row, onlyContents, foldLine) {
+            if (!onlyContents) {
+                stringBuilder.push(
+                    "<div class='ace_line' style='height:", this.config.lineHeight, "px'>"
+                );
+            }
+            this.popup.$renderLineInner(stringBuilder, row);
+        
+            if (!onlyContents)
+                stringBuilder.push("</div>");
+        }
+        
+        module.exports = function (popup) {
+            popup.session.bgTokenizer.popup = popup;
+            popup.session.bgTokenizer.$tokenizeRow = tokenizeRow;
+            popup.renderer.$textLayer.popup = popup;
+            popup.$renderLineInner = renderLineInner;
+            popup.renderer.$textLayer.$renderLine = renderLine;
+        }
+
 });
