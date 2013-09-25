@@ -101,7 +101,7 @@ define(function(require, exports, module) {
         function typeAlongCompleteTextInput(text, pasted) {
             var completionRegex = complete.getContinousCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
-            if (pasted || !completionRegex)
+            if (pasted)
                 return false;
             handleChar(text, idRegex, completionRegex); 
         }
