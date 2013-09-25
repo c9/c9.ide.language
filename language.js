@@ -409,27 +409,30 @@ define(function(require, exports, module) {
          **/
         plugin.freezePublicAPI({
             /**
-             * 
+             * Returns true if the "continuous completion" IDE setting is enabled
+             * @returns Boolean
              */
             isContinuousCompletionEnabled : isContinuousCompletionEnabled,
             
             /**
-             * 
+             * Sets whether the "continuous completion" IDE setting is enabled
+             * @param {Boolean} value
              */
             setContinuousCompletionEnabled : setContinuousCompletionEnabled,
             
             /**
-             * Registers a new language handler.
-             * @param modulePath  the require path of the handler
-             * @param contents    (optionally) the contents of the handler script
-             * @param callback    An optional callback called when the handler is initialized
+             * Returns whether type inference for JavaScript is available.
+             * Used internally.
              */
-            registerLanguageHandler : registerLanguageHandler,
+            isInferAvailable : isInferAvailable,
             
             /**
-             * 
+             * Registers a new language handler.
+             * @param {String} modulePath  the require path of the handler
+             * @param {String} contents    the contents of the handler script, or null
+             * @param {String} callback    An optional callback called when the handler is initialized
              */
-            isInferAvailable : isInferAvailable
+            registerLanguageHandler : registerLanguageHandler
         });
         
         register(null, {
