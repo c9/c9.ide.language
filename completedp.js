@@ -32,10 +32,10 @@ define(function(require, exports, module) {
                 
             iconClass[icon] = "lang-icon-" + icon;
             
-            var cssText = ".ace_" + iconClass[icon] + "{"
+            var cssText = "." + iconClass[icon] + "{"
                 + "background-image:url('" + path + icon + ".png')"
                 + "}";
-                
+            console.log(cssText)    
             addStylesheetRule(cssText);
             return iconClass[icon];
         }
@@ -76,10 +76,7 @@ define(function(require, exports, module) {
             if (match.meta)
                 html += '<span class="meta"> - ' + match.meta + '</span>';
             
-            builder.push("<div class='" 
-                + (row === this.getRow() ? CLASS_SELECTED : CLASS_UNSELECTED) 
-                + "'>"
-                + html + "</div>");
+            builder.push(html);
         }
         
         function renderLine(stringBuilder, row, onlyContents, foldLine) {

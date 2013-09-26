@@ -158,6 +158,9 @@ define(function(require, exports, module) {
             txtCompleterDoc    = barCompleterCont.lastElementChild.lastElementChild;
             
             popup = new Popup(document.body);
+            popup.setTheme({cssClass: "code_complete_text", padding: 0});
+            popup.$imageSize = 18;
+            
             completedp(popup);
             //@TODO DEPRECATE: onKeyPress
             
