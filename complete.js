@@ -40,8 +40,8 @@ define(function(require, exports, module) {
         var enterCompletion = true;
         
         var oldCommandKey, oldOnTextInput, isDocShown;
-        var txtCompleter, barCompleterCont, txtCompleterHolder, txtCompleterDoc; // ui elements
-        var selectedIdx, scrollIdx, matchEls, matches, completionElement;
+        var txtCompleterDoc; // ui elements
+        var matches, completionElement;
         var docElement, cursorConfig, lineHeight, lastAce, forceBox, worker; 
         var eventMatches, popup;
         
@@ -77,18 +77,16 @@ define(function(require, exports, module) {
             }
         });
         var drawDocInvoke = lang.deferredCall(function() {
-            if (isPopupVisible() && matches[selectedIdx].doc) {
+            if (isPopupVisible() && matches[popup.getRow()].doc) {
                 isDocShown = true;
-                txtCompleterDoc.parentNode.style.display = "block";
+                txtCompleterDoc.style.display = "block";
             }
-            isDrawDocInvokeScheduled = false;
         });
-        var isDrawDocInvokeScheduled = false;
         
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
                 isDocShown = false;
-                txtCompleterDoc.parentNode.style.display = "none";
+                txtCompleterDoc.style.display = "none";
             }
         });
         
@@ -149,30 +147,23 @@ define(function(require, exports, module) {
             // Import the CSS for the completion box
             ui.insertCss(require("text!./complete.css"), plugin);
             
-            // UI
-            var n = ui.insertHtml(null, require("text!./complete.html"), plugin);
-            
-            barCompleterCont   = n[0];
-            txtCompleterHolder = barCompleterCont.firstElementChild;
-            txtCompleter       = txtCompleterHolder.firstElementChild;
-            txtCompleterDoc    = barCompleterCont.lastElementChild.lastElementChild;
+            txtCompleterDoc = document.createElement("div")
+            txtCompleterDoc.className = "code_complete_doc_text";
             
             popup = new Popup(document.body);
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
             popup.$imageSize = 18;
             
-            completedp(popup);
+            completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
             
             // Ace Tree Interaction
-            txtCompleter.addEventListener("mouseover", function() {
+            popup.on("mouseover", function() {
                 if (ignoreMouseOnce) {
                     ignoreMouseOnce = false;
                     return;
                 }
-                // updateDoc();
-                // if (!isDrawDocInvokeScheduled)
-                //     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
+                //drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
             
             popup.on("select", function(){
@@ -289,12 +280,7 @@ define(function(require, exports, module) {
         function showCompletionBox(editor, m, prefix, line, column) {
             var ace = editor.ace;
             draw();
-            
-            //ace.container.parentNode.appendChild(barCompleterCont);
-            
-            selectedIdx       = 0;
-            scrollIdx         = 0;
-            matchEls          = [];
+
             matches           = m;
             docElement        = txtCompleterDoc;
                        
@@ -336,10 +322,8 @@ define(function(require, exports, module) {
         }
     
         function closeCompletionBox(event) {
-            if (!barCompleterCont)
-                return;
-
-            barCompleterCont.style.display = "none";
+            popup.hide();
+            hideDocPopup()
             
             if (!lastAce) // no editor, try again later
                 return;
@@ -356,8 +340,6 @@ define(function(require, exports, module) {
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
             
             lastAce = null;
-            
-            popup.hide();
         }
             
         function populateCompletionBox(ace, matches) {
@@ -390,10 +372,10 @@ define(function(require, exports, module) {
                 return;
             var docHead;
             if (selected.type) {
-                var shortType = ldSearch.guidToShortString(selected.type);
+                var shortType = completedp.guidToShortString(selected.type);
                 if (shortType) {
                     docHead = selected.name + " : " 
-                        + ldSearch.guidToLongString(selected.type) + "</div>";
+                        + completedp.guidToLongString(selected.type) + "</div>";
                 }
             }
             
@@ -407,23 +389,46 @@ define(function(require, exports, module) {
             
             if (selected && selected.$doc) {
                 if (isDocShown) {
-                    txtCompleterDoc.parentNode.style.display = "block";
+                    showDocPopup();
                 }
                 else {
-                    txtCompleterDoc.parentNode.style.display = "none";
-                    if (!isDrawDocInvokeScheduled || delayPopup)
+                    hideDocPopup();
+                    if (!drawDocInvoke.isPending() || delayPopup)
                         drawDocInvoke.schedule(SHOW_DOC_DELAY);
                 }
                 docElement.innerHTML += selected.$doc + '</span>';
             }
             else {
-                txtCompleterDoc.parentNode.style.display = "none";
+                 hideDocPopup()
             }
             if (selected && selected.docUrl)
                 docElement.innerHTML += '<p><a' +
                     ' onclick="require(\'ext/preview/preview\').preview(\'' + selected.docUrl + '\'); return false;"' +
                     ' href="' + selected.docUrl + '" target="c9doc">(more)</a></p>';
             docElement.innerHTML += '</span>';
+        }
+        
+        function showDocPopup() {
+            var rect = popup.container.getBoundingClientRect();
+            if (!txtCompleterDoc.parentNode) {
+                document.body.appendChild(txtCompleterDoc);                
+            }
+            txtCompleterDoc.style.top = popup.container.style.top;
+            txtCompleterDoc.style.bottom = popup.container.style.bottom;
+            
+            if (window.innerWidth - rect.right < 320) {
+                txtCompleterDoc.style.right = window.innerWidth - rect.left + "px";
+                txtCompleterDoc.style.left = "";
+            } else {
+                txtCompleterDoc.style.left = rect.right + "px";
+                txtCompleterDoc.style.right = "";
+            }
+            txtCompleterDoc.style.height = rect.height + "px";
+            txtCompleterDoc.style.display = "block";
+        }
+        
+        function hideDocPopup() {
+            txtCompleterDoc.style.display = "none";
         }
     
         function onTextInput(text, pasted) {
