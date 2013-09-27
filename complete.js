@@ -77,9 +77,10 @@ define(function(require, exports, module) {
             }
         });
         var drawDocInvoke = lang.deferredCall(function() {
-            if (isPopupVisible() && matches[popup.getRow()].doc) {
+            var match = isPopupVisible() && matches[popup.getRow()]
+            if (match && (match.doc || match.$doc)) {
                 isDocShown = true;
-                txtCompleterDoc.style.display = "block";
+                showDocPopup();
             }
             isDrawDocInvokeScheduled = false;
         });
@@ -88,7 +89,7 @@ define(function(require, exports, module) {
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
                 isDocShown = false;
-                txtCompleterDoc.style.display = "none";
+                hideDocPopup();;
             }
         });
         
@@ -154,7 +155,7 @@ define(function(require, exports, module) {
             
             popup = new Popup(document.body);
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
-            popup.$imageSize = 18;
+            popup.$imageSize = 8 + 5 + 7 + 1;
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
@@ -314,14 +315,12 @@ define(function(require, exports, module) {
             
             var pos = renderer.$cursorLayer.getPixelPosition(base, true);
             pos.left -= popup.getTextLeftOffset();
-            
             var rect = ace.container.getBoundingClientRect();
             pos.top += rect.top - renderer.layerConfig.offset;
             pos.left += rect.left;
             pos.left += renderer.$gutterLayer.gutterWidth;
 
-            popup.show(pos, lineHeight);
-            
+            popup.show(pos, lineHeight);            
             
             ignoreMouseOnce = !isPopupVisible();
         }
@@ -386,6 +385,9 @@ define(function(require, exports, module) {
                 }
             }
             
+            
+            selected.$doc = "";
+            
             if (selected.doc)
                 selected.$doc = '<p>' + selected.doc + '</p>';
                 
@@ -406,7 +408,7 @@ define(function(require, exports, module) {
                 docElement.innerHTML += selected.$doc + '</span>';
             }
             else {
-                 hideDocPopup()
+                hideDocPopup();
             }
             if (selected && selected.docUrl)
                 docElement.innerHTML += '<p><a' +
