@@ -174,12 +174,11 @@ define(function(require, exports, module) {
             
                 ignoreSelectOnce = true;
                 if (selected)
-                    tdOutline.selectNode(selected);
+                    tree.selection.selectNode(selected);
                 else
-                    tree.select(0);
-                
-                // tree.$scrollIntoView();
-                tree.renderer.scrollCaretIntoView(tdOutline.$selectedNode, 0.5);
+                    tree.selection.selectNode(0);
+
+                tree.renderer.scrollCaretIntoView(null, 0.5);
             }
         }
         
@@ -280,7 +279,7 @@ define(function(require, exports, module) {
             //      I just hacked it into the dataprovider for now, but that is very wrong.
             // tree.getSelection().on("changeSelection", function(){ previewFile(); });
             // tree.on("select", function(){ previewFile(); });
-            tdOutline.on("select", function(){ 
+            tree.on("changeSelection", function(){ 
                 onSelect();
             });
             
@@ -390,7 +389,7 @@ define(function(require, exports, module) {
     
         function onSelect(node) {
             if (!node) 
-                node = tdOutline.$selectedNode
+                node = tree.selection.getCursor()
                 
             if (ignoreSelectOnce) {
                 ignoreSelectOnce = false;
