@@ -479,8 +479,9 @@ function asyncParForEach(array, fn, callback) {
 
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
+                        handler.language = part.language;
                         handler.analyze(part.value, ast, function(result) {
-                            if (result){
+                            if (result) {
                                 handler.getResolutions(part.value, ast, result, function(result2) {
                                     if (result2) {
                                         partMarkers = partMarkers.concat(result2);
