@@ -523,10 +523,6 @@ function asyncParForEach(array, fn, callback) {
             _self.cachedAsts = cachedAsts;
             _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
             _self.currentMarkers = markers;
-            if (_self.postponedCursorMove) {
-                _self.onCursorMove(_self.postponedCursorMove);
-                _self.postponedCursorMove = null;
-            }
             callback();
         });
     };
@@ -593,11 +589,6 @@ function asyncParForEach(array, fn, callback) {
     };
 
     this.onCursorMove = function(event) {
-        if(this.scheduledUpdate) {
-            // Postpone the cursor move until the update propagates
-            this.postponedCursorMove = event;
-            return;
-        }
         var pos = event.data;
         var part = this.getPart(pos);
 
@@ -608,6 +599,11 @@ function asyncParForEach(array, fn, callback) {
         
         function cursorMoved(ast, currentNode, currentPos) {
             asyncForEach(_self.handlers, function(handler, next) {
+                if (_self.scheduledUpdate) {
+                    // Postpone the cursor move until the update propagates
+                    _self.postponedCursorMove = event;
+                    return;
+                }
                 if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
                     handler.onCursorMovedNode(_self.doc, ast, currentPos, currentNode, function(response) {
                         if (!response)
@@ -820,7 +816,6 @@ function asyncParForEach(array, fn, callback) {
     };
 
     this.onUpdate = function() {
-        this.scheduledUpdate = false;
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
             if (handler.handlesLanguage(_self.$language) && _self.doc.length < handler.getMaxFileSizeSupported())
@@ -828,7 +823,13 @@ function asyncParForEach(array, fn, callback) {
             else
                 next();
         }, function() {
-            _self.analyze(function() {});
+            _self.analyze(function() {
+                _self.scheduledUpdate = false;
+                if (_self.postponedCursorMove) {
+                    _self.onCursorMove(_self.postponedCursorMove);
+                    _self.postponedCursorMove = null;
+                }
+            });
         });
     };
     
