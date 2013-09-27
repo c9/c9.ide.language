@@ -81,7 +81,9 @@ define(function(require, exports, module) {
                 isDocShown = true;
                 txtCompleterDoc.style.display = "block";
             }
+            isDrawDocInvokeScheduled = false;
         });
+        var isDrawDocInvokeScheduled = false;
         
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
@@ -163,7 +165,10 @@ define(function(require, exports, module) {
                     ignoreMouseOnce = false;
                     return;
                 }
-                //drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
+                
+                // updateDoc();
+                if (!isDrawDocInvokeScheduled)
+                    drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
             
             popup.on("select", function(){
@@ -322,6 +327,8 @@ define(function(require, exports, module) {
         }
     
         function closeCompletionBox(event) {
+            if (!popup)
+                return;
             popup.hide();
             hideDocPopup()
             
@@ -393,7 +400,7 @@ define(function(require, exports, module) {
                 }
                 else {
                     hideDocPopup();
-                    if (!drawDocInvoke.isPending() || delayPopup)
+                    if (!isDrawDocInvokeScheduled || delayPopup)
                         drawDocInvoke.schedule(SHOW_DOC_DELAY);
                 }
                 docElement.innerHTML += selected.$doc + '</span>';
@@ -552,8 +559,7 @@ define(function(require, exports, module) {
                 showCompletionBox(editor, matches, identifier);
             }
             else {
-                if (typeof barCompleterCont !== 'undefined')
-                    closeCompletionBox();
+                closeCompletionBox();
             }
         }
         
