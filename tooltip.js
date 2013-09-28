@@ -27,8 +27,6 @@ define(function(require, exports, module) {
         var assert = require("plugins/c9.util/assert");
 
         language.on("initWorker", function(e){
-            ui.insertCss(require("text!./complete.css"), language);
-
             e.worker.on("hint", function(event) {
                 var page = tabs.findTab(event.data.path);
                 if (!page) return;

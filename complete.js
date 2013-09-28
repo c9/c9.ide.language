@@ -148,7 +148,7 @@ define(function(require, exports, module) {
             drawn = true;
         
             // Import the CSS for the completion box
-            // ui.insertCss(require("text!./complete.css"), plugin);
+            ui.insertCss(require("text!./complete.css"), plugin);
             
             txtCompleterDoc = document.createElement("div")
             txtCompleterDoc.className = "code_complete_doc_text";
