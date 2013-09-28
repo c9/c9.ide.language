@@ -157,6 +157,7 @@ define(function(require, exports, module) {
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
             popup.$imageSize = 8 + 5 + 7 + 1;
             popup.renderer.setScrollMargin(1, 1, 1, 2);
+            // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
@@ -434,7 +435,7 @@ define(function(require, exports, module) {
                 txtCompleterDoc.style.right = window.innerWidth - rect.left + "px";
                 txtCompleterDoc.style.left = "";
             } else {
-                txtCompleterDoc.style.left = rect.right + "px";
+                txtCompleterDoc.style.left = (rect.right + 1) + "px";
                 txtCompleterDoc.style.right = "";
             }
             txtCompleterDoc.style.height = rect.height + "px";

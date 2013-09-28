@@ -69,6 +69,14 @@
     text-shadow: none;
 }
 
+.code_complete_text .ace_text-layer{
+    left : 1px;
+    right : 1px;
+    width : auto;
+    top : 1px;
+    bottom : 1px;
+}
+
 .code_complete_text .ace_line{
     background : transparent;
     color : #666;
