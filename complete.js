@@ -161,6 +161,9 @@ define(function(require, exports, module) {
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
+            popup.on("select", function(){
+                popup.onLastLine = false;
+            });
             
             // Ace Tree Interaction
             popup.on("mouseover", function() {
@@ -507,9 +510,13 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
                 case 40: // Down
-                    if (popup.getRow() == popup.matches.length - 1)
-                        return closeCompletionBox();
-                    popup.setRow(popup.getRow() + 1);
+                    if (popup.getRow() == popup.matches.length - 1) {
+                        if (popup.onLastLine)
+                            return closeCompletionBox();
+                        popup.onLastLine = true;
+                    }
+                    if (!popup.onLastLine)
+                        popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
