@@ -240,6 +240,10 @@ define(function(require, exports, module) {
                 if (!isInvokeScheduled)
                     setTimeout(deferredInvoke, 0);
             }
+            
+            // Don't insert extra () in front of (
+            if (newText.substr(newText.length - 4) == "(^^)" && line.substr(pos.column, 1) === "(")
+                newText = newText.substr(0, newText.length - 4);
         
             newText = newText.replace(/\t/g, session.getTabString());
             
