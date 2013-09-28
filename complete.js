@@ -148,7 +148,7 @@ define(function(require, exports, module) {
             drawn = true;
         
             // Import the CSS for the completion box
-            ui.insertCss(require("text!./complete.css"), plugin);
+            // ui.insertCss(require("text!./complete.css"), plugin);
             
             txtCompleterDoc = document.createElement("div")
             txtCompleterDoc.className = "code_complete_doc_text";
@@ -156,6 +156,7 @@ define(function(require, exports, module) {
             popup = new Popup(document.body);
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
             popup.$imageSize = 8 + 5 + 7 + 1;
+            popup.renderer.setScrollMargin(1, 1, 1, 2);
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress

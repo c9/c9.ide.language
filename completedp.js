@@ -43,7 +43,7 @@ define(function(require, exports, module) {
     function renderLineInner(builder, row) {
         var match = this.data[row];
         
-        html = "<span class='img " + (match.icon 
+        var html = "<span class='img " + (match.icon 
             ? iconClass[match.icon] || defineIcon(match.icon)
             : "" ) + "'></span>";
         

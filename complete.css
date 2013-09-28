@@ -14,8 +14,9 @@
     background: #303130;
     border: 1px solid rgba(255,255,255,0.06);
     box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.8), 1px 1px 0 black, -1px -1px 0 black;    
-    width: 320px;
-    line-height: 1.45;
+    width: 270px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
 }
 .dark .code_complete_text {/*TODO this doesn't work*/
     border-width: 0 2px 2px 2px;
@@ -92,7 +93,7 @@
     opacity: .7;
 }
 .code_complete_text .ace_line .main u {
-    font-weight: bold;
+    /*font-weight: bold;*/
     text-decoration: none;
     color: #9FB814;
 }
@@ -103,6 +104,7 @@
 .code_complete_text .ace_line.selected .main u {
     color: white !important;
     text-decoration: underline;
+    /*font-weight : normal;*/
 }
 .code_complete_text .ace_line .meta {
     opacity: .5;
