@@ -77,7 +77,8 @@ define(function(require, exports, module) {
             }
         });
         var drawDocInvoke = lang.deferredCall(function() {
-            var match = isPopupVisible() && matches[popup.getRow()]
+            if (!isPopupVisible()) return;
+            var match = matches[popup.getHoveredRow()] || matches[popup.getRow()];
             if (match && (match.doc || match.$doc)) {
                 isDocShown = true;
                 showDocPopup();
@@ -148,7 +149,7 @@ define(function(require, exports, module) {
             drawn = true;
         
             // Import the CSS for the completion box
-            ui.insertCss(require("text!./complete.css"), plugin);
+            // ui.insertCss(require("text!./complete.css"), plugin);
             
             txtCompleterDoc = document.createElement("div")
             txtCompleterDoc.className = "code_complete_doc_text";
@@ -156,11 +157,13 @@ define(function(require, exports, module) {
             popup = new Popup(document.body);
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
             popup.$imageSize = 8 + 5 + 7 + 1;
-            popup.renderer.setScrollMargin(1, 1, 1, 2);
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
+            popup.on("select", function(){
+                popup.onLastLine = false;
+            });
             
             // Ace Tree Interaction
             popup.on("mouseover", function() {
@@ -174,9 +177,9 @@ define(function(require, exports, module) {
                     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
             
-            popup.on("select", function(){
-                updateDoc(true);
-            });
+            popup.on("select", function(){ updateDoc(true) });
+            popup.on("changeHoverMarker", function(){ updateDoc(true) });
+            
             popup.on("click", function(e) {
                 onKeyPress(e, 0, 13);
                 e.stop();
@@ -378,8 +381,10 @@ define(function(require, exports, module) {
         
         function updateDoc(delayPopup) {
             docElement.innerHTML = '<span class="code_complete_doc_body">';
-            
-            var selected = popup.matches && popup.matches[popup.getRow()];
+            var matches = popup.matches;
+            var selected = matches && (
+                matches[popup.getHoveredRow()] || matches[popup.getRow()]);
+
             if (!selected)
                 return;
             var docHead;
@@ -505,9 +510,13 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
                 case 40: // Down
-                    if (popup.getRow() == popup.matches.length - 1)
-                        return closeCompletionBox();
-                    popup.setRow(popup.getRow() + 1);
+                    if (popup.getRow() == popup.matches.length - 1) {
+                        if (popup.onLastLine)
+                            return closeCompletionBox();
+                        popup.onLastLine = true;
+                    }
+                    if (!popup.onLastLine)
+                        popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
