@@ -77,7 +77,8 @@ define(function(require, exports, module) {
             }
         });
         var drawDocInvoke = lang.deferredCall(function() {
-            var match = isPopupVisible() && matches[popup.getRow()]
+            if (!isPopupVisible()) return;
+            var match = matches[popup.getHoveredRow()] || matches[popup.getRow()];
             if (match && (match.doc || match.$doc)) {
                 isDocShown = true;
                 showDocPopup();
@@ -156,7 +157,6 @@ define(function(require, exports, module) {
             popup = new Popup(document.body);
             popup.setTheme({cssClass: "code_complete_text", padding: 0});
             popup.$imageSize = 8 + 5 + 7 + 1;
-            popup.renderer.setScrollMargin(1, 1, 1, 2);
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
             
             completedp.initPopup(popup);
@@ -174,9 +174,9 @@ define(function(require, exports, module) {
                     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
             
-            popup.on("select", function(){
-                updateDoc(true);
-            });
+            popup.on("select", function(){ updateDoc(true) });
+            popup.on("changeHoverMarker", function(){ updateDoc(true) });
+            
             popup.on("click", function(e) {
                 onKeyPress(e, 0, 13);
                 e.stop();
@@ -378,8 +378,10 @@ define(function(require, exports, module) {
         
         function updateDoc(delayPopup) {
             docElement.innerHTML = '<span class="code_complete_doc_body">';
-            
-            var selected = popup.matches && popup.matches[popup.getRow()];
+            var matches = popup.matches;
+            var selected = matches && (
+                matches[popup.getHoveredRow()] || matches[popup.getRow()]);
+
             if (!selected)
                 return;
             var docHead;
