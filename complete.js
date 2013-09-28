@@ -61,15 +61,15 @@ define(function(require, exports, module) {
         
         var deferredInvoker = lang.deferredCall(function() {
             isInvokeScheduled = false;
-            var editor = deferredInvoker.ace;
-            var pos = editor.getCursorPosition();
-            var line = editor.getSession().getDocument().getLine(pos.row);
-            var regex = getIdentifierRegex(null, editor) || DEFAULT_ID_REGEX;
+            var ace = deferredInvoker.ace;
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getDocument().getLine(pos.row);
+            var regex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
             if (completeUtil.precededByIdentifier(line, pos.column) ||
                (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(regex))) ||
                (line[pos.column - 1] && line[pos.column - 1].match(regex)
                ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
-               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", editor))) {
+               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke(true);
             }
             else {
