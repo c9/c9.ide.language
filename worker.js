@@ -353,16 +353,25 @@ function asyncParForEach(array, fn, callback) {
      * Finds the current node using the language handler.
      * This should always be preferred over the treehugger findNode()
      * method.
+     * 
+     * @param pos.row
+     * @param pos.column
      */
     this.findNode = function(ast, pos, callback) {
         if (!ast)
             return callback();
+
+        // Sanity check for old-style pos objects
+        if (pos.line)
+            throw new Error("Internal error: accessing line/col instead of row/column");
+        pos.__defineGetter__("col", function(){
+            throw new Error("Internal error: accessing line/col instead of row/column");
+        });
+        
         var _self = this;
-        var rowColPos = {row: pos.line, column: pos.col};
-        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, rowColPos, _self.$language);
+        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var language = part.language;
-        var posInPart = SyntaxDetector.posToRegion(part.region, rowColPos);
-        posInPart = {line: posInPart.row, col: posInPart.column};
+        var posInPart = SyntaxDetector.posToRegion(part.region, pos);
         var result;
         asyncForEach(_self.handlers, function(handler, next) {
             if (handler.handlesLanguage(language) && part.value.length < handler.getMaxFileSizeSupported()) {
@@ -560,7 +569,7 @@ function asyncParForEach(array, fn, callback) {
         var part = this.getPart({ row: event.data.row, column: event.data.col });
         this.parse(part, function(ast) {
             // find the current node based on the ast and the position data
-            _self.findNode(ast, { line: event.data.row, col: event.data.col }, function(node) {
+            _self.findNode(ast, pos, function(node) {
                 // find a handler that can build an expression for this language
                 var handler = _self.handlers.filter(function (h) {
                     return h.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported() && h.buildExpression;
@@ -656,11 +665,10 @@ function asyncParForEach(array, fn, callback) {
 
         }
 
-        var currentPos = {line: pos.row, col: pos.column};
         var posInPart = SyntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
-            _self.findNode(ast, currentPos, function(currentNode) {
-                if (currentPos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
+            _self.findNode(ast, pos, function(currentNode) {
+                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
                     cursorMoved(ast, currentNode, posInPart);
                 }
             });
@@ -675,7 +683,7 @@ function asyncParForEach(array, fn, callback) {
         var part = this.getPart(pos);
 
         this.parse(part, function(ast) {
-            _self.findNode(ast, {line: pos.row, col: pos.column}, function(currentNode) {
+            _self.findNode(ast, pos, function(currentNode) {
                 if (!currentNode)
                     return callback();
                 
@@ -741,7 +749,7 @@ function asyncParForEach(array, fn, callback) {
         var regionPos = SyntaxDetector.posToRegion(part.region, pos);
 
         this.parse(part, function(ast) {
-            _self.findNode(ast, {line: pos.row, col: pos.column}, function(currentNode) {
+            _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
                         handler.getVariablePositions(_self.doc, ast, regionPos, currentNode, function(response) {
@@ -977,8 +985,7 @@ function asyncParForEach(array, fn, callback) {
         var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var language = part.language;
         this.parse(part, function(ast) {
-            var currentPos = { line: pos.row, col: pos.column };
-            _self.findNode(ast, currentPos, function(node) {
+            _self.findNode(ast, pos, function(node) {
                 var currentNode = node;
                 var matches = [];
 
