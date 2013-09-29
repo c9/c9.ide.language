@@ -87,8 +87,13 @@ module.exports = {
     },
 
     /**
-     * Finds a tree node at a certain row and col,
+     * Finds a tree node at a certain row and column,
      * e.g. using the findNode(pos) function of treehugger.
+     *
+     * @param AST  the abstract syntax tree
+     * @param pos  the position
+     * @param pos.row
+     * @param pos.column
      */
     findNode: function(ast, pos, callback) {
         callback();
