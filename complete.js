@@ -368,11 +368,17 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
             // Set the highlight metadata
-            popup.ace              = ace;
-            popup.matches          = matches;
-            popup.prefix           = prefix;
-            popup.isInferAvailable = language.isInferAvailable();
-            popup.calcPrefix       = function(regex){
+            popup.ace = ace;
+            popup.matches = matches;
+            popup.prefix = prefix;
+            popup.isNonGenericAvailable = false;
+            for (var i = 0; i < matches.length; i++) {
+                if (!matches[i].isGeneric) {
+                    popup.isNonGenericAvailable = true;
+                    break;
+                }
+            }
+            popup.calcPrefix = function(regex){
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             

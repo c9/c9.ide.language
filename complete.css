@@ -98,7 +98,7 @@
     border : 0 !important;
 }
 .code_complete_text .ace_line .deferred {
-    opacity: .7;
+    opacity: .5;
 }
 .code_complete_text .ace_line .main u {
     /*font-weight: bold;*/
