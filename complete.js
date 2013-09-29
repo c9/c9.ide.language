@@ -358,9 +358,6 @@ define(function(require, exports, module) {
         }
             
         function populateCompletionBox(ace, matches) {
-            // Populate the completion box
-            popup.setData(matches);
-
             // Get context info
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
@@ -378,10 +375,15 @@ define(function(require, exports, module) {
                     break;
                 }
             }
+            if (popup.isNonGenericAvailable) {
+                // Experiment: disable generic matches when possible
+                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
             popup.calcPrefix = function(regex){
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             
+            popup.setData(matches);
             popup.setRow(0);
         }
         
