@@ -26,11 +26,11 @@ define(function(require, exports, module) {
         
         var assert = require("plugins/c9.util/assert");
 
-        language.on("worker.init", function(e){
+        language.on("initWorker", function(e){
             ui.insertCss(require("text!./complete.css"), language);
 
             e.worker.on("hint", function(event) {
-                var page = tabs.findPage(event.data.path);
+                var page = tabs.findTab(event.data.path);
                 if (!page) return;
                 
                 var editor = page.editor;
@@ -94,7 +94,10 @@ define(function(require, exports, module) {
         }
         
         register(null, {
-            "language.tooltip": {}
+            "language.tooltip": {
+                hide: hide,
+                show: show
+            }
         });
     }
     

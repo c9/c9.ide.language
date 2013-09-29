@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "tabManager", "ace", "language", "language.marker", 
-        "language.complete"
+        "language.complete", "language.tooltip"
     ];
     main.provides = ["language.keyhandler"];
     return main;
@@ -18,6 +18,7 @@ define(function(require, exports, module) {
         var language      = imports.language;
         var marker        = imports["language.marker"];
         var complete      = imports["language.complete"];
+        var tooltip       = imports["language.tooltip"];
         var complete_util = require("../c9.ide.language.generic/complete_util");
         var TokenIterator = require("ace/token_iterator").TokenIterator;
         var ace;
@@ -72,8 +73,8 @@ define(function(require, exports, module) {
                 return false;
             if (language.isContinuousCompletionEnabled())
                 typeAlongComplete(e);
-            /* if (e.keyCode == 27) // Esc
-                marker.hideToolTip(); */
+            if (e.keyCode == 27) // Esc
+                tooltip.hide();
             return false;
         }
         
@@ -100,7 +101,7 @@ define(function(require, exports, module) {
         function typeAlongCompleteTextInput(text, pasted) {
             var completionRegex = complete.getContinousCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
-            if (pasted || !completionRegex)
+            if (pasted)
                 return false;
             handleChar(text, idRegex, completionRegex); 
         }

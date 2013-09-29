@@ -67,8 +67,6 @@ module.exports = {
     
     /**
      * Returns a regular expression used to trigger code completion.
-     * If a non-null value is returned, it is assumed continous completion
-     * is supported for this language.
      * 
      * As an example, Java-like languages might want to use: /\./
      */
