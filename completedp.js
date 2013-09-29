@@ -31,7 +31,7 @@ define(function(require, exports, module) {
         var cssText = "." + iconClass[icon] + "{"
             + "background-image:url('" + path + icon + ".png')"
             + "}";
-        console.log(cssText)    
+        //console.log(cssText)    
         addStylesheetRule(cssText);
         return iconClass[icon];
     }
