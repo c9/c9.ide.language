@@ -447,6 +447,7 @@ define(function(require, exports, module) {
          * Outline panel. Allows a user to navigate to a file from a structured
          * listing of all it's members and events.
          * @singleton
+         * @extends Panel
          **/
         /**
          * @command outline
