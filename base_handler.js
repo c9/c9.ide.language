@@ -225,23 +225,95 @@ module.exports = {
     },
 
     /**
-     * Invoked when the cursor has been moved inside to a different AST node.
+     * Invoked when the cursor has been moved.
      * 
-     * May be overridden by inheritors.
+     * Should be overridden by inheritors that implement tooltips.
      * 
-     * @param doc the       Document object repersenting the source
-     * @param fullAst       The entire AST of the current file (if exists)
-     * @param cursorPos     The current cursor position (object with keys 'row' and 'column')
-     * @param currentNode   The AST node the cursor is currently at (if exists)
-     * @return              A JSON object with three optional keys: {markers: [...], hint: {message: ...}, enableRefactoring: [...]}
+     * @param {aceDocument} doc                   Document object repersenting the source
+     * @param {Object} fullAst                    The entire AST of the current file (if any)
+     * @param {Object} cursorPos                  The current cursor position
+     * @param {Number} cursorPos.row              The current cursor's row
+     * @param {Number} cursorPos.column           The current cursor's column
+     * @param {Object currentNode                 The AST node the cursor is currently at (if any)
+     * @param {Function} callback                 The callback; must be called
      */
     onCursorMovedNode: function(doc, fullAst, cursorPos, currentNode, callback) {
+        callback();
+    },
+    
+    /**
+     * Invoked when the cursor has been moved inside to a different AST node.
+     * Gets a tooltip to display when the cursor is moved to a particular location.
+     * 
+     * Should be overridden by inheritors that implement tooltips.
+     * 
+     * @param {aceDocument} doc                   Document object repersenting the source
+     * @param {Object} fullAst                    The entire AST of the current file (if any)
+     * @param {Object} cursorPos                  The current cursor position
+     * @param {Number} cursorPos.row              The current cursor's row
+     * @param {Number} cursorPos.column           The current cursor's column
+     * @param {Object currentNode                 The AST node the cursor is currently at (if any)
+     * @param {Function} callback                 The callback; must be called
+     * @param {Object} callback.result            The function's result
+     * @param {String} [callback.result.message]  An HTML string with the tooltip to display
+     */
+    tooltip: function(doc, fullAst, cursorPos, currentNode, callback) {
+        callback();
+    },
+    
+    /**
+     * Gets the instances to highlight when the cursor is moved to a particular location.
+     * 
+     * Should be overridden by inheritors that implement occurrence highlighting.
+     * 
+     * @param {aceDocument} doc                        Document object repersenting the source
+     * @param {Object} fullAst                         The entire AST of the current file (if any)
+     * @param {Object} cursorPos                       The current cursor position
+     * @param {Number} cursorPos.row                   The current cursor's row
+     * @param {Number} cursorPos.column                The current cursor's column
+     * @param {Object currentNode                      The AST node the cursor is currently at (if any)
+     * @param {Function} callback                      The callback; must be called
+     * @param {Object} callback.result                 The function's result
+     * @param {Object[]} [callback.result.markers]     The markers to highlight
+     * @param {Object} callback.result.markers.pos     The marker's position
+     * @param {Number} callback.result.markers.pos.sl  The starting line
+     * @param {Number} callback.result.markers.pos.el  The ending line
+     * @param {Number} callback.result.markers.pos.sc  The starting column
+     * @param {Number} callback.result.markers.pos.ec  The ending column
+     * @param {"occurrence_other"|"occurrence_main"} callback.result.markers.type
+     *                                                 The type of occurrence: the main one, or any other one.
+     */
+    highlightOccurrences: function(doc, fullAst, cursorPos, currentNode, callback) {
+        callback();
+    },
+    
+    //  {markers: [...], hint: {message: ...}, enableRefactoring: [...]}
+    
+    
+    /**
+     * Determines what refactorings to enable when the cursor is moved to a particular location.
+     * 
+     * Should be overridden by inheritors that implement refactorings.
+     * 
+     * @param {aceDocument} doc              Document object repersenting the source
+     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} cursorPos             The current cursor position
+     * @param {Number} cursorPos.row         The current cursor's row
+     * @param {Number} cursorPos.column      The current cursor's column
+     * @param {Object currentNode            The AST node the cursor is currently at (if any)
+     * @param {Function} callback            The callback; must be called
+     * @param {Object} callback.result       The function's result
+     * @param {String[]} [callback.result.enableRefactorings]
+     *                                       The refactorings to enable, such as "renameVariable"
+     */
+    onRefactoringTest: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
 
     /**
      * Constructs an outline.
      * 
+     * Should be overridden by inheritors that implement an outline.
      * 
      * @param doc the Document object repersenting the source
      * @param fullAst the entire AST of the current file (if exists)
@@ -255,7 +327,9 @@ module.exports = {
      * Invoked when an type hierarchy is required
      * (either for a selected element, or the enclosing element)
      * @param doc the Document object repersenting the source
-     * @param cursorPos the current cursor position (object with keys 'row' and 'column')
+     * @param {Object} cursorPos the current cursor position
+     * @param {Number} cursorPos.row                   The current cursor's row
+     * @param {Number} cursorPos.column                The current cursor's column
      * @return a JSON hierarchy structure or null if not supported
      */
     hierarchy: function(doc, cursorPos, callback) {
@@ -266,7 +340,9 @@ module.exports = {
      * Performs code completion for the user based on the current cursor position
      * @param doc the Document object repersenting the source
      * @param fullAst the entire AST of the current file (if exists)
-     * @param pos the current cursor position (object with keys 'row' and 'column')
+     * @param {Object} pos the current cursor position
+     * @param {Number} pos.row                   The current cursor's row
+     * @param {Number} pos.column                The current cursor's column
      * @param currentNode the AST node the cursor is currently at (if exists)
      * @return an array of completion matches
      */
@@ -288,7 +364,9 @@ module.exports = {
      * Invoked when inline variable renaming is activated
      * @param doc the Document object repersenting the source
      * @param fullAst the entire AST of the current file (if exists)
-     * @param pos the current cursor position (object with keys 'row' and 'column')
+     * @param {Object} pos the current cursor position
+     * @param {Number} pos.row                   The current cursor's row
+     * @param {Number} pos.column                The current cursor's column
      * @param currentNode the AST node the cursor is currently at (if exists)
      * @return an object with the main occurence and array of other occurences of the selected element
      */
