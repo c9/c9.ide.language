@@ -14,16 +14,41 @@ define(function(require, exports, module) {
 
 module.exports = {
     
+    /**
+     * The language this worker is currently operating on.
+     * @type {String}
+     */
     language: null,
-    project: null,
+    
+    /**
+     * The path of the file this worker is currently operating on.
+     * @type {String}
+     */
     path: null,
+    
+    /**
+     * The current workspace directory.
+     * @type {String}
+     */
     workspaceDir: null,
+    
+    /**
+     * The current document this worker is operating on.
+     * 
+     * @type {{ getValue : {function() : String} }}
+     */
     doc: null,
 
     // UTILITIES
 
     /**
-     * Determine whether a certain feature is enabled in the user's preferences.
+     * Utility function, used to determine whether a certain feature is enabled
+     * in the user's preferences.
+     * 
+     * Should not be overridden by inheritors.
+     * 
+     * @param {String} name  The name of the feature, e.g. "unusedFunctionArgs"
+     * @returns {Boolean}
      */
     isFeatureEnabled: function(name) {
         return !disabledFeatures[name];
@@ -32,17 +57,26 @@ module.exports = {
     // OVERRIDABLE ACCESORS
 
     /**
-     * Returns whether this language handler should be enabled for the given file
-     * @param language to check the handler against
+     * Returns whether this language handler should be enabled for the given
+     * file.
+     * 
+     * Must be overridden by inheritors.
+     * 
+     * @param {String} language   to check the handler against
+     * @returns {Boolean}
      */
     handlesLanguage: function(language) {
-        return false;
+        throw new Error("base_handler.handlesLanguage() is not overridden");
     },
     
     /**
      * Returns the maximum file size this language handler supports.
      * Should return Infinity if size does not matter.
      * Default is 10.000 lines of 80 characters.
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @returns {Number}
      */
     getMaxFileSizeSupported: function() {
         // Conservative default
@@ -52,14 +86,22 @@ module.exports = {
     /**
      * Determine if the language component supports parsing.
      * Assumed to be true if at least one hander for the language reports true.
+     * 
+     * Should be overridden by inheritors.
+     * 
+     * @returns {Boolean}
      */
     isParsingSupported: function() {
         return false;
     },
 
     /**
-     * Returns a regular expression for identifiers.
+     * Returns a regular expression for identifiers in the handler's language.
      * If not specified, /[A-Za-z0-9\$\_]/ is used.
+     * 
+     * Should be overridden by inheritors that implement code completion.
+     * 
+     * @returns RegExp
      */
     getIdentifierRegex: function() {
         return null;
@@ -67,33 +109,47 @@ module.exports = {
     
     /**
      * Returns a regular expression used to trigger code completion.
+     * If a non-null value is returned, it is assumed continous completion
+     * is supported for this language.
      * 
      * As an example, Java-like languages might want to use: /\./
+     * 
+     * Should be overridden by inheritors that implement code completion.
+     * Default implementation returns null.
+     * 
+     * @returns RegExp
      */
     getCompletionRegex: function() {
         return null;
-    }, 
+    },
 
     // PARSING AND ABSTRACT SYNTAX CALLBACKS
 
     /**
-     * If the language handler implements parsing, this function should take
-     * the source code and turn it into an AST
-     * @param value the source the document to analyze
-     * @return treehugger AST or null if not implemented
+     * Parses the given document.
+     * 
+     * Should be overridden by inheritors that implement parsing
+     * (which is, like all features here, optional).
+     * 
+     * @param value {String}   the source the document to analyze
+     * @return {Object}        an abstract syntax tree (of any type), or null if not implemented
      */
     parse: function(value, callback) {
         callback();
     },
 
     /**
-     * Finds a tree node at a certain row and column,
+     * Finds a tree node at a certain row and col,
      * e.g. using the findNode(pos) function of treehugger.
-     *
-     * @param AST  the abstract syntax tree
-     * @param pos  the position
-     * @param pos.row
-     * @param pos.column
+     * 
+     * Should be overridden by inheritors that implement parsing.
+     * 
+     * @param {Object} ast                An abstract syntax tree object from @link #parse
+     * @param {Object} pos                The position of the node to look up
+     * @param {Number} pos.row            The position's row
+     * @param {Number} pow.column         The position's column
+     * @param {Function} callback         The callback for the result
+     * @param {Object} [callback.result]  The found node
      */
     findNode: function(ast, pos, callback) {
         callback();
@@ -102,8 +158,16 @@ module.exports = {
     /**
      * Returns the  a tree node at a certain row and col,
      * e.g. using the node.getPos() function of treehugger.
-     * @returns an object with properties sl, the start line, sc, the start
-     *          column, el, the end line, and ec, the end column.
+     * 
+     * Should be overridden by inheritors that implement parsing.
+     * 
+     * @param {Object} node                The node to look up
+     * @param {Function} callback          The callback for the result
+     * @param {Object} [callback.result]   The resulting position
+     * @param {Number} callback.result.sl  The starting line
+     * @param {Number} callback.result.el  The ending line
+     * @param {Number} callback.result.sc  The starting column
+     * @param {Number} callback.result.ec  The ending column
      */
     getPos: function(node, callback) {
         callback();
@@ -113,51 +177,72 @@ module.exports = {
 
     /**
      * Initialize this language handler.
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @param callback            The callback; must be called
      */
     init: function(callback) {
         callback();
     },
 
     /**
-     * Invoked when the document has been updated (possibly after a certain interval)
-     * @param doc the Document object repersenting the source
+     * Invoked when the document has been updated (possibly after a certain delay)
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @param {ace.Document} doc  The current document
+     * @param {Function} callback            The callback; must be called
      */
     onUpdate: function(doc, callback) {
         callback();
     },
 
     /**
-     * Invoked when a new document has been opened
-     * @param path the path of the newly opened document
-     * @param doc the Document object repersenting the source
-     * @param oldPath the path of the document that was active before
+     * Invoked when a new document has been opened.
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @param {String} path        The path of the newly opened document
+     * @param {String} doc         The Document object repersenting the source
+     * @param {String} oldPath     The path of the document that was active before
+     * @param {Function} callback  The callback; must be called
      */
     onDocumentOpen: function(path, doc, oldPath, callback) {
         callback();
     },
 
     /**
-     * Invoked when a document is closed in the IDE
-     * @param path the path of the file
+     * Invoked when a document is closed in the IDE.
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @param {String} path the path of the file
+     * @param {Function} callback  The callback; must be called
      */
     onDocumentClose: function(path, callback) {
         callback();
     },
 
     /**
-     * Invoked when the cursor has been moved inside to a different AST node
-     * @param doc the Document object repersenting the source
-     * @param fullAst the entire AST of the current file (if exists)
-     * @param cursorPos the current cursor position (object with keys 'row' and 'column')
-     * @param currentNode the AST node the cursor is currently at (if exists)
-     * @return a JSON object with three optional keys: {markers: [...], hint: {message: ...}, enableRefactoring: [...]}
+     * Invoked when the cursor has been moved inside to a different AST node.
+     * 
+     * May be overridden by inheritors.
+     * 
+     * @param doc the       Document object repersenting the source
+     * @param fullAst       The entire AST of the current file (if exists)
+     * @param cursorPos     The current cursor position (object with keys 'row' and 'column')
+     * @param currentNode   The AST node the cursor is currently at (if exists)
+     * @return              A JSON object with three optional keys: {markers: [...], hint: {message: ...}, enableRefactoring: [...]}
      */
     onCursorMovedNode: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
 
     /**
-     * Invoked when an outline is required
+     * Constructs an outline.
+     * 
+     * 
      * @param doc the Document object repersenting the source
      * @param fullAst the entire AST of the current file (if exists)
      * @return a JSON outline structure or null if not supported
@@ -253,7 +338,6 @@ module.exports = {
      */
     jumpToDefinition: function(doc, fullAst, pos, currentNode, callback) {
         callback();
-
     },
     
     /**
