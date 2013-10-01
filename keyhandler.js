@@ -73,8 +73,10 @@ define(function(require, exports, module) {
                 return false;
             if (language.isContinuousCompletionEnabled())
                 typeAlongComplete(e);
+        
             if (e.keyCode == 27) // Esc
                 tooltip.hide();
+                
             return false;
         }
         

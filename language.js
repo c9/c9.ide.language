@@ -194,10 +194,7 @@ define(function(require, exports, module) {
                 notifyWorker("switchFile", e);
             });
             
-            emit("initWorker", {worker: worker});
-            plugin.on("newListener", function(type, listener){
-                if (type == "initWorker") listener({worker: worker});
-            });
+            emit("initWorker", {worker: worker}, true);
 
             settings.on("read", function() {
                 settings.setDefaults("user/language", [
