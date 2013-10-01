@@ -48,7 +48,7 @@ module.exports = {
      * Should not be overridden by inheritors.
      * 
      * @param {String} name  The name of the feature, e.g. "unusedFunctionArgs"
-     * @returns {Boolean}
+     * @return {Boolean}
      */
     isFeatureEnabled: function(name) {
         return !disabledFeatures[name];
@@ -63,7 +63,7 @@ module.exports = {
      * Must be overridden by inheritors.
      * 
      * @param {String} language   to check the handler against
-     * @returns {Boolean}
+     * @return {Boolean}
      */
     handlesLanguage: function(language) {
         throw new Error("base_handler.handlesLanguage() is not overridden");
@@ -76,7 +76,7 @@ module.exports = {
      * 
      * May be overridden by inheritors.
      * 
-     * @returns {Number}
+     * @return {Number}
      */
     getMaxFileSizeSupported: function() {
         // Conservative default
@@ -89,7 +89,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors.
      * 
-     * @returns {Boolean}
+     * @return {Boolean}
      */
     isParsingSupported: function() {
         return false;
@@ -101,7 +101,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement code completion.
      * 
-     * @returns RegExp
+     * @return RegExp
      */
     getIdentifierRegex: function() {
         return null;
@@ -117,7 +117,7 @@ module.exports = {
      * Should be overridden by inheritors that implement code completion.
      * Default implementation returns null.
      * 
-     * @returns RegExp
+     * @return RegExp
      */
     getCompletionRegex: function() {
         return null;
