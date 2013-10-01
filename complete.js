@@ -48,7 +48,7 @@ define(function(require, exports, module) {
         var idRegexes         = {};
         var completionRegexes = {}; 
       
-        var DEFAULT_ID_REGEX = /[a-zA-Z_0-9\$\/]/;
+        var DEFAULT_ID_REGEX = completeUtil.DEFAULT_ID_REGEX;
         
         var SHOW_DOC_DELAY = 1500;
         var SHOW_DOC_DELAY_MOUSE_OVER = 100;
