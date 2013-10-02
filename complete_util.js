@@ -3,24 +3,24 @@ define(function(require, exports, module) {
 var ID_REGEX = /[a-zA-Z_0-9\$]/;
 var REQUIRE_ID_REGEX = /(?!["'])./;
 
-function retrievePrecedingIdentifier(text, pos, regex) {
+function retrievePrecedingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
     var buf = [];
-    for (var i = pos-1; i >= 0; i--) {
-        if (regex.test(text[i]))
-            buf.push(text[i]);
+    for (var i = offset-1; i >= 0; i--) {
+        if (regex.test(line[i]))
+            buf.push(line[i]);
         else
             break;
     }
     return buf.reverse().join("");
 }
 
-function retrieveFollowingIdentifier(text, pos, regex) {
+function retrieveFollowingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
     var buf = [];
-    for (var i = pos; i < text.length; i++) {
-        if (regex.test(text[i]))
-            buf.push(text[i]);
+    for (var i = offset; i < line.length; i++) {
+        if (regex.test(line[i]))
+            buf.push(line[i]);
         else
             break;
     }
@@ -155,12 +155,55 @@ exports.retrievePreceedingIdentifier = function() {
     console.error("Deprecated: 'retrievePreceedingIdentifier' - use 'retrievePrecedingIdentifier' instead"); 
     return retrievePrecedingIdentifier.apply(null, arguments);
 };
+
+/**
+ * @internal
+ * @return {Boolean}
+ */
 exports.precededByIdentifier = precededByIdentifier;
+
+/**
+ * @internal
+ */
 exports.isRequireJSCall = isRequireJSCall;
+
+/**
+ * Retrieves the identifier string preceding the current position.
+ * 
+ * @param {String} line     The line to search in
+ * @param {Number} offset   The offset to start
+ * @param {RegExp} regex    The regular expression to use
+ * @return {String}
+ */
 exports.retrievePrecedingIdentifier = retrievePrecedingIdentifier;
+
+/**
+ * Retrieves the identifier string following the current position.
+ * 
+ * @param {String} line     The line to search in
+ * @param {Number} offset   The offset to start
+ * @param {RegExp} regex    The regular expression to use
+ * @return {String}
+ */
 exports.retrieveFollowingIdentifier = retrieveFollowingIdentifier;
+
+/**
+ * @internal
+ */
 exports.findCompletions = findCompletions;
+
+/**
+ * @internal
+ */
 exports.fetchText = fetchText;
+
+/**
+ * @internal
+ */
 exports.DEFAULT_ID_REGEX = ID_REGEX;
+
+/**
+ * @internal
+ */
 exports.canCompleteForChangedLine = canCompleteForChangedLine;
 });
