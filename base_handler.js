@@ -239,7 +239,7 @@ module.exports = {
      * @param {Object} cursorPos                  The current cursor position
      * @param {Number} cursorPos.row              The current cursor's row
      * @param {Number} cursorPos.column           The current cursor's column
-     * @param {Object currentNode                 The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode                The AST node the cursor is currently at (if any)
      * @param {Function} callback                 The callback; must be called
      */
     onCursorMovedNode: function(doc, fullAst, cursorPos, currentNode, callback) {
@@ -257,7 +257,7 @@ module.exports = {
      * @param {Object} cursorPos                          The current cursor position
      * @param {Number} cursorPos.row                      The current cursor's row
      * @param {Number} cursorPos.column                   The current cursor's column
-     * @param {Object currentNode                         The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode                        The AST node the cursor is currently at (if any)
      * @param {Function} callback                         The callback; must be called
      * @param {Object} callback.result                    The function's result
      * @param {String} [callback.result.hint]             An HTML string with the tooltip to display
@@ -279,7 +279,7 @@ module.exports = {
      * @param {Object} cursorPos                       The current cursor position
      * @param {Number} cursorPos.row                   The current cursor's row
      * @param {Number} cursorPos.column                The current cursor's column
-     * @param {Object currentNode                      The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode                     The AST node the cursor is currently at (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Object} callback.result                 The function's result
      * @param {Object[]} [callback.result.markers]     The markers to highlight
@@ -305,7 +305,7 @@ module.exports = {
      * @param {Object} cursorPos             The current cursor position
      * @param {Number} cursorPos.row         The current cursor's row
      * @param {Number} cursorPos.column      The current cursor's column
-     * @param {Object currentNode            The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result
      * @param {String[]} [callback.result.enableRefactorings]
