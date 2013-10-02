@@ -536,7 +536,7 @@ module.exports = {
      * @param {Object} markers                      The markers to get resolutions for
      * @param {Function} callback                   The callback; must be called
      * @param {Object} callback.result              The function's result
-     * @return {c9.ide.language.MarkerResolution[]} Resulting resolutions.
+     * @return {language.MarkerResolution[]} Resulting resolutions.
      */
     getResolutions: function(doc, fullAst, markers, callback) {
         callback();

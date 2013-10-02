@@ -404,7 +404,7 @@ define(function(require, exports, module) {
          * 
          * Language handlers are executed inside a web worker.
          * They can be registered using the {@link #registerLanguageHandler}
-         * function, and should be based on the {@link c9.ide.language/base_handler}
+         * function, and should be based on the {@link language.base_handler}
          * base class.
          * 
          * @singleton
