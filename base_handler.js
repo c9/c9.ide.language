@@ -42,7 +42,7 @@ module.exports = {
     /**
      * The current document this worker is operating on.
      * 
-     * @type {{ getValue : {function() : String} }}
+     * @type {ace.Document}
      */
     doc: null,
 
