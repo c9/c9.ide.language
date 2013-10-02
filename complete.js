@@ -26,7 +26,7 @@ define(function(require, exports, module) {
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("../c9.ide.language.generic/complete_util");
+        var completeUtil   = require("../c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
         

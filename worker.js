@@ -19,7 +19,7 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 // TODO: support linereport again (see below)
 // var linereport = require("ext/linereport/linereport_base");
 var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
-var completeUtil = require("plugins/c9.ide.language.generic/complete_util");
+var completeUtil = require("plugins/c9.ide.language/complete_util");
 
 require("plugins/c9.ide.browsersupport/browsersupport");
 
@@ -353,16 +353,25 @@ function asyncParForEach(array, fn, callback) {
      * Finds the current node using the language handler.
      * This should always be preferred over the treehugger findNode()
      * method.
+     * 
+     * @param pos.row
+     * @param pos.column
      */
     this.findNode = function(ast, pos, callback) {
         if (!ast)
             return callback();
+
+        // Sanity check for old-style pos objects
+        if (pos.line)
+            throw new Error("Internal error: accessing line/col instead of row/column");
+        pos.__defineGetter__("col", function(){
+            throw new Error("Internal error: accessing line/col instead of row/column");
+        });
+        
         var _self = this;
-        var rowColPos = {row: pos.line, column: pos.col};
-        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, rowColPos, _self.$language);
+        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var language = part.language;
-        var posInPart = SyntaxDetector.posToRegion(part.region, rowColPos);
-        posInPart = {line: posInPart.row, col: posInPart.column};
+        var posInPart = SyntaxDetector.posToRegion(part.region, pos);
         var result;
         asyncForEach(_self.handlers, function(handler, next) {
             if (handler.handlesLanguage(language) && part.value.length < handler.getMaxFileSizeSupported()) {
@@ -560,7 +569,7 @@ function asyncParForEach(array, fn, callback) {
         var part = this.getPart({ row: event.data.row, column: event.data.col });
         this.parse(part, function(ast) {
             // find the current node based on the ast and the position data
-            _self.findNode(ast, { line: event.data.row, col: event.data.col }, function(node) {
+            _self.findNode(ast, pos, function(node) {
                 // find a handler that can build an expression for this language
                 var handler = _self.handlers.filter(function (h) {
                     return h.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported() && h.buildExpression;
@@ -588,6 +597,9 @@ function asyncParForEach(array, fn, callback) {
         return result || completeUtil.DEFAULT_ID_REGEX;
     };
 
+    /**
+     * Process a cursor move. We do way too much here.
+     */
     this.onCursorMove = function(event) {
         var pos = event.data;
         var part = this.getPart(pos);
@@ -596,6 +608,34 @@ function asyncParForEach(array, fn, callback) {
         var hintMessage = ""; // this.checkForMarker(pos) || "";
 
         var aggregateActions = {markers: [], hint: null, displayPos: null, enableRefactorings: []};
+                    
+        function processResponse(response) {
+            if (response.markers && response.markers.length > 0) {
+                aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
+                    var start = SyntaxDetector.regionToPos(part.region, {row: m.pos.sl, column: m.pos.sc});
+                    var end = SyntaxDetector.regionToPos(part.region, {row: m.pos.el, column: m.pos.ec});
+                    m.pos = {
+                        sl: start.row,
+                        sc: start.column,
+                        el: end.row,
+                        ec: end.column
+                    };
+                    return m;
+                }));
+            }
+            if (response.enableRefactorings && response.enableRefactorings.length > 0) {
+                aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
+            }
+            if (response.hint) {
+                if (aggregateActions.hint)
+                    aggregateActions.hint += "\n" + response.hint;
+                else
+                    aggregateActions.hint = response.hint;
+            }
+            if (response.displayPos) {
+                aggregateActions.displayPos = response.displayPos;
+            }
+        }
         
         function cursorMoved(ast, currentNode, currentPos) {
             asyncForEach(_self.handlers, function(handler, next) {
@@ -605,39 +645,19 @@ function asyncParForEach(array, fn, callback) {
                     return;
                 }
                 if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
-                    handler.onCursorMovedNode(_self.doc, ast, currentPos, currentNode, function(response) {
-                        if (!response)
-                            return next();
-                        if (response.markers && response.markers.length > 0) {
-                            aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
-                                var start = SyntaxDetector.regionToPos(part.region, {row: m.pos.sl, column: m.pos.sc});
-                                var end = SyntaxDetector.regionToPos(part.region, {row: m.pos.el, column: m.pos.ec});
-                                m.pos = {
-                                    sl: start.row,
-                                    sc: start.column,
-                                    el: end.row,
-                                    ec: end.column
-                                };
-                                return m;
-                            }));
-                        }
-                        if (response.enableRefactorings && response.enableRefactorings.length > 0) {
-                            aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
-                        }
-                        if (response.hint) {
-                            if (aggregateActions.hint)
-                                aggregateActions.hint += "\n" + response.hint;
-                            else
-                                aggregateActions.hint = response.hint;
-                        }
-                        if (response.displayPos) {
-                            aggregateActions.displayPos = response.displayPos;
-                        }
-                        next();
-                    });
+                    // We send this to several handlers that each handle part of the language functionality,
+                    // triggered by the cursor move event
+                    asyncForEach(["tooltip", "onRefactoringTest", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                        handler[method](_self.doc, ast, currentPos, currentNode, function(response) {
+                            if (response)
+                                processResponse(response);
+                            nextMethod();
+                        });
+                    }, next);
                 }
-                else
+                else {
                     next();
+                }
             }, function() {
                 if (aggregateActions.hint && !hintMessage) {
                     hintMessage = aggregateActions.hint;
@@ -656,11 +676,10 @@ function asyncParForEach(array, fn, callback) {
 
         }
 
-        var currentPos = {line: pos.row, col: pos.column};
         var posInPart = SyntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
-            _self.findNode(ast, currentPos, function(currentNode) {
-                if (currentPos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
+            _self.findNode(ast, pos, function(currentNode) {
+                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
                     cursorMoved(ast, currentNode, posInPart);
                 }
             });
@@ -675,7 +694,7 @@ function asyncParForEach(array, fn, callback) {
         var part = this.getPart(pos);
 
         this.parse(part, function(ast) {
-            _self.findNode(ast, {line: pos.row, col: pos.column}, function(currentNode) {
+            _self.findNode(ast, pos, function(currentNode) {
                 if (!currentNode)
                     return callback();
                 
@@ -741,7 +760,7 @@ function asyncParForEach(array, fn, callback) {
         var regionPos = SyntaxDetector.posToRegion(part.region, pos);
 
         this.parse(part, function(ast) {
-            _self.findNode(ast, {line: pos.row, col: pos.column}, function(currentNode) {
+            _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
                         handler.getVariablePositions(_self.doc, ast, regionPos, currentNode, function(response) {
@@ -977,8 +996,7 @@ function asyncParForEach(array, fn, callback) {
         var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var language = part.language;
         this.parse(part, function(ast) {
-            var currentPos = { line: pos.row, col: pos.column };
-            _self.findNode(ast, currentPos, function(node) {
+            _self.findNode(ast, pos, function(node) {
                 var currentNode = node;
                 var matches = [];
 

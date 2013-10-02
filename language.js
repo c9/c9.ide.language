@@ -398,7 +398,15 @@ define(function(require, exports, module) {
         /***** Register and define API *****/
         
         /**
-         * Language foundation for Cloud9 
+         * The language foundation for Cloud9, controlling language
+         * handlers that implement features such as content completion
+         * for various languages.
+         * 
+         * Language handlers are executed inside a web worker.
+         * They can be registered using the {@link #registerLanguageHandler}
+         * function, and should be based on the {@link c9.ide.language.base_handler}
+         * base class.
+         * 
          * @event afterfilesave Fires after a file is saved
          * @param {Object} e
          *     node     {XMLNode} description
@@ -406,27 +414,36 @@ define(function(require, exports, module) {
          **/
         plugin.freezePublicAPI({
             /**
-             * 
+             * Returns true if the "continuous completion" IDE setting is enabled
+             * @return {Boolean}
              */
             isContinuousCompletionEnabled : isContinuousCompletionEnabled,
             
             /**
-             * 
+             * Sets whether the "continuous completion" IDE setting is enabled
+             * @param {Boolean} value
              */
             setContinuousCompletionEnabled : setContinuousCompletionEnabled,
             
             /**
-             * Registers a new language handler.
-             * @param modulePath  the require path of the handler
-             * @param contents    (optionally) the contents of the handler script
-             * @param callback    An optional callback called when the handler is initialized
+             * Returns whether type inference for JavaScript is available.
+             * Used internally.
              */
-            registerLanguageHandler : registerLanguageHandler,
+            isInferAvailable : isInferAvailable,
             
             /**
+             * Registers a new language handler in the web worker.
+             * Clients should specify a module path where the handler can be loaded.
+             * Normally, it can be loaded in the web worker using a regular require(),
+             * but if it is not available in the context of the web worker (perhaps
+             * because it is hosted elsewhere), clients can also specify a string
+             * source for the handler.
              * 
+             * @param {String} modulePath    The require path of the handler
+             * @param {String} contents      The contents of the handler script, or null
+             * @param {Function} callback    An optional callback called when the handler is initialized
              */
-            isInferAvailable : isInferAvailable
+            registerLanguageHandler : registerLanguageHandler
         });
         
         register(null, {

@@ -23,7 +23,7 @@ define(function(require, exports, module) {
         var ace = imports.ace;
         var tabs = imports.tabManager;
         var ui = imports.ui;
-        var util = require("plugins/c9.ide.language.generic/complete_util");
+        var util = require("plugins/c9.ide.language/complete_util");
         var menus = imports.menus;
         
         var CRASHED_JOB_TIMEOUT = 30000;
