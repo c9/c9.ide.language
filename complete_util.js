@@ -1,3 +1,6 @@
+/**
+ * @class complete_util
+ */
 define(function(require, exports, module) {
 
 var ID_REGEX = /[a-zA-Z_0-9\$]/;
@@ -150,25 +153,30 @@ function inCompletableCodeContext(line, column, id) {
     return !inMode;
 }
 
-/** @deprecated Use retrievePrecedingIdentifier */
+/**
+ * @ignore
+ * @deprecated Use retrievePrecedingIdentifier
+ */
 exports.retrievePreceedingIdentifier = function() {
     console.error("Deprecated: 'retrievePreceedingIdentifier' - use 'retrievePrecedingIdentifier' instead"); 
     return retrievePrecedingIdentifier.apply(null, arguments);
 };
 
 /**
- * @internal
+ * @ignore
  * @return {Boolean}
  */
 exports.precededByIdentifier = precededByIdentifier;
 
 /**
- * @internal
+ * @ignore
  */
 exports.isRequireJSCall = isRequireJSCall;
 
 /**
  * Retrieves the identifier string preceding the current position.
+ * 
+ * @method
  * 
  * @param {String} line     The line to search in
  * @param {Number} offset   The offset to start
@@ -180,6 +188,8 @@ exports.retrievePrecedingIdentifier = retrievePrecedingIdentifier;
 /**
  * Retrieves the identifier string following the current position.
  * 
+ * @method
+ * 
  * @param {String} line     The line to search in
  * @param {Number} offset   The offset to start
  * @param {RegExp} regex    The regular expression to use
@@ -188,22 +198,22 @@ exports.retrievePrecedingIdentifier = retrievePrecedingIdentifier;
 exports.retrieveFollowingIdentifier = retrieveFollowingIdentifier;
 
 /**
- * @internal
+ * @ignore
  */
 exports.findCompletions = findCompletions;
 
 /**
- * @internal
+ * @ignore
  */
 exports.fetchText = fetchText;
 
 /**
- * @internal
+ * @ignore
  */
 exports.DEFAULT_ID_REGEX = ID_REGEX;
 
 /**
- * @internal
+ * @ignore
  */
 exports.canCompleteForChangedLine = canCompleteForChangedLine;
 });
