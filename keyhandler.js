@@ -19,7 +19,7 @@ define(function(require, exports, module) {
         var marker        = imports["language.marker"];
         var complete      = imports["language.complete"];
         var tooltip       = imports["language.tooltip"];
-        var complete_util = require("../c9.ide.language.generic/complete_util");
+        var complete_util = require("../c9.ide.language/complete_util");
         var TokenIterator = require("ace/token_iterator").TokenIterator;
         var ace;
         

@@ -19,7 +19,7 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 // TODO: support linereport again (see below)
 // var linereport = require("ext/linereport/linereport_base");
 var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
-var completeUtil = require("plugins/c9.ide.language.generic/complete_util");
+var completeUtil = require("plugins/c9.ide.language/complete_util");
 
 require("plugins/c9.ide.browsersupport/browsersupport");
 
