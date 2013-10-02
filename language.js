@@ -407,10 +407,7 @@ define(function(require, exports, module) {
          * function, and should be based on the {@link c9.ide.language/base_handler}
          * base class.
          * 
-         * @event afterfilesave Fires after a file is saved
-         * @param {Object} e
-         *     node     {XMLNode} description
-         *     oldpath  {String} description
+         * @singleton
          **/
         plugin.freezePublicAPI({
             /**

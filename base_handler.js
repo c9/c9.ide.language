@@ -12,6 +12,8 @@
  * language services such as code completion.
  * 
  * See {@link language}
+ * 
+ * @class language.base_handler
  */
 define(function(require, exports, module) {
 

@@ -1,5 +1,5 @@
 /**
- * @class complete_util
+ * @class language.complete_util
  */
 define(function(require, exports, module) {
 
