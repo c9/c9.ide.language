@@ -27,8 +27,7 @@
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: solid 1px #999;
-    opacity: 0.5;
+    border: solid 1px #888888;
     z-index: 2000;
 }
 
@@ -41,8 +40,7 @@
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: solid 1px #999;
-    opacity: 0.5;
+    border: solid 1px #88888;
     z-index: 2000;
 }
 
