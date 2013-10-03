@@ -363,10 +363,7 @@ function asyncParForEach(array, fn, callback) {
 
         // Sanity check for old-style pos objects
         if (pos.line)
-            throw new Error("Internal error: accessing line/col instead of row/column");
-        pos.__defineGetter__("col", function(){
-            throw new Error("Internal error: accessing line/col instead of row/column");
-        });
+            throw new Error("Internal error: providing line/col instead of row/column");
         
         var _self = this;
         var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
