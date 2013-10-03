@@ -881,6 +881,7 @@ function asyncParForEach(array, fn, callback) {
         this.lastCurrentPos = null;
         this.cachedAsts = null;
         this.setValue(code);
+        this.scheduledUpdate = true;
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
         });
