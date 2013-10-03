@@ -1,6 +1,6 @@
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "settings", "ui", "menus", "panels", "tabManager", 
+        "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
         "language", "util"
     ];
     main.provides = ["outline"];
@@ -8,7 +8,7 @@ define(function(require, exports, module) {
 
     function main(options, imports, register) {
         var c9       = imports.c9;
-        var Plugin   = imports.Plugin;
+        var Panel    = imports.Panel;
         var settings = imports.settings;
         var ui       = imports.ui;
         var util     = imports.util;
@@ -25,8 +25,15 @@ define(function(require, exports, module) {
         
         /***** Initialization *****/
         
-        var plugin = new Plugin("Ajax.org", main.consumes);
-        var emit   = plugin.getEmitter();
+        var plugin = new Panel("Ajax.org", main.consumes, {
+            index        : 50,
+            width        : 250,
+            caption      : "Outline",
+            elementName  : "winOutline",
+            minWidth     : 130,
+            where        : "right"
+        });
+        // var emit   = plugin.getEmitter();
         
         var fullOutline         = [];
         var filteredOutline     = [];
@@ -46,16 +53,11 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            // Register this panel on the left-side panels
-            panels.register({
-                index        : 50,
-                width        : 250,
-                caption      : "Outline",
-                command      : "outline",
-                hint         : "search for a definition and jump to it",
-                bindKey      : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
-                panel        : plugin,
-                exec         : function(){
+            plugin.setCommand({
+                name    : "outline",
+                hint    : "search for a definition and jump to it",
+                bindKey : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
+                exec    : function(){
                     if (isActive){
                         if (focussed)
                             panels.deactivate("outline");
@@ -65,25 +67,7 @@ define(function(require, exports, module) {
                     else {
                         panels.activate("outline");
                     }
-                },
-                elementName  : "winOutline",
-                minWidth     : 130,
-                where        : "right",
-                draw         : draw
-            });
-            
-            panels.on("showpanelOutline", function(e){
-                isActive = true;
-                
-                textbox.focus();
-                textbox.select();
-                tree.resize();
-                
-                updateOutline();
-            });
-            panels.on("hidepanelOutline", function(e){
-                // tree.clearSelection();
-                isActive = false;
+                }
             });
             
             isActive = panels.isActive("outline");
@@ -174,12 +158,11 @@ define(function(require, exports, module) {
             
                 ignoreSelectOnce = true;
                 if (selected)
-                    tdOutline.selectNode(selected);
+                    tree.selection.selectNode(selected);
                 else
-                    tree.select(0);
-                
-                // tree.$scrollIntoView();
-                tree.renderer.scrollCaretIntoView(tdOutline.$selectedNode, 0.5);
+                    tree.selection.selectNode(0);
+
+                tree.renderer.scrollCaretIntoView(null, 0.5);
             }
         }
         
@@ -204,7 +187,7 @@ define(function(require, exports, module) {
             drawn = true;
             
             // Create UI elements
-            ui.insertMarkup(options.panel, markup, plugin);
+            ui.insertMarkup(options.aml, markup, plugin);
             
             // Import CSS
             ui.insertCss(require("text!./outline.css"), staticPrefix, plugin);
@@ -280,7 +263,7 @@ define(function(require, exports, module) {
             //      I just hacked it into the dataprovider for now, but that is very wrong.
             // tree.getSelection().on("changeSelection", function(){ previewFile(); });
             // tree.on("select", function(){ previewFile(); });
-            tdOutline.on("select", function(){ 
+            tree.on("changeSelection", function(){ 
                 onSelect();
             });
             
@@ -314,8 +297,6 @@ define(function(require, exports, module) {
                     dirty = false;
                 }
             }, 25);
-        
-            emit("draw");
         }
         
         /***** Methods *****/
@@ -390,7 +371,7 @@ define(function(require, exports, module) {
     
         function onSelect(node) {
             if (!node) 
-                node = tdOutline.$selectedNode
+                node = tree.selection.getCursor()
                 
             if (ignoreSelectOnce) {
                 ignoreSelectOnce = false;
@@ -431,6 +412,22 @@ define(function(require, exports, module) {
         plugin.on("load", function(){
             load();
         });
+        plugin.on("draw", function(e){
+            draw(e);
+        });
+        plugin.on("show", function(e){
+            isActive = true;
+            
+            textbox.focus();
+            textbox.select();
+            tree.resize();
+            
+            updateOutline();
+        });
+        plugin.on("hide", function(e){
+            // tree.clearSelection();
+            isActive = false;
+        });
         plugin.on("enable", function(){
             
         });
@@ -447,7 +444,24 @@ define(function(require, exports, module) {
         /***** Register and define API *****/
         
         /**
+         * Outline panel. Allows a user to navigate to a file from a structured
+         * listing of all it's members and events.
+         * @singleton
+         * @extends Panel
          **/
+        /**
+         * @command outline
+         */
+        /**
+         * Fires when the outline panel shows
+         * @event showPanelOutline
+         * @member panels
+         */
+        /**
+         * Fires when the outline panel hides
+         * @event hidePanelOutline
+         * @member panels
+         */
         plugin.freezePublicAPI({
             
         });

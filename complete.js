@@ -26,7 +26,7 @@ define(function(require, exports, module) {
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("../c9.ide.language.generic/complete_util");
+        var completeUtil   = require("../c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
         
@@ -48,7 +48,7 @@ define(function(require, exports, module) {
         var idRegexes         = {};
         var completionRegexes = {}; 
       
-        var DEFAULT_ID_REGEX = /[a-zA-Z_0-9\$\/]/;
+        var DEFAULT_ID_REGEX = completeUtil.DEFAULT_ID_REGEX;
         
         var SHOW_DOC_DELAY = 1500;
         var SHOW_DOC_DELAY_MOUSE_OVER = 100;
@@ -149,7 +149,7 @@ define(function(require, exports, module) {
             drawn = true;
         
             // Import the CSS for the completion box
-            // ui.insertCss(require("text!./complete.css"), plugin);
+            ui.insertCss(require("text!./complete.css"), plugin);
             
             txtCompleterDoc = document.createElement("div")
             txtCompleterDoc.className = "code_complete_doc_text";

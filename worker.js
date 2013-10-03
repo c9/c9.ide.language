@@ -19,7 +19,7 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 // TODO: support linereport again (see below)
 // var linereport = require("ext/linereport/linereport_base");
 var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
-var completeUtil = require("plugins/c9.ide.language.generic/complete_util");
+var completeUtil = require("plugins/c9.ide.language/complete_util");
 
 require("plugins/c9.ide.browsersupport/browsersupport");
 
@@ -597,6 +597,9 @@ function asyncParForEach(array, fn, callback) {
         return result || completeUtil.DEFAULT_ID_REGEX;
     };
 
+    /**
+     * Process a cursor move. We do way too much here.
+     */
     this.onCursorMove = function(event) {
         var pos = event.data;
         var part = this.getPart(pos);
@@ -605,6 +608,34 @@ function asyncParForEach(array, fn, callback) {
         var hintMessage = ""; // this.checkForMarker(pos) || "";
 
         var aggregateActions = {markers: [], hint: null, displayPos: null, enableRefactorings: []};
+                    
+        function processResponse(response) {
+            if (response.markers && response.markers.length > 0) {
+                aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
+                    var start = SyntaxDetector.regionToPos(part.region, {row: m.pos.sl, column: m.pos.sc});
+                    var end = SyntaxDetector.regionToPos(part.region, {row: m.pos.el, column: m.pos.ec});
+                    m.pos = {
+                        sl: start.row,
+                        sc: start.column,
+                        el: end.row,
+                        ec: end.column
+                    };
+                    return m;
+                }));
+            }
+            if (response.enableRefactorings && response.enableRefactorings.length > 0) {
+                aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
+            }
+            if (response.hint) {
+                if (aggregateActions.hint)
+                    aggregateActions.hint += "\n" + response.hint;
+                else
+                    aggregateActions.hint = response.hint;
+            }
+            if (response.displayPos) {
+                aggregateActions.displayPos = response.displayPos;
+            }
+        }
         
         function cursorMoved(ast, currentNode, currentPos) {
             asyncForEach(_self.handlers, function(handler, next) {
@@ -614,39 +645,19 @@ function asyncParForEach(array, fn, callback) {
                     return;
                 }
                 if (handler.handlesLanguage(part.language) && part.value.length < handler.getMaxFileSizeSupported()) {
-                    handler.onCursorMovedNode(_self.doc, ast, currentPos, currentNode, function(response) {
-                        if (!response)
-                            return next();
-                        if (response.markers && response.markers.length > 0) {
-                            aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
-                                var start = SyntaxDetector.regionToPos(part.region, {row: m.pos.sl, column: m.pos.sc});
-                                var end = SyntaxDetector.regionToPos(part.region, {row: m.pos.el, column: m.pos.ec});
-                                m.pos = {
-                                    sl: start.row,
-                                    sc: start.column,
-                                    el: end.row,
-                                    ec: end.column
-                                };
-                                return m;
-                            }));
-                        }
-                        if (response.enableRefactorings && response.enableRefactorings.length > 0) {
-                            aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
-                        }
-                        if (response.hint) {
-                            if (aggregateActions.hint)
-                                aggregateActions.hint += "\n" + response.hint;
-                            else
-                                aggregateActions.hint = response.hint;
-                        }
-                        if (response.displayPos) {
-                            aggregateActions.displayPos = response.displayPos;
-                        }
-                        next();
-                    });
+                    // We send this to several handlers that each handle part of the language functionality,
+                    // triggered by the cursor move event
+                    asyncForEach(["tooltip", "onRefactoringTest", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                        handler[method](_self.doc, ast, currentPos, currentNode, function(response) {
+                            if (response)
+                                processResponse(response);
+                            nextMethod();
+                        });
+                    }, next);
                 }
-                else
+                else {
                     next();
+                }
             }, function() {
                 if (aggregateActions.hint && !hintMessage) {
                     hintMessage = aggregateActions.hint;

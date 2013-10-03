@@ -110,9 +110,10 @@
     text-shadow: 0 0 0.01em;
 }
 .code_complete_text .ace_line.selected .main u {
-    color: white !important;
+    color: rgb(184, 206, 115) !important;
     text-decoration: underline;
-    /*font-weight : normal;*/
+    /*font-weight: bold;*/
+    text-shadow: 0px 1px rgba(0,0,0,0.3);
 }
 .code_complete_text .ace_line .meta {
     opacity: .5;
