@@ -31,7 +31,7 @@ define(function(require, exports, module) {
         var cssText = "." + iconClass[icon] + "{"
             + "background-image:url('" + path + icon + ".png')"
             + "}";
-        console.log(cssText)    
+        //console.log(cssText)    
         addStylesheetRule(cssText);
         return iconClass[icon];
     }
@@ -58,7 +58,7 @@ define(function(require, exports, module) {
             : this.prefix;
         
         var trim = match.meta ? " maintrim" : "";
-        if (!this.isInferAvailable || match.icon) {
+        if (!this.isNonGenericAvailable || !match.isGeneric) {
             html += '<span class="main' + trim + '"><u>' 
                 + prefix + "</u>" + match.name.substring(prefix.length) 
                 + '</span>';

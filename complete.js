@@ -358,9 +358,6 @@ define(function(require, exports, module) {
         }
             
         function populateCompletionBox(ace, matches) {
-            // Populate the completion box
-            popup.setData(matches);
-
             // Get context info
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
@@ -368,14 +365,25 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
             // Set the highlight metadata
-            popup.ace              = ace;
-            popup.matches          = matches;
-            popup.prefix           = prefix;
-            popup.isInferAvailable = language.isInferAvailable();
-            popup.calcPrefix       = function(regex){
+            popup.ace = ace;
+            popup.matches = matches;
+            popup.prefix = prefix;
+            popup.isNonGenericAvailable = false;
+            for (var i = 0; i < matches.length; i++) {
+                if (!matches[i].isGeneric) {
+                    popup.isNonGenericAvailable = true;
+                    break;
+                }
+            }
+            if (popup.isNonGenericAvailable) {
+                // Experiment: disable generic matches when possible
+                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
+            popup.calcPrefix = function(regex){
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             
+            popup.setData(matches);
             popup.setRow(0);
         }
         

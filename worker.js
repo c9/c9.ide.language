@@ -878,6 +878,7 @@ function asyncParForEach(array, fn, callback) {
         this.lastCurrentPos = null;
         this.cachedAsts = null;
         this.setValue(code);
+        this.scheduledUpdate = true;
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
         });
@@ -975,6 +976,7 @@ function asyncParForEach(array, fn, callback) {
     this.complete = function(event) {
         var _self = this;
         var data = event.data;
+        var start = new Date().getTime();
         
         var line = _self.doc.getLine(data.pos.row);
         if (!completeUtil.canCompleteForChangedLine(data.line, line, data.pos, data.pos, this.getIdentifierRegex())) {
@@ -1037,6 +1039,7 @@ function asyncParForEach(array, fn, callback) {
                         else
                             return 0;
                     });
+                    console.log("completed", new Date().getTime() - start);
                     _self.sender.emit("complete", {
                         pos: pos,
                         matches: matches,

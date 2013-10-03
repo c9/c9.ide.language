@@ -146,7 +146,7 @@ module.exports = {
     },
 
     /**
-     * Finds a tree node at a certain row and col,
+     * Finds a tree node at a certain row and column,
      * e.g. using the findNode(pos) function of treehugger.
      * 
      * Should be overridden by inheritors that implement parsing.
