@@ -979,7 +979,7 @@ function asyncParForEach(array, fn, callback) {
         var start = new Date().getTime();
         
         var line = _self.doc.getLine(data.pos.row);
-        if (!completeUtil.canCompleteForChangedLine(data.line, line, data.pos, data.pos, this.getIdentifierRegex())) {
+        if (!completeUtil.canCompleteForChangedLine(line, data.line, data.pos, data.pos, this.getIdentifierRegex())) {
             if (!line) { // sanity check
                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
             }
