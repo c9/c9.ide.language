@@ -161,9 +161,9 @@ define(function(require, exports, module) {
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
-            popup.on("select", function(){
-                popup.onLastLine = false;
-            });
+            function clearLastLine(){ popup.onLastLine = false; }
+            popup.on("select", clearLastLine);
+            popup.on("change", clearLastLine);
             
             // Ace Tree Interaction
             popup.on("mouseover", function() {
