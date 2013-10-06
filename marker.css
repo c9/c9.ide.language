@@ -27,12 +27,12 @@
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: solid 1px #888888;
+    border: solid 1px #888;
     z-index: 2000;
 }
 
 .ace_dark .language_highlight_occurrence_main {
-    border: solid 1px #ccc;
+    border: solid 1px #888;
 }
 
 .language_highlight_occurrence_other {
@@ -40,12 +40,12 @@
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: solid 1px #88888;
+    border: solid 1px #888;
     z-index: 2000;
 }
 
 .ace_dark .language_highlight_occurrence_other {
-    border: solid 1px #ccc;
+    border: solid 1px #888;
 }
 
 .language_rename_main {
