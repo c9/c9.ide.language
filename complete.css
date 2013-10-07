@@ -2,14 +2,27 @@
     display: inline-block;
     position: absolute;
     border: 1px solid gray;
-    background-color: #ffffd5;
-    color: black;
+    background-color: #636363;
+    color: #C1C1C1;
+    border-color: rgb(111, 111, 111);
     padding: 4px;
     -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.4);
     box-shadow: 0 1px 1px rgba(0,0,0,.4);
     z-index: 300;
+    font-family: Arial;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.21);
 }
 
+.language_activeparam {
+    color: #FFFFF;
+    font-weight: bold;
+    font-style: normal;
+}
+
+.language_paramhelp {
+    color: #FFFFF;
+    font-style: italic;
+}
 
 .code_complete_bar {
     overflow: visible;
