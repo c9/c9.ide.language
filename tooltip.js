@@ -21,6 +21,7 @@ define(function(require, exports, module) {
         
         var editor;
         var isVisible;
+        var labelHeight;
         
         var tooltipEl = dom.createElement("div");
         tooltipEl.className = "language_tooltip dark";
@@ -74,14 +75,17 @@ define(function(require, exports, module) {
                 var position = editor.renderer.textToScreenCoordinates(row, column);
                 var cursorConfig = editor.renderer.$cursorLayer.config;
                 var labelWidth = dom.getInnerWidth(tooltipEl);
-                var labelHeight = dom.getInnerHeight(tooltipEl);
+                labelHeight = dom.getInnerHeight(tooltipEl);
                 position.pageX -= offset.left;
                 position.pageY -= offset.top;
+                /*
                 var onTop = true;
                 if(onTop && position.pageY < labelHeight)
                     onTop = false;
                 else if(!onTop && position.pageY > labelHeight - cursorConfig.lineHeight - 20)
                     onTop = true;
+                */
+                var onTop = false;
                 var shiftLeft = Math.round(labelWidth / 2) - 3;
                 tooltipEl.style.left = Math.max(position.pageX - shiftLeft, 0) + "px";
                 if(onTop)
@@ -89,6 +93,10 @@ define(function(require, exports, module) {
                 else
                     tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
             //});
+        }
+        
+        function getHeight() {
+            return isVisible && labelHeight || 0;
         }
             
         function hide() {
@@ -104,7 +112,8 @@ define(function(require, exports, module) {
         register(null, {
             "language.tooltip": {
                 hide: hide,
-                show: show
+                show: show,
+                getHeight: getHeight
             }
         });
     }

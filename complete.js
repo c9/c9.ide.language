@@ -7,7 +7,8 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "ui", "tabManager", "ace", "language",
-        "menus", "commands", "c9", "tabManager", "browsersupport"
+        "menus", "commands", "c9", "tabManager", "browsersupport",
+        "language.tooltip"
     ];
     main.provides = ["language.complete"];
     return main;
@@ -22,6 +23,7 @@ define(function(require, exports, module) {
         var commands   = imports.commands;
         var language   = imports.language;
         var browsers   = imports.browsersupport;
+        var tooltip    = imports["language.tooltip"];
         
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
@@ -326,10 +328,12 @@ define(function(require, exports, module) {
             pos.left -= popup.getTextLeftOffset();
             var rect = ace.container.getBoundingClientRect();
             pos.top += rect.top - renderer.layerConfig.offset;
+            if (tooltip.getHeight())
+                pos.top += tooltip.getHeight() - 3;
             pos.left += rect.left;
             pos.left += renderer.$gutterLayer.gutterWidth;
 
-            popup.show(pos, lineHeight);            
+            popup.show(pos, lineHeight, tooltip.getHeight());            
             
             ignoreMouseOnce = !isPopupVisible();
         }
