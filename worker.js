@@ -1039,7 +1039,7 @@ function asyncParForEach(array, fn, callback) {
                         else
                             return 0;
                     });
-                    console.log("completed", new Date().getTime() - start);
+                    //console.log("completed", new Date().getTime() - start);
                     _self.sender.emit("complete", {
                         pos: pos,
                         matches: matches,
