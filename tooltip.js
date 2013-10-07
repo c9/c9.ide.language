@@ -13,10 +13,11 @@ define(function(require, exports, module) {
     
     function main(options, imports, register) {
         var language = imports.language;
-        var tabs     = imports.tabManager;
-        var dom      = require("ace/lib/dom");
-        var Plugin   = imports.Plugin;
-        var ui       = imports.ui;
+        var tabs = imports.tabManager;
+        var dom = require("ace/lib/dom");
+        var Plugin = imports.Plugin;
+        var ui = imports.ui;
+        var plugin = new Plugin("Ajax.org", main.consumes);
         
         var editor;
         var isVisible;
@@ -47,7 +48,16 @@ define(function(require, exports, module) {
                 hide();
         }
         
+        var drawn = false;
+        function draw() {
+            if (drawn) return true;
+            drawn = true;
+            
+            ui.insertCss(require("text!./complete.css"), plugin);
+        }
+        
         function show(row, column, html, _editor) {
+            draw();
             editor = _editor;
             
             if (!isVisible) {
