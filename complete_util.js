@@ -100,7 +100,7 @@ function precededByIdentifier(line, column, postfix, ace) {
     var id = retrievePrecedingIdentifier(line, column);
     if (postfix) id += postfix;
     return id !== "" && !(id[0] >= '0' && id[0] <= '9') 
-        && (inCompletableCodeContext(line, column, id) 
+        && (inCompletableCodeContext(line, column, id, ace) 
         || isRequireJSCall(line, column, id, ace));
 }
 
@@ -118,7 +118,7 @@ function isRequireJSCall(line, column, identifier, ace) {
 /**
  * Ensure that code completion is not triggered.
  */
-function inCompletableCodeContext(line, column, id) {
+function inCompletableCodeContext(line, column, id, ace) {
     var inMode = null;
     if (line.match(/^\s*\*.+/))
         return false;
@@ -145,7 +145,7 @@ function inCompletableCodeContext(line, column, id) {
             inMode = null;
             i++;
         }
-        else if(line[i] === "/" && !inMode)
+        else if(line[i] === "/" && ace.getSession().syntax === "javascript" && !inMode)
             inMode = "/";
         else if(line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
             inMode = null;
