@@ -58,10 +58,19 @@
     box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.8), 1px 1px 0 #000, -1px -1px 0 #000;
 }
 
+.language_activeparamindent {
+    color: rgba(0, 0, 0, 0);
+    text-shadow: none;
+}
+
 .language_activeparam {
     color: #FFFFF;
     font-weight: bold;
     font-style: normal;
+}
+
+.language_activeparamhelp {
+    margin-left: 5px;
 }
 
 .language_paramhelp {
