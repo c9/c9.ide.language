@@ -14,13 +14,8 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             hosted      : true,
             local       : false
         },
-        {
-            packagePath: "plugins/c9.vfs.client/vfs_client",
-            smithIo     : {
-                "path": "/smith.io/server"
-            }
-        },
-        "plugins/c9.vfs.client/endpoint.standalone",
+        "plugins/c9.vfs.client/vfs_client",
+        "plugins/c9.vfs.client/endpoint",
         "plugins/c9.ide.auth/auth",
         "plugins/c9.core/ext",
         "plugins/c9.core/util",
