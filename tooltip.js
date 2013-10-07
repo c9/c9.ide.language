@@ -23,7 +23,7 @@ define(function(require, exports, module) {
         var isVisible;
         
         var tooltipEl = dom.createElement("div");
-        tooltipEl.className = "language_tooltip";
+        tooltipEl.className = "language_tooltip dark";
         
         var assert = require("plugins/c9.util/assert");
 
