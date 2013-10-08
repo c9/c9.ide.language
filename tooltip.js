@@ -86,8 +86,7 @@ define(function(require, exports, module) {
                     onTop = true;
                 */
                 var onTop = false;
-                var shiftLeft = Math.round(labelWidth / 2) - 3;
-                tooltipEl.style.left = Math.max(position.pageX - shiftLeft, 0) + "px";
+                tooltipEl.style.left = (position.pageX - 22) + "px";
                 if(onTop)
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
                 else
