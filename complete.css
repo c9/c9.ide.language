@@ -6,6 +6,7 @@
     color: black;
     padding: 4px;
     -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.4);
+    -webkit-font-smoothing: antialiased;
     box-shadow: 0 1px 1px rgba(0,0,0,.4);
     z-index: 300;
     font-family: Arial;
@@ -64,18 +65,19 @@
 }
 
 .language_activeparam {
-    color: #FFFFF;
+    color: #FFFFFF;
     font-weight: bold;
     font-style: normal;
 }
 
 .language_activeparamhelp {
     margin-left: 5px;
+    font-style: italic;
 }
 
 .language_paramhelp {
-    color: #FFFFF;
-    font-style: italic;
+    color: #FFFFFF;
+    margin-top: 2px;
 }
 
 .code_complete_doc_body {
