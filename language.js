@@ -179,7 +179,7 @@ define(function(require, exports, module) {
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (e.tab.editorType === "ace") {
+                if (["ace", "immediate"].indexOf(e.tab.editor.type) === -1) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
@@ -188,7 +188,7 @@ define(function(require, exports, module) {
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (e.tab.editor.type !== "ace")
+                if (["ace", "immediate"].indexOf(e.tab.editor.type) === -1)
                     return;
                 
                 notifyWorker("switchFile", e);
@@ -273,7 +273,7 @@ define(function(require, exports, module) {
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
                 tabs.getPanes().forEach(function(pane){
                     pane.getTabs().forEach(function(tab){
-                        if (tab.editorType === "ace") {
+                        if (["ace", "immediate"].indexOf(tab.editorType) === -1) {
                             setTimeout(function() {
                                 if (tab.value)
                                     return notifyWorker("documentOpen", { tab: tab });
