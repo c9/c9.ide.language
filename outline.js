@@ -361,7 +361,7 @@ define(function(require, exports, module) {
                 tree.select(0);
             else if (selected) {
                 ignoreSelectOnce = true;
-                tdOutline.selectNode(selected);
+                tdOutline.selection.selectNode(selected);
             }
             
             tree.resize();
