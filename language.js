@@ -104,8 +104,8 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
-            var tab    = e.tab;
-            var path    = tab && tab.path;
+            var tab     = e.tab;
+            var path    = tab && (tab.path || tab.name);
             var session = tab && tab.editor.ace && tab.editor.ace.session;
             if (!session)
                 return;
@@ -125,6 +125,9 @@ define(function(require, exports, module) {
             }
                 
             var syntax = session.syntax;
+            if (session.$modeId)
+                syntax = /[^\/]*$/.exec(session.$modeId)[0] || syntax;
+            session.syntax = syntax;
             
             var value = e.value || session.doc.$lines || [];
 
@@ -179,7 +182,7 @@ define(function(require, exports, module) {
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (["ace", "immediate"].indexOf(e.tab.editor.type) === -1) {
+                if (supportsEditor(e.tab.editor)) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
@@ -188,10 +191,8 @@ define(function(require, exports, module) {
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (["ace", "immediate"].indexOf(e.tab.editor.type) === -1)
-                    return;
-                
-                notifyWorker("switchFile", e);
+                if (supportsEditor(e.tab.editor))               
+                    notifyWorker("switchFile", e);
             });
             
             emit("initWorker", {worker: worker}, true);
@@ -349,6 +350,10 @@ define(function(require, exports, module) {
         
         /***** Methods *****/
         
+        function supportsEditor(editor) {
+            return ["ace", "immediate"].indexOf(editor.type) !== -1;
+        }
+        
         function isWorkerEnabled() {
             return !useUIWorker;
         }
@@ -410,6 +415,7 @@ define(function(require, exports, module) {
          * @singleton
          **/
         plugin.freezePublicAPI({
+            supportsEditor : supportsEditor,
             /**
              * Returns true if the "continuous completion" IDE setting is enabled
              * @return {Boolean}
