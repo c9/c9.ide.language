@@ -47,6 +47,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
         },
         "plugins/c9.ide.language/keyhandler",
         "plugins/c9.ide.language/complete",
+        "plugins/c9.ide.language/tooltip",
         "plugins/c9.ide.language/marker",
         "plugins/c9.ide.language.generic/generic",
         "plugins/c9.ide.language.javascript/javascript",
@@ -57,6 +58,10 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
         "plugins/c9.ide.auth/auth",
         "plugins/c9.fs/fs",
         "plugins/c9.ide.browsersupport/browsersupport",
+        
+        // todo move to mock?
+        "plugins/c9.ide.dialog/dialog",
+        "plugins/c9.ide.dialog.common/alert",
         
         // Mock plugins
         {
@@ -75,7 +80,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
     ], function (err, config) {
         if (err) throw err;
         var app = architect.createApp(config);
-        app.on("service", function(name, plugin){ plugin.name = name; });
+        app.on("service", function(name, plugin){ if (!plugin.name) plugin.name = name; });
     });
     
     function main(options, imports, register) {
