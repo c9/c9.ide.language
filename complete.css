@@ -17,6 +17,7 @@
     width: 270px;
     line-height: 20px;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 .dark .code_complete_text {/*TODO this doesn't work*/
     border-width: 0 2px 2px 2px;
