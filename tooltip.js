@@ -78,7 +78,7 @@ define(function(require, exports, module) {
                 labelHeight = dom.getInnerHeight(tooltipEl);
                 position.pageX -= offset.left;
                 position.pageY -= offset.top;
-                /*
+                /* Always show on bottom, since we put the completer below that
                 var onTop = true;
                 if(onTop && position.pageY < labelHeight)
                     onTop = false;
@@ -87,7 +87,7 @@ define(function(require, exports, module) {
                 */
                 var onTop = false;
                 tooltipEl.style.left = (position.pageX - 22) + "px";
-                if(onTop)
+                if (onTop)
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
                 else
                     tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
@@ -108,6 +108,9 @@ define(function(require, exports, module) {
             }
         }
         
+        /**
+         * @internal
+         */
         register(null, {
             "language.tooltip": {
                 hide: hide,

@@ -436,7 +436,7 @@ define(function(require, exports, module) {
             
             /**
              * Returns whether type inference for JavaScript is available.
-             * Used internally.
+             * @ignore
              */
             isInferAvailable : isInferAvailable,
             
@@ -460,16 +460,3 @@ define(function(require, exports, module) {
         });
     }
 });
- 
-    
-/* Move to appropriate plugins
-        marker.addMarkers({data:[]}, this.editor);
-    },
-
-    destroy: function () {
-        // Language features
-        marker.destroy();
-        complete.destroy();
-        refactor.destroy();
-        this.$destroy();
-*/

@@ -665,32 +665,41 @@ define(function(require, exports, module) {
         /***** Register and define API *****/
         
         /**
-         * Draws the file tree
-         * @event afterfilesave Fires after a file is saved
-         * @param {Object} e
-         *     node     {XMLNode} description
-         *     oldpath  {String} description
+         * Manages the code completer popup.
          **/
         plugin.freezePublicAPI({
             /**
+             * Invoke the completer after a small delay,
+             * if there is a matching language handler that
+             * agrees to complete at the current cursor position.
+             *
+             * @param {Boolean} now   Show without delay
+             * @param {ace}     ace   The current tab's editor.ace object
              */
             deferredInvoke : deferredInvoke,
             
             /**
+             * @ignore
              */
             getContinousCompletionRegex: getContinousCompletionRegex,
             
             /**
+             * @ignore
              */
             getIdentifierRegex: getIdentifierRegex,
             
             /**
-             * 
+             * Close the completion popup.
              */
             closeCompletionBox : closeCompletionBox,
             
             /**
-             * 
+             * Determines whether a completion popup is currently visible.
+             */
+            isPopupVisible : isPopupVisible,
+            
+            /**
+             * @internal
              */
             setEnterCompletion : setEnterCompletion
         });
