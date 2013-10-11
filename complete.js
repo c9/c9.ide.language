@@ -139,7 +139,7 @@ define(function(require, exports, module) {
                     win: "Ctrl-Space|Alt-Space"
                 },
                 isAvailable : function(editor){
-                    return editor && editor.type == "ace"
+                    return editor && language.isEditorSupported(editor)
                 },
                 exec : invoke
             }, plugin);
@@ -163,9 +163,9 @@ define(function(require, exports, module) {
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
-            popup.on("select", function(){
-                popup.onLastLine = false;
-            });
+            function clearLastLine(){ popup.onLastLine = false; }
+            popup.on("select", clearLastLine);
+            popup.on("change", clearLastLine);
             
             // Ace Tree Interaction
             popup.on("mouseover", function() {
@@ -544,7 +544,8 @@ define(function(require, exports, module) {
         
         function invoke(forceBox) {
             var tab = tabs.focussedTab;
-            if (!tab || tab.editor.type != "ace") return;
+            if (!tab || !language.isEditorSupported(tab.editor))
+                return;
             
             var ace = lastAce = tab.editor.ace;
             
