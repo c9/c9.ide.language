@@ -22,6 +22,8 @@ define(function(require, exports, module) {
         var editor;
         var isVisible;
         var labelHeight;
+        var completer;
+        var adjustCompleterTop;
         
         var tooltipEl = dom.createElement("div");
         tooltipEl.className = "language_tooltip dark";
@@ -91,6 +93,7 @@ define(function(require, exports, module) {
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
                 else
                     tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
+                adjustCompleterTop && adjustCompleterTop(labelHeight);
             //});
         }
         
@@ -115,7 +118,10 @@ define(function(require, exports, module) {
             "language.tooltip": {
                 hide: hide,
                 show: show,
-                getHeight: getHeight
+                getHeight: getHeight,
+                set adjustCompleterTop(f) {
+                    adjustCompleterTop = f;
+                }
             }
         });
     }

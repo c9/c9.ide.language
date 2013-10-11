@@ -40,6 +40,7 @@ define(function(require, exports, module) {
         var isInvokeScheduled = false;
         var ignoreMouseOnce = false;
         var enterCompletion = true;
+        var tooltipHeightAdjust = 0;
         
         var oldCommandKey, oldOnTextInput, isDocShown;
         var txtCompleterDoc; // ui elements
@@ -332,14 +333,26 @@ define(function(require, exports, module) {
             pos.left -= popup.getTextLeftOffset();
             var rect = ace.container.getBoundingClientRect();
             pos.top += rect.top - renderer.layerConfig.offset;
-            if (tooltip.getHeight())
-                pos.top += tooltip.getHeight() - 3;
+            tooltipHeightAdjust = 0;
             pos.left += rect.left;
             pos.left += renderer.$gutterLayer.gutterWidth;
 
-            popup.show(pos, lineHeight, tooltip.getHeight());            
+            popup.show(pos, lineHeight, true);
+            adjustToToolTipHeight(tooltip.getHeight());         
             
             ignoreMouseOnce = !isPopupVisible();
+        }
+        
+        function adjustToToolTipHeight(height) {
+            if (!isPopupVisible())
+                return;
+            if (height)
+                height -= 3;
+            var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
+            top += height;
+            popup.container.style.top = top + "px";
+            tooltipHeightAdjust = height;
+            tooltip.adjustCompleterTop = adjustToToolTipHeight;
         }
     
         function closeCompletionBox(event) {
