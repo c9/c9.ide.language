@@ -182,7 +182,7 @@ define(function(require, exports, module) {
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (supportsEditor(e.tab.editor)) {
+                if (isEditorSupported(e.tab.editor)) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
@@ -191,7 +191,7 @@ define(function(require, exports, module) {
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (supportsEditor(e.tab.editor))               
+                if (isEditorSupported(e.tab.editor))               
                     notifyWorker("switchFile", e);
             });
             
@@ -274,7 +274,7 @@ define(function(require, exports, module) {
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
                 tabs.getPanes().forEach(function(pane){
                     pane.getTabs().forEach(function(tab){
-                        if (["ace", "immediate"].indexOf(tab.editorType) === -1) {
+                        if (isEditorSupported(tab)) {
                             setTimeout(function() {
                                 if (tab.value)
                                     return notifyWorker("documentOpen", { tab: tab });
@@ -350,7 +350,7 @@ define(function(require, exports, module) {
         
         /***** Methods *****/
         
-        function supportsEditor(editor) {
+        function isEditorSupported(editor) {
             return ["ace", "immediate"].indexOf(editor.type) !== -1;
         }
         
@@ -415,15 +415,21 @@ define(function(require, exports, module) {
          * @singleton
          **/
         plugin.freezePublicAPI({
-            supportsEditor : supportsEditor,
+            /**
+             * @ignore
+             */
+            isEditorSupported : isEditorSupported,
+
             /**
              * Returns true if the "continuous completion" IDE setting is enabled
+             * @internal
              * @return {Boolean}
              */
             isContinuousCompletionEnabled : isContinuousCompletionEnabled,
             
             /**
              * Sets whether the "continuous completion" IDE setting is enabled
+             * @internal
              * @param {Boolean} value
              */
             setContinuousCompletionEnabled : setContinuousCompletionEnabled,
