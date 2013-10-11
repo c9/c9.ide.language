@@ -93,7 +93,7 @@ define(function(require, exports, module) {
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
                 isDocShown = false;
-                hideDocPopup();;
+                hideDocPopup();
             }
         });
         
@@ -573,7 +573,13 @@ define(function(require, exports, module) {
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
-            worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line, forceBox: true }});
+            worker.emit("complete", { data: {
+                pos: pos,
+                staticPrefix: c9.staticPrefix,
+                line: line,
+                forceBox: true,
+                immediateEditor: tab.name
+            }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }

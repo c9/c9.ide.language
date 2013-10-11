@@ -75,6 +75,18 @@ module.exports = {
     handlesLanguage: function(language) {
         throw new Error("base_handler.handlesLanguage() is not overridden");
     },
+
+    /**
+     * Returns whether this language handler should be used only
+     * in the immediate window.
+     * 
+     * May be overridden by inheritors; returns false by default.
+     * 
+     * @return {Boolean}
+     */
+    handlesImmediate: function() {
+        return false;
+    },
     
     /**
      * Returns the maximum file size this language handler supports.
