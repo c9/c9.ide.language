@@ -296,10 +296,12 @@ function asyncParForEach(array, fn, callback) {
         var handler;
         try {
             handler = require(path);
+            if (!handler)
+                throw new Error("Unable to load required module: " + path);
         } catch (e) {
             if (isInWebWorker) {
                 console.error("Could not load language handler " + path + ": " + e);
-                _self.sender.emit("registered", { path: path, err: e });
+                _self.sender.emit("registered", { path: path, err: e.message });
                 callback && callback(e);
                 throw e;
             }
