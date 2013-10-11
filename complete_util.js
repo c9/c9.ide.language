@@ -104,14 +104,15 @@ function precededByIdentifier(line, column, postfix, ace) {
         || isRequireJSCall(line, column, id, ace));
 }
 
-function isRequireJSCall(line, column, identifier, ace) {
+function isRequireJSCall(line, column, identifier, ace, noQuote) {
     if (ace.getSession().syntax !== "javascript")
         return false;
-    var id = identifier || retrievePrecedingIdentifier(line, column, REQUIRE_ID_REGEX);
-    var LENGTH = 'require("'.length;
+    var id = identifier == null ? retrievePrecedingIdentifier(line, column, REQUIRE_ID_REGEX) : identifier;
+    var LENGTH = 'require("'.length - (noQuote ? 1 : 0);
     var start = column - id.length - LENGTH;
+    var substr = line.substr(start, LENGTH) + (noQuote ? '"' : '');
 
-    return start >= 0 && line.substr(start, LENGTH).match(/require\(["']/)
+    return start >= 0 && substr.match(/require\(["']/)
         || line.substr(start + 1, LENGTH).match(/require\(["']/);
 }
 

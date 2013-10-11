@@ -19,7 +19,7 @@ define(function(require, exports, module) {
         var marker        = imports["language.marker"];
         var complete      = imports["language.complete"];
         var tooltip       = imports["language.tooltip"];
-        var complete_util = require("../c9.ide.language/complete_util");
+        var complete_util = require("./complete_util");
         var TokenIterator = require("ace/token_iterator").TokenIterator;
         var ace;
         
@@ -129,6 +129,12 @@ define(function(require, exports, module) {
                 if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(ace, pos))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
+            }
+            else if (ch === '"' || ch === "'") {
+                var pos = ace.getCursorPosition();
+                var line = ace.getSession().getDocument().getLine(pos.row);
+                if (complete_util.isRequireJSCall(line, pos.column, "", ace, true))
+                    complete.deferredInvoke(true, ace);
             }
         }
         

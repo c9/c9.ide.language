@@ -229,7 +229,7 @@ define(function(require, exports, module) {
             if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
                 newText = "require(\"^^\")";
                 if (!isInvokeScheduled)
-                    setTimeout(deferredInvoke, 0);
+                    setTimeout(deferredInvoke.bind(null, false, ace), 0);
             }
             
             // Don't insert extra () in front of (
