@@ -294,12 +294,12 @@ define(function(require, exports, module) {
             ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
         }
         
-        function showCompletionBox(editor, m, prefix, line, column) {
+        function showCompletionBox(editor, m, prefix, line) {
             var ace = editor.ace;
             draw();
 
-            matches           = m;
-            docElement        = txtCompleterDoc;
+            matches = m;
+            docElement = txtCompleterDoc;
                        
            
             // Monkey patch
@@ -323,6 +323,10 @@ define(function(require, exports, module) {
             
             var base = ace.getCursorPosition();
             base.column -= prefix.length;
+            
+            // Offset to the left for completion in string, e.g. 'require("a")'
+            if (base.column > 0 && line.substr(base.column - 1, 1).match(/["'"]/))
+                base.column--;
             
             var pos = renderer.$cursorLayer.getPixelPosition(base, true);
             pos.left -= popup.getTextLeftOffset();
@@ -586,7 +590,7 @@ define(function(require, exports, module) {
             if (matches.length === 1 && identifier === matches[0].replaceText)
                 closeCompletionBox();
             else
-                showCompletionBox(editor, matches, identifier);
+                showCompletionBox(editor, matches, identifier, line);
             }
             else {
                 closeCompletionBox();
@@ -610,7 +614,7 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             var matches = filterMatches(eventMatches, line, pos);
             if (matches.length)
-                showCompletionBox({ace: ace}, matches, prefix);
+                showCompletionBox({ace: ace}, matches, prefix, line);
         }
         
         function filterMatches(matches, line, pos) {
