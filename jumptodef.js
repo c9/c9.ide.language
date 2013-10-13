@@ -156,7 +156,7 @@ define(function(require, exports, module) {
             }
     
             var _self = this;
-            var path = lastResult.path ? ide.davPrefix.replace(/[\/]+$/, "") + "/" + lastResult.path : tab.path;
+            var path = lastResult && lastResult.path || tab.path;
     
             /*
             editors.gotoDocument({
