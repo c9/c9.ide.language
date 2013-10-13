@@ -577,8 +577,7 @@ define(function(require, exports, module) {
                 pos: pos,
                 staticPrefix: c9.staticPrefix,
                 line: line,
-                forceBox: true,
-                immediateEditor: tab.name
+                forceBox: true
             }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
