@@ -921,7 +921,8 @@ function asyncParForEach(array, fn, callback) {
         handler.workspaceDir = this.$workspaceDir;
         handler.doc = this.doc;
         handler.sender = this.sender;
-        handler.$completeUpdate = this.completeUpdate.bind(this);
+        handler.completeUpdate = this.completeUpdate.bind(this);
+        handler.immediateWindow = this.immediateWindow;
         handler.$getIdentifierRegex = this.getIdentifierRegex.bind(this);
         if (handler.handlesLanguage(_self.$language) && handler.getIdentifierRegex())
             _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });

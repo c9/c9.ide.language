@@ -140,7 +140,7 @@ define(function(require, exports, module) {
                     win: "Ctrl-Space|Alt-Space"
                 },
                 isAvailable : function(editor){
-                    return editor && language.isEditorSupported(editor)
+                    return editor && language.isEditorSupported(editor);
                 },
                 exec : invoke
             }, plugin);
@@ -154,7 +154,7 @@ define(function(require, exports, module) {
             // Import the CSS for the completion box
             ui.insertCss(require("text!./complete.css"), plugin);
             
-            txtCompleterDoc = document.createElement("div")
+            txtCompleterDoc = document.createElement("div");
             txtCompleterDoc.className = "code_complete_doc_text";
             
             popup = new Popup(document.body);
