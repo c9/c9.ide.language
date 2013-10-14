@@ -111,8 +111,8 @@ module.exports = {
      * by default.
      * 
      * @return {Number} One of {@link #HANDLES_EDITOR},
-     *                  {@link #HANDLES_IMMEDIATE},
-     *                  or {@link #HANDLES_BOTH}.
+     *                  {@link #HANDLES_IMMEDIATE}, or
+     *                  {@link #HANDLES_BOTH}.
      */
     handlesImmediate: function() {
         return this.HANDLES_EDITOR;

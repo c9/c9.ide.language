@@ -1026,7 +1026,7 @@ function asyncParForEach(array, fn, callback) {
                         handler.workspaceDir = _self.$workspaceDir;
                         handler.path = _self.$path;
                         handler.complete(_self.doc, ast, data.pos, currentNode, function(completions) {
-                            if (completions)
+                            if (completions && completions.length)
                                 matches = matches.concat(completions);
                             next();
                         });
