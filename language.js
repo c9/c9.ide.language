@@ -39,7 +39,7 @@ define(function(require, exports, module) {
         
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit   = plugin.getEmitter();
-        emit.setMaxListeners(25); // avoid warnings during initialization
+        emit.setMaxListeners(50); // avoid warnings during initialization
         
         var worker;
         

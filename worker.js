@@ -16,8 +16,7 @@ var oop = require("ace/lib/oop");
 var Mirror = require("ace/worker/mirror").Mirror;
 var tree = require('treehugger/tree');
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
-// TODO: support linereport again (see below)
-// var linereport = require("ext/linereport/linereport_base");
+var linereport = require("plugins/c9.ide.language.generic.linereport/linereport_base");
 var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
 var base_handler = require("./base_handler");
@@ -133,7 +132,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     this.serverProxy = new ServerProxy(sender);
 
     Mirror.call(this, sender);
-    // TODO: linereport.sender = sender;
+    linereport.sender = sender;
     this.setTimeout(0);
 
     sender.on("hierarchy", function(event) {
@@ -965,9 +964,9 @@ function asyncParForEach(array, fn, callback) {
         var _self = this;
         var oldPath = this.$path;
         var code = this.$documentToString(document);
-        // TODO: linereport.workspaceDir =
+        linereport.workspaceDir =
             this.$workspaceDir = workspaceDir === "" ? "/" : workspaceDir;
-        // TODO: linereport.path =
+        linereport.path =
             this.$path = path;
         this.$language = language;
         this.immediateWindow = immediateWindow;
