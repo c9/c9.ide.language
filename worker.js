@@ -323,7 +323,7 @@ function asyncParForEach(array, fn, callback) {
     };
     
     this.isHandlerMatch = function(handler, part, ignoreSize) {
-        switch (handler.handlesImmediate()) {
+        switch (handler.handlesEditor()) {
             case base_handler.HANDLES_EDITOR: 
                 if (this.immediateWindow)
                     return;

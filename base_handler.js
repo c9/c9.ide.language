@@ -104,8 +104,8 @@ module.exports = {
     },
 
     /**
-     * Returns whether this language handler should be
-     * in the immediate window.
+     * Returns whether this language handler should be used in a
+     * particular kind of editor.
      * 
      * May be overridden by inheritors; returns {@link #HANDLES_EDITOR}
      * by default.
@@ -114,7 +114,7 @@ module.exports = {
      *                  {@link #HANDLES_IMMEDIATE}, or
      *                  {@link #HANDLES_BOTH}.
      */
-    handlesImmediate: function() {
+    handlesEditor: function() {
         return this.HANDLES_EDITOR;
     },
     
