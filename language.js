@@ -232,6 +232,7 @@ define(function(require, exports, module) {
             
             prefs.add({
                 "Language" : {
+                    position : 500,
                     "Auto Complete" : {
                         position : 100,
                         "Complete As You Type" : {
