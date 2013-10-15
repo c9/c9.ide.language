@@ -22,19 +22,25 @@ define(function(require, exports, module) {
 module.exports = {
     
     /**
+     * Indicates the handler handles editors, the immediate window,
+     * and anything else.
+     */
+    HANDLES_ANY: 0,
+    
+    /**
      * Indicates the handler only handles editors, not the immediate window.
      */
-    HANDLES_EDITOR: 0, 
+    HANDLES_EDITOR: 1,
     
     /**
      * Indicates the handler only handles the immediate window, not editors.
      */
-    HANDLES_IMMEDIATE: 1,
+    HANDLES_IMMEDIATE: 2,
     
     /**
-     * Indicates the handler handles both editor and the immediate window.
+     * Indicates the handler only handles the immediate window, not editors.
      */
-    HANDLES_BOTH: 2,
+    HANDLES_EDITOR_AND_IMMEDIATE: 3,
     
     /**
      * The language this worker is currently operating on.
@@ -112,7 +118,8 @@ module.exports = {
      * 
      * @return {Number} One of {@link #HANDLES_EDITOR},
      *                  {@link #HANDLES_IMMEDIATE}, or
-     *                  {@link #HANDLES_BOTH}.
+     *                  {@link #HANDLES_EDITOR_AND_IMMEDIATE}, or
+     *                  {@link #HANDLES_ANY}.
      */
     handlesEditor: function() {
         return this.HANDLES_EDITOR;
