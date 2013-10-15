@@ -22,6 +22,21 @@ define(function(require, exports, module) {
 module.exports = {
     
     /**
+     * Indicates the handler only handles editors, not the immediate window.
+     */
+    HANDLES_EDITOR: 0, 
+    
+    /**
+     * Indicates the handler only handles the immediate window, not editors.
+     */
+    HANDLES_IMMEDIATE: 1,
+    
+    /**
+     * Indicates the handler handles both editor and the immediate window.
+     */
+    HANDLES_BOTH: 2,
+    
+    /**
      * The language this worker is currently operating on.
      * @type {String}
      */
@@ -60,6 +75,18 @@ module.exports = {
     isFeatureEnabled: function(name) {
         return !disabledFeatures[name];
     },
+    
+    /**
+     * Utility function, used to determine the identifier regex for the 
+     * current language, by invoking {@link #getIdentifierRegex} on its handlers.
+     * 
+     * Should not be overridden by inheritors.
+     * 
+     * @return {RegExp}
+     */
+    $getIdentifierRegex: function() {
+        return null;
+    },
 
     // OVERRIDABLE ACCESORS
 
@@ -74,6 +101,21 @@ module.exports = {
      */
     handlesLanguage: function(language) {
         throw new Error("base_handler.handlesLanguage() is not overridden");
+    },
+
+    /**
+     * Returns whether this language handler should be used in a
+     * particular kind of editor.
+     * 
+     * May be overridden by inheritors; returns {@link #HANDLES_EDITOR}
+     * by default.
+     * 
+     * @return {Number} One of {@link #HANDLES_EDITOR},
+     *                  {@link #HANDLES_IMMEDIATE}, or
+     *                  {@link #HANDLES_BOTH}.
+     */
+    handlesEditor: function() {
+        return this.HANDLES_EDITOR;
     },
     
     /**

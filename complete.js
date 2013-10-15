@@ -93,7 +93,7 @@ define(function(require, exports, module) {
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
                 isDocShown = false;
-                hideDocPopup();;
+                hideDocPopup();
             }
         });
         
@@ -140,7 +140,7 @@ define(function(require, exports, module) {
                     win: "Ctrl-Space|Alt-Space"
                 },
                 isAvailable : function(editor){
-                    return editor && language.isEditorSupported(editor)
+                    return editor && language.isEditorSupported(editor);
                 },
                 exec : invoke
             }, plugin);
@@ -154,7 +154,7 @@ define(function(require, exports, module) {
             // Import the CSS for the completion box
             ui.insertCss(require("text!./complete.css"), plugin);
             
-            txtCompleterDoc = document.createElement("div")
+            txtCompleterDoc = document.createElement("div");
             txtCompleterDoc.className = "code_complete_doc_text";
             
             popup = new Popup(document.body);
@@ -573,7 +573,12 @@ define(function(require, exports, module) {
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
-            worker.emit("complete", { data: { pos: pos, staticPrefix: c9.staticPrefix, line: line, forceBox: true }});
+            worker.emit("complete", { data: {
+                pos: pos,
+                staticPrefix: c9.staticPrefix,
+                line: line,
+                forceBox: true
+            }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }

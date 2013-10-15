@@ -104,11 +104,12 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
-            var tab     = e.tab;
-            var path    = tab && (tab.path || tab.name);
+            var tab = e.tab;
+            var path = tab && (tab.path || tab.name);
             var session = tab && tab.editor.ace && tab.editor.ace.session;
             if (!session)
                 return;
+            var immediateWindow = session.repl ? tab.name : null;
             
             if (session !== worker.$doc) {
                 if (worker.$doc) {
@@ -136,21 +137,21 @@ define(function(require, exports, module) {
             clearTimeout(delayedTransfer);
             
             if (type === "switchFile" && value.length > BIG_FILE_LINES) {
-                return delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, syntax, value), BIG_FILE_DELAY);
+                return delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
             }
             
             console.log("Sent to worker [" + type + "] " + path + " (" + value.length + ")"); // DEBUG
 
-            notifyWorkerTransferData(type, path, syntax, value);
+            notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
         }
         
-        function notifyWorkerTransferData(type, path, syntax, value) {
+        function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
             if (options.workspaceDir === undefined)
                 console.error("options.workspaceDir is undefined!")
             // background tabs=open document, foreground tab=switch to file
             // this is needed because with concorde changeSession event is fired when document is still empty
             worker.call(type, [
-                path, syntax, value, null, 
+                path, immediateWindow, syntax, value, null, 
                 options.workspaceDir
             ]);
         }
