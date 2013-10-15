@@ -31,7 +31,8 @@ define(function(require, exports, module) {
             caption      : "Outline",
             elementName  : "winOutline",
             minWidth     : 130,
-            where        : "right"
+            where        : "right",
+            autohide     : true
         });
         // var emit   = plugin.getEmitter();
         
@@ -134,6 +135,13 @@ define(function(require, exports, module) {
                 if (isActive && e.last)
                     clear();
             });
+            
+            panels.on("showPanelOutline", function(e){
+                plugin.autohide = !e.button;
+            }, plugin);
+            panels.on("hidePanelOutline", function(e){
+                plugin.autohide = true;
+            }, plugin);
             
             if (isActive && tabs.focussedTab)
                 updateOutline();
@@ -266,6 +274,21 @@ define(function(require, exports, module) {
             tree.on("changeSelection", function(){ 
                 onSelect();
             });
+            
+            function onallblur(e){
+                if (!winOutline.visible || !plugin.autohide)
+                    return;
+                
+                var to = e.toElement;
+                if (!to || apf.isChildOf(winOutline, to, true)) {
+                    return;
+                }
+                
+                // TODO add better support for overlay panels
+                setTimeout(function(){ plugin.hide() }, 10);
+            }
+    
+            apf.addEventListener("movefocus", onallblur);
             
             function onfocus(){ 
                 focussed = true;
