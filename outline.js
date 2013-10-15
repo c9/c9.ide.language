@@ -339,6 +339,7 @@ define(function(require, exports, module) {
             var editor = tab && tab.editor;
             if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
+                
             originalTab = tab;
             draw();
             
@@ -358,7 +359,7 @@ define(function(require, exports, module) {
             tdOutline.reFilter = util.escapeRegExp(filter);
             
             if (filter)
-                tree.select(0);
+                tree.select(tree.provider.getNodeAtIndex(0));
             else if (selected) {
                 ignoreSelectOnce = true;
                 tdOutline.selection.selectNode(selected);
