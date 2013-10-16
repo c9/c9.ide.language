@@ -145,7 +145,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     }));
     sender.on("complete", applyEventOnce(function(data) {
         _self.complete(data);
-    }));
+    }), true);
     sender.on("documentClose", function(event) {
         _self.documentClose(event);
     });
@@ -183,15 +183,20 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
 
 /**
  * Ensure that an event handler is called only once if multiple
- * events are received at the same time.
+ * events are received at roughly the same time.
  **/
-function applyEventOnce(eventHandler) {
+function applyEventOnce(eventHandler, waitForMirror) {
     var timer;
+    var mirror = this;
     return function() {
         var _arguments = arguments;
         if (timer)
             clearTimeout(timer);
-        timer = setTimeout(function() { eventHandler.apply(eventHandler, _arguments); }, 0);
+        timer = setTimeout(function() {
+            if (waitForMirror && mirror.isPending())
+                return setTimeout(function() { applyEventOnce(eventHandler, true) }, 0);
+            eventHandler.apply(eventHandler, _arguments);
+        }, 0);
     };
 }
 
