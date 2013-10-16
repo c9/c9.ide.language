@@ -996,21 +996,16 @@ function asyncParForEach(array, fn, callback) {
     this.complete = function(event) {
         var _self = this;
         var data = event.data;
+        var pos = data.pos;
         //var start = new Date().getTime();
         
-        var line = _self.doc.getLine(data.pos.row);
-        if (!completeUtil.canCompleteForChangedLine(line, data.line, data.pos, data.pos, this.getIdentifierRegex())) {
+        var line = _self.doc.getLine(pos.row);
+        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, this.getIdentifierRegex())) {
             if (!line) { // sanity check
                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
             }
             return;
         }
-
-        var pos = data.pos;
-        var line = _self.doc.getLine(data.pos.row);
-        
-        if (!completeUtil.canCompleteForChangedLine(data.line, line, pos, pos, this.getIdentifierRegex()))
-            return;
 
         var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var language = part.language;
@@ -1025,7 +1020,7 @@ function asyncParForEach(array, fn, callback) {
                         handler.language = language;
                         handler.workspaceDir = _self.$workspaceDir;
                         handler.path = _self.$path;
-                        handler.complete(_self.doc, ast, data.pos, currentNode, function(completions) {
+                        handler.complete(_self.doc, ast, pos, currentNode, function(completions) {
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
                             next();
