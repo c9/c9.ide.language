@@ -923,8 +923,10 @@ function asyncParForEach(array, fn, callback) {
             if (!_self.$path)
                 return setTimeout(waitForPath, 500);
             
-            if (!handler.$isInited)
-                return _self.$initHandler(handler, oldPath, onDocumentOpen, callback);
+            if (handler.$isInited)
+                return callback();
+            
+            _self.$initHandler(handler, oldPath, onDocumentOpen, callback);
         }
         var _self = this;
         if (!this.$path) {

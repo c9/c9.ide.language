@@ -349,16 +349,22 @@ define(function(require, exports, module) {
         }
     
         function registerLanguageHandler(modulePath, contents, callback) {
+            if (!callback && typeof contents === "function") {
+                callback = contents;
+                contents = null;
+            }
+            
+            worker.on("registered", function reply(e) {
+                if (e.data.path !== modulePath)
+                    return;
+                worker.removeEventListener(reply);
+                callback && callback(e.data.err);
+            });
+            
             if (worker)
                 return worker.call("register", [modulePath, contents]);
                 
             plugin.once("initWorker", function(e) {
-                worker.on("registered", function reply(e) {
-                    if (e.data.path !== modulePath)
-                        return;
-                    worker.removeEventListener(reply);
-                    callback && callback(e.data.err);
-                });
                 worker.call("register", [modulePath, contents]);
             });
         }
@@ -427,7 +433,7 @@ define(function(require, exports, module) {
              * source for the handler.
              * 
              * @param {String} modulePath    The require path of the handler
-             * @param {String} contents      The contents of the handler script, or null
+             * @param {String} [contents]    The contents of the handler script
              * @param {Function} callback    An optional callback called when the handler is initialized
              */
             registerLanguageHandler : registerLanguageHandler
