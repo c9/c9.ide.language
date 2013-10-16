@@ -130,7 +130,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
 
     Mirror.call(this, sender);
     // TODO: linereport.sender = sender;
-    this.setTimeout(500);
+    this.setTimeout(0);
 
     sender.on("hierarchy", function(event) {
         _self.hierarchy(event);
