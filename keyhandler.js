@@ -13,14 +13,15 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var Plugin        = imports.Plugin;
-        var aceHandle     = imports.ace;
-        var language      = imports.language;
-        var marker        = imports["language.marker"];
-        var complete      = imports["language.complete"];
-        var tooltip       = imports["language.tooltip"];
+        var Plugin = imports.Plugin;
+        var aceHandle = imports.ace;
+        var language = imports.language;
+        var marker = imports["language.marker"];
+        var complete = imports["language.complete"];
+        var tooltip = imports["language.tooltip"];
         var complete_util = require("./complete_util");
         var TokenIterator = require("ace/token_iterator").TokenIterator;
+        var DEFAULT_ID_REGEX = complete_util.DEFAULT_ID_REGEX;
         var ace;
         
         /***** Initialization *****/
@@ -123,7 +124,7 @@ define(function(require, exports, module) {
         } 
         
         function handleChar(ch, idRegex, completionRegex) {
-            if (ch.match(idRegex || /[A-Za-z0-9_\$\.\"\'\/]/) || (completionRegex && ch.match(completionRegex))) { 
+            if (ch.match(idRegex || DEFAULT_ID_REGEX) || (completionRegex && ch.match(completionRegex))) { 
                 var pos = ace.getCursorPosition();
                 var line = ace.getSession().getDocument().getLine(pos.row);
                 if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(ace, pos))
