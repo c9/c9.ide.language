@@ -26,6 +26,7 @@ define(function(require, exports, module) {
         var delayedTransfer;
         
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
+        var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
         var useUIWorker  = window.location && /[?&]noworker=1/.test(window.location.search)
             || (browsers.getIEVersion() && browsers.getIEVersion() < 10);
         
@@ -41,7 +42,6 @@ define(function(require, exports, module) {
         emit.setMaxListeners(25); // avoid warnings during initialization
         
         var worker;
-        var createUIWorkerClient;
         
         var loaded = false;
 
@@ -49,28 +49,7 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
 
-            if (!useUIWorker)
-                return doLoad();
-
-            // If we have require.js, just load the worker in the UI
-            window["req"+"uire"](["plugins/c9.ide.language/worker"], function(worker) {
-                if (worker) {
-                    createUIWorkerClient = worker.createUIWorkerClient;
-                    return doLoad();
-                }
-
-                // If we're packed with mini-require.js, load the script directly into the DOM
-                var scriptElement  = document.createElement("script");
-                scriptElement.onload = function() {
-                    window["req"+"uire"](["plugins/c9.ide.language/worker"], function(worker) {
-                        createUIWorkerClient = worker.createUIWorkerClient;
-                        doLoad();
-                    });
-                };
-                scriptElement.src = "worker-c9.ide.language.js";
-                scriptElement.type = "text/javascript";
-                document.getElementsByTagName("head")[0].appendChild(scriptElement);
-            });
+            return doLoad();
         }
         
         var onCursorChangeDeferred;
@@ -157,12 +136,9 @@ define(function(require, exports, module) {
         }
 
         function doLoad() {
-            // We have to wait until the paths for ace are set - a nice module system will fix this
-            // ide.on("extload", function() {
-            
             // Create main worker for language processing
             if (useUIWorker) {
-                worker = createUIWorkerClient(["treehugger", "ext", "ace", "c9", "plugins"], "plugins/c9.ide.language/worker", "LanguageWorker");
+                worker = new UIWorkerClient(["treehugger", "ext", "ace", "c9", "plugins"], "plugins/c9.ide.language/worker", "LanguageWorker");
             }
             else  {
                 try {
