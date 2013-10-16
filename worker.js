@@ -1019,75 +1019,104 @@ function asyncParForEach(array, fn, callback) {
         var _self = this;
         var data = event.data;
         var pos = data.pos;
-        //var start = new Date().getTime();
         
-        var line = _self.doc.getLine(pos.row);
-        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, this.getIdentifierRegex())) {
-            if (!line) { // sanity check
-                console.log("worker: seeing an empty line in my copy of the document, won't complete");
-            }
-            return;
-        }
-
-        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
-        var language = part.language;
-        this.parse(part, function(ast) {
-            _self.findNode(ast, pos, function(node) {
-                var currentNode = node;
-                var matches = [];
-
-                asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
-                        handler.staticPrefix = data.staticPrefix;
-                        handler.language = language;
-                        handler.workspaceDir = _self.$workspaceDir;
-                        handler.path = _self.$path;
-                        handler.complete(_self.doc, ast, pos, currentNode, function(completions) {
-                            if (completions && completions.length)
-                                matches = matches.concat(completions);
-                            next();
-                        });
-                    }
-                    else {
-                        next();
-                    }
-                }, function() {
-                    removeDuplicateMatches(matches);
-                    // Sort by priority, score
-                    matches.sort(function(a, b) {
-                        if (a.priority < b.priority)
-                            return 1;
-                        else if (a.priority > b.priority)
-                            return -1;
-                        else if (a.score < b.score)
-                            return 1;
-                        else if (a.score > b.score)
-                            return -1;
-                        else if (a.id && a.id === b.id) {
-                            if (a.isFunction)
-                                return -1;
-                            else if (b.isFunction)
-                                return 1;
+        _self.waitForCompletionSync(event, function() {
+            var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+            var language = part.language;
+            _self.parse(part, function(ast) {
+                _self.findNode(ast, pos, function(node) {
+                    var currentNode = node;
+                    var matches = [];
+    
+                    asyncForEach(_self.handlers, function(handler, next) {
+                        if (_self.isHandlerMatch(handler, part)) {
+                            handler.staticPrefix = data.staticPrefix;
+                            handler.language = language;
+                            handler.workspaceDir = _self.$workspaceDir;
+                            handler.path = _self.$path;
+                            handler.complete(_self.doc, ast, pos, currentNode, function(completions) {
+                                if (completions && completions.length)
+                                    matches = matches.concat(completions);
+                                next();
+                            });
                         }
-                        if (a.name < b.name)
-                            return -1;
-                        else if (a.name > b.name)
-                            return 1;
-                        else
-                            return 0;
-                    });
-                    //console.log("completed", new Date().getTime() - start);
-                    _self.sender.emit("complete", {
-                        pos: pos,
-                        matches: matches,
-                        isUpdate: event.data.isUpdate,
-                        line: _self.doc.getLine(pos.row),
-                        path: _self.$path,
-                        forceBox: event.data.forceBox
+                        else {
+                            next();
+                        }
+                    }, function() {
+                        removeDuplicateMatches(matches);
+                        // Sort by priority, score
+                        matches.sort(function(a, b) {
+                            if (a.priority < b.priority)
+                                return 1;
+                            else if (a.priority > b.priority)
+                                return -1;
+                            else if (a.score < b.score)
+                                return 1;
+                            else if (a.score > b.score)
+                                return -1;
+                            else if (a.id && a.id === b.id) {
+                                if (a.isFunction)
+                                    return -1;
+                                else if (b.isFunction)
+                                    return 1;
+                            }
+                            if (a.name < b.name)
+                                return -1;
+                            else if (a.name > b.name)
+                                return 1;
+                            else
+                                return 0;
+                        });
+                        _self.sender.emit("complete", {
+                            pos: pos,
+                            matches: matches,
+                            isUpdate: event.data.isUpdate,
+                            line: _self.doc.getLine(pos.row),
+                            path: _self.$path,
+                            forceBox: event.data.forceBox
+                        });
                     });
                 });
             });
         });
+    };
+    
+    /**
+     * Check if the worker-side copy of the document is still up to date.
+     * If needed, wait a little while for any pending change events
+     * if needed (these should normally come in just before the complete event)
+     */
+    this.waitForCompletionSync = function(event, runCompletion) {
+        var _self = this;
+        var data = event.data;
+        var pos = data.pos;
+        var line = _self.doc.getLine(pos.row);
+        this.waitForCompletionSyncThread = this.waitForCompletionSyncThread || 0;
+        var threadId = ++this.waitForCompletionSyncThread;
+        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, this.getIdentifierRegex())) {
+            setTimeout(function() {
+                if (threadId !== _self.waitForCompletionSyncThread)
+                    return;
+                line = _self.doc.getLine(pos.row);
+                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, _self.getIdentifierRegex())) {
+                    setTimeout(function() {
+                        if (threadId !== _self.waitForCompletionSyncThread)
+                            return;
+                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, _self.getIdentifierRegex())) {
+                            if (!line) { // sanity check
+                                console.log("worker: seeing an empty line in my copy of the document, won't complete");
+                            }
+                            return; // ugh give up already
+                        }
+                        runCompletion();
+                    }, 20);
+                }
+                runCompletion();
+            }, 5);
+            return;
+        }
+        runCompletion();
     };
     
     /**
