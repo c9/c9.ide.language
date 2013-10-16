@@ -32,6 +32,8 @@ var WARNING_LEVELS = {
     info: 1
 };
 
+var UPDATE_TIMEOUT_MIN = 500;
+
 // Leaking into global namespace of worker, to allow handlers to have access
 /*global disabledFeatures: true*/
 disabledFeatures = {};
@@ -155,9 +157,6 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     });
     sender.on("inspect", applyEventOnce(function(event) {
         _self.inspect(event);
-    }));
-    sender.on("change", applyEventOnce(function() {
-        _self.scheduledUpdate = true;
     }));
     sender.on("jumpToDefinition", applyEventOnce(function(event) {
         _self.jumpToDefinition(event);
@@ -849,22 +848,36 @@ function asyncParForEach(array, fn, callback) {
         });
     };
 
-    this.onUpdate = function() {
+    this.onUpdate = function(now) {
         var _self = this;
-        asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler))
-                handler.onUpdate(_self.doc, next);
-            else
-                next();
-        }, function() {
-            _self.analyze(function() {
-                _self.scheduledUpdate = false;
-                if (_self.postponedCursorMove) {
-                    _self.onCursorMove(_self.postponedCursorMove);
-                    _self.postponedCursorMove = null;
-                }
+        if (this.scheduledUpdate && !now)
+            return;
+        this.scheduledUpdate = setTimeout(function() {
+            try {
+                var startTime = new Date().getTime();
+                handleUpdate();
+                _self.lastUpdateTime = new Date().getTime() - startTime;
+            } finally {
+                _self.scheduledUpdate = null;
+            }
+        }, UPDATE_TIMEOUT_MIN + this.lastUpdateTime);
+        
+        function handleUpdate() {
+            asyncForEach(_self.handlers, function(handler, next) {
+                if (_self.isHandlerMatch(handler))
+                    handler.onUpdate(_self.doc, next);
+                else
+                    next();
+            }, function() {
+                _self.analyze(function() {
+                    _self.scheduledUpdate = null;
+                    if (_self.postponedCursorMove) {
+                        _self.onCursorMove(_self.postponedCursorMove);
+                        _self.postponedCursorMove = null;
+                    }
+                });
             });
-        });
+        }
     };
     
     this.$documentToString = function(document) {
@@ -897,9 +910,11 @@ function asyncParForEach(array, fn, callback) {
         this.lastCurrentPos = null;
         this.cachedAsts = null;
         this.setValue(code);
-        this.scheduledUpdate = true;
+        this.lastUpdateTime = 0;
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
+        }, function() {
+            _self.onUpdate(true);
         });
     };
 
