@@ -556,6 +556,16 @@ define(function(require, exports, module) {
                     e.stopPropagation();
                     e.preventDefault();
                     break;
+                case 33: // PageUp
+                    popup.gotoPageUp();
+                    e.stopPropagation();
+                    e.preventDefault();
+                    break;
+                case 34: // PageDown
+                    popup.gotoPageDown();
+                    e.stopPropagation();
+                    e.preventDefault();
+                    break;
             }
         }
         
