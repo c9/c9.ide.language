@@ -70,7 +70,8 @@ define(function(require, exports, module) {
             //@todo marker.onChange(session, e);
         }
         function onChangeMode() {
-            notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
+            if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab)
+                notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
         }
         
         /**
