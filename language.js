@@ -251,21 +251,19 @@ define(function(require, exports, module) {
             var editor = e.editor;
             
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
-                tabs.getPanes().forEach(function(pane){
-                    pane.getTabs().forEach(function(tab){
-                        if (isEditorSupported(tab)) {
-                            setTimeout(function() {
-                                if (tab.value)
-                                    return notifyWorker("documentOpen", { tab: tab });
-                                var value = tab.document.value;
-                                if (value)
-                                    return notifyWorker("documentOpen", { tab: tab, value: value });
-                                tab.document.once("valueSet", function(e) {
-                                    notifyWorker("documentOpen", { tab: tab, value: e.value });
-                                });
-                            }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
-                        }
-                    });
+                tabs.getTabs().forEach(function(tab) {
+                    if (isEditorSupported(tab)) {
+                        setTimeout(function() {
+                            if (tab.value)
+                                return notifyWorker("documentOpen", { tab: tab });
+                            var value = tab.document.value;
+                            if (value)
+                                return notifyWorker("documentOpen", { tab: tab, value: value });
+                            tab.document.once("valueSet", function(e) {
+                                notifyWorker("documentOpen", { tab: tab, value: e.value });
+                            });
+                        }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
+                    }
                 });
                 if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
                     notifyWorker("switchFile", { tab: tabs.focussedTab });
