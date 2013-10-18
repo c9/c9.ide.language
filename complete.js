@@ -397,14 +397,16 @@ define(function(require, exports, module) {
             popup.ace = ace;
             popup.matches = matches;
             popup.prefix = prefix;
-            popup.isNonGenericAvailable = false;
+            var isNonGenericAvailable = false;
+            var isContextualAvailable = false;
             for (var i = 0; i < matches.length; i++) {
-                if (!matches[i].isGeneric) {
-                    popup.isNonGenericAvailable = true;
-                    break;
-                }
+                if (!matches[i].isGeneric)
+                    isNonGenericAvailable = true;
+                if (matches[i].isContextual)
+                    isContextualAvailable = true;
             }
-            if (popup.isNonGenericAvailable) {
+            popup.ignoreGenericMatches = isNonGenericAvailable && isContextualAvailable;
+            if (popup.ignoreGenericMatches) {
                 // Experiment: disable generic matches when possible
                 matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
             }

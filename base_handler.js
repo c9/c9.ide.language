@@ -459,6 +459,9 @@ module.exports = {
      * @param {Boolean} callback.result.isGeneric
      *                                       Indicates that this is a generic, language-independent
      *                                       suggestion
+     * @param {Boolean} callback.result.isContextual
+     *                                       Indicates that this is a contextual completion,
+     *                                       and that any generic completions should not be shown
      */
     complete: function(doc, fullAst, pos, currentNode, callback) {
         callback();
