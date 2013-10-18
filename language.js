@@ -70,7 +70,8 @@ define(function(require, exports, module) {
             //@todo marker.onChange(session, e);
         }
         function onChangeMode() {
-            notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
+            if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab)
+                notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
         }
         
         /**
@@ -159,7 +160,7 @@ define(function(require, exports, module) {
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (isEditorSupported(e.tab.editor)) {
+                if (isEditorSupported(e.tab)) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
@@ -168,7 +169,7 @@ define(function(require, exports, module) {
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (isEditorSupported(e.tab.editor))               
+                if (isEditorSupported(e.tab))               
                     notifyWorker("switchFile", e);
             });
             
@@ -250,21 +251,19 @@ define(function(require, exports, module) {
             var editor = e.editor;
             
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
-                tabs.getPanes().forEach(function(pane){
-                    pane.getTabs().forEach(function(tab){
-                        if (isEditorSupported(tab)) {
-                            setTimeout(function() {
-                                if (tab.value)
-                                    return notifyWorker("documentOpen", { tab: tab });
-                                var value = tab.document.value;
-                                if (value)
-                                    return notifyWorker("documentOpen", { tab: tab, value: value });
-                                tab.document.once("valueSet", function(e) {
-                                    notifyWorker("documentOpen", { tab: tab, value: e.value });
-                                });
-                            }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
-                        }
-                    });
+                tabs.getTabs().forEach(function(tab) {
+                    if (isEditorSupported(tab)) {
+                        setTimeout(function() {
+                            if (tab.value)
+                                return notifyWorker("documentOpen", { tab: tab });
+                            var value = tab.document.value;
+                            if (value)
+                                return notifyWorker("documentOpen", { tab: tab, value: value });
+                            tab.document.once("valueSet", function(e) {
+                                notifyWorker("documentOpen", { tab: tab, value: e.value });
+                            });
+                        }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
+                    }
                 });
                 if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
                     notifyWorker("switchFile", { tab: tabs.focussedTab });
@@ -328,8 +327,8 @@ define(function(require, exports, module) {
         
         /***** Methods *****/
         
-        function isEditorSupported(editor) {
-            return ["ace", "immediate"].indexOf(editor.type) !== -1;
+        function isEditorSupported(tab) {
+            return ["ace", "immediate"].indexOf(tab.editor ? tab.editor.type : tab.editorType) !== -1;
         }
         
         function isWorkerEnabled() {
@@ -354,19 +353,18 @@ define(function(require, exports, module) {
                 contents = null;
             }
             
+            if (!worker)
+                return plugin.once("initWorker", function(e) {
+                    registerLanguageHandler(modulePath, contents, callback);
+                });
+            
             worker.on("registered", function reply(e) {
                 if (e.data.path !== modulePath)
                     return;
                 worker.removeEventListener(reply);
                 callback && callback(e.data.err);
             });
-            
-            if (worker)
-                return worker.call("register", [modulePath, contents]);
-                
-            plugin.once("initWorker", function(e) {
-                worker.call("register", [modulePath, contents]);
-            });
+            worker.call("register", [modulePath, contents]);
         }
         
         /***** Lifecycle *****/
