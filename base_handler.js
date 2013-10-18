@@ -445,6 +445,20 @@ module.exports = {
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of completion matches
+     * @param {String} callback.result.name  The name to show in the popup
+     * @param {String} callback.result.replaceText
+     *                                       The text to replace the selection with
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"}
+     *                [callback.result.icon] The icon to use
+     * @param {String} callback.result.meta  Additional information to show
+     * @param {String} callback.result.doc   Documentation to display
+     * @param {String} callback.result.docHead
+     *                                       Documentation heading to display
+     * @param {Number} callback.result.priority
+     *                                       Priority of this completion suggestion
+     * @param {Boolean} callback.result.isGeneric
+     *                                       Indicates that this is a generic, language-independent
+     *                                       suggestion
      */
     complete: function(doc, fullAst, pos, currentNode, callback) {
         callback();
