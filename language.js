@@ -321,7 +321,7 @@ define(function(require, exports, module) {
             // worker.emit("cursormove", {data: cursorPos});
             
             isContinuousCompletionEnabledSetting = 
-                settings.getBool("user/language/@continuousCompletion");
+                settings.get("user/language/@continuousCompletion") != "false";
             if (tabs.focussedTab)
                 notifyWorker("switchFile", { tab: tabs.focussedTab });
         }
