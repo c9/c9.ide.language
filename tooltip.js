@@ -104,7 +104,7 @@ define(function(require, exports, module) {
         }
         
         function getRight() {
-            return 0; // TODO
+            return isVisible && tooltipEl.getBoundingClientRect().right;
         }
             
         function hide() {

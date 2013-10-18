@@ -348,7 +348,9 @@ define(function(require, exports, module) {
             
             if (!isPopupVisible())
                 return;
-            if (popup.isTopdown !== tooltip.isTopdown())
+            
+            var left = parseInt(popup.container.style.left, 10);
+            if (popup.isTopdown !== tooltip.isTopdown() || left > tooltip.getRight())
                 height = 0;
             
             if (popup.isTopdown) {
