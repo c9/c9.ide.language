@@ -28,9 +28,10 @@ define(function(require, exports, module) {
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("../c9.ide.language/complete_util");
+        var completeUtil   = require("plugins/c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
+        var assert         = require("plugins/c9.util/assert");
         
         /***** Initialization *****/
         
@@ -119,11 +120,12 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var tab = tabs.findTab(event.data.path);
-                    if (!tab) return;
+                    var tab = tabs.focussedTab;
+                    if (!tab || !tab.path === event.data.path)
+                        return;
                     
-                    var editor = tab.editor;
-                    onComplete(event, editor);
+                    assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
+                    onComplete(event, tab.editor);
                 });
             });
             
