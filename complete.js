@@ -319,7 +319,6 @@ define(function(require, exports, module) {
 
             var renderer = ace.renderer;
             popup.setFontSize(ace.getFontSize());
-
             var lineHeight = renderer.layerConfig.lineHeight;
             
             var base = ace.getCursorPosition();
@@ -337,22 +336,32 @@ define(function(require, exports, module) {
             pos.left += rect.left;
             pos.left += renderer.$gutterLayer.gutterWidth;
 
-            popup.show(pos, lineHeight, true);
-            adjustToToolTipHeight(tooltip.getHeight());         
+            popup.show(pos, lineHeight);
+            adjustToToolTipHeight(tooltip.getHeight());
             
             ignoreMouseOnce = !isPopupVisible();
         }
         
         function adjustToToolTipHeight(height) {
+            // Give function to tooltip to adjust completer
+            tooltip.adjustCompleterTop = adjustToToolTipHeight;
+            
             if (!isPopupVisible())
                 return;
-            if (height)
-                height -= 3;
-            var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
-            top += height;
-            popup.container.style.top = top + "px";
+            if (popup.isTopdown !== tooltip.isTopdown())
+                height = 0;
+            
+            if (popup.isTopdown) {
+                var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
+                top += height - (height ? 3 : 0);
+                popup.container.style.top = top + "px";
+            }
+            else {
+                var bottom = parseInt(popup.container.style.bottom, 10) - tooltipHeightAdjust;
+                bottom += height;
+                popup.container.style.bottom = bottom + "px";
+            }
             tooltipHeightAdjust = height;
-            tooltip.adjustCompleterTop = adjustToToolTipHeight;
         }
     
         function closeCompletionBox(event) {
