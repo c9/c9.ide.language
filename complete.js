@@ -328,13 +328,10 @@ define(function(require, exports, module) {
             if (base.column > 0 && line.substr(base.column - 1, 1).match(/["'"]/))
                 base.column--;
             
-            var pos = renderer.$cursorLayer.getPixelPosition(base, true);
+            var loc = ace.renderer.textToScreenCoordinates(base.row, base.column);
+            var pos = { left: loc.pageX, top: loc.pageY };
             pos.left -= popup.getTextLeftOffset();
-            var rect = ace.container.getBoundingClientRect();
-            pos.top += rect.top - renderer.layerConfig.offset;
             tooltipHeightAdjust = 0;
-            pos.left += rect.left;
-            pos.left += renderer.$gutterLayer.gutterWidth;
 
             popup.show(pos, lineHeight);
             adjustToToolTipHeight(tooltip.getHeight());
