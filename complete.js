@@ -397,6 +397,20 @@ define(function(require, exports, module) {
             popup.ace = ace;
             popup.matches = matches;
             popup.prefix = prefix;
+            
+            popup.ignoreGenericMatches = isIgnoreGenericEnabled(matches);
+            if (popup.ignoreGenericMatches) {
+                // Experiment: disable generic matches when possible
+                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
+            popup.calcPrefix = function(regex){
+                return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
+            };
+            popup.setData(matches);
+            popup.setRow(0);
+        }
+        
+        function isIgnoreGenericEnabled(matches) {
             var isNonGenericAvailable = false;
             var isContextualAvailable = false;
             for (var i = 0; i < matches.length; i++) {
@@ -405,17 +419,7 @@ define(function(require, exports, module) {
                 if (matches[i].isContextual)
                     isContextualAvailable = true;
             }
-            popup.ignoreGenericMatches = isNonGenericAvailable && isContextualAvailable;
-            if (popup.ignoreGenericMatches) {
-                // Experiment: disable generic matches when possible
-                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
-            }
-            popup.calcPrefix = function(regex){
-                return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
-            };
-            
-            popup.setData(matches);
-            popup.setRow(0);
+            return isNonGenericAvailable && isContextualAvailable;
         }
         
         function updateDoc(delayPopup) {
