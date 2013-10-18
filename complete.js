@@ -352,7 +352,8 @@ define(function(require, exports, module) {
             
             if (popup.isTopdown) {
                 var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
-                top += height - (height ? 3 : 0);
+                height -= height ? 3 : 0;
+                top += height;
                 popup.container.style.top = top + "px";
             }
             else {

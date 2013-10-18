@@ -84,7 +84,7 @@ define(function(require, exports, module) {
                 isTopdown = true;
                 if (position.pageY < labelHeight)
                     isTopdown = true;
-                else if (position.pageY > labelHeight - cursorConfig.lineHeight - 20)
+                else if (position.pageY + labelHeight > window.innerHeight - offset.top)
                     isTopdown = false;
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)
