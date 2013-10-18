@@ -140,7 +140,7 @@ define(function(require, exports, module) {
                     win: "Ctrl-Space|Alt-Space"
                 },
                 isAvailable : function(editor){
-                    return editor && language.isEditorSupported(editor);
+                    return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec : invoke
             }, plugin);
@@ -579,7 +579,7 @@ define(function(require, exports, module) {
         
         function invoke(forceBox) {
             var tab = tabs.focussedTab;
-            if (!tab || !language.isEditorSupported(tab.editor))
+            if (!tab || !language.isEditorSupported(tab))
                 return;
             
             var ace = lastAce = tab.editor.ace;

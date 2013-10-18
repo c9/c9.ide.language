@@ -160,7 +160,7 @@ define(function(require, exports, module) {
             
             // Hook all newly opened files
             tabs.on("open", function(e){
-                if (isEditorSupported(e.tab.editor)) {
+                if (isEditorSupported(e.tab)) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
@@ -169,7 +169,7 @@ define(function(require, exports, module) {
             
             // Switch to any active file
             tabs.on("focusSync", function(e){
-                if (isEditorSupported(e.tab.editor))               
+                if (isEditorSupported(e.tab))               
                     notifyWorker("switchFile", e);
             });
             
@@ -327,8 +327,8 @@ define(function(require, exports, module) {
         
         /***** Methods *****/
         
-        function isEditorSupported(editor) {
-            return ["ace", "immediate"].indexOf(editor.type) !== -1;
+        function isEditorSupported(tab) {
+            return ["ace", "immediate"].indexOf(tab.editor ? tab.editor.type : tab.editorType) !== -1;
         }
         
         function isWorkerEnabled() {
