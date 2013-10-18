@@ -353,19 +353,18 @@ define(function(require, exports, module) {
                 contents = null;
             }
             
+            if (!worker)
+                return plugin.once("initWorker", function(e) {
+                    registerLanguageHandler(modulePath, contents, callback);
+                });
+            
             worker.on("registered", function reply(e) {
                 if (e.data.path !== modulePath)
                     return;
                 worker.removeEventListener(reply);
                 callback && callback(e.data.err);
             });
-            
-            if (worker)
-                return worker.call("register", [modulePath, contents]);
-                
-            plugin.once("initWorker", function(e) {
-                worker.call("register", [modulePath, contents]);
-            });
+            worker.call("register", [modulePath, contents]);
         }
         
         /***** Lifecycle *****/
