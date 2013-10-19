@@ -300,7 +300,7 @@ define(function(require, exports, module) {
             // Remove cursor marker
             paddedLines = paddedLines.replace(/\^\^/g, "");
         
-            if (deleteSuffix || line.substr(pos.column, postfix.length) === postfix)
+            if (deleteSuffix || paddedLines.slice(-postfix.length) === postfix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
             else
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
@@ -533,6 +533,8 @@ define(function(require, exports, module) {
             switch(keyCode) {
                 case 0: break;
                 case 32: // Space
+                case 35: // End
+                case 36: // Home
                     closeCompletionBox();
                     break;
                 case 27: // Esc
