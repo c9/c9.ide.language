@@ -28,9 +28,10 @@ define(function(require, exports, module) {
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("../c9.ide.language/complete_util");
+        var completeUtil   = require("plugins/c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
+        var assert         = require("plugins/c9.util/assert");
         
         /***** Initialization *****/
         
@@ -119,11 +120,12 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var tab = tabs.findTab(event.data.path);
-                    if (!tab) return;
+                    var tab = tabs.focussedTab;
+                    if (!tab || !tab.path === event.data.path)
+                        return;
                     
-                    var editor = tab.editor;
-                    onComplete(event, editor);
+                    assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
+                    onComplete(event, tab.editor);
                 });
             });
             
@@ -314,7 +316,7 @@ define(function(require, exports, module) {
             lastAce = ace;
             
             populateCompletionBox(ace, matches);
-            document.addEventListener("click", closeCompletionBox);
+            window.document.addEventListener("click", closeCompletionBox);
             ace.on("mousewheel", closeCompletionBox);
 
             var renderer = ace.renderer;
@@ -352,7 +354,8 @@ define(function(require, exports, module) {
             
             if (popup.isTopdown) {
                 var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
-                top += height - (height ? 3 : 0);
+                height -= height ? 3 : 0;
+                top += height;
                 popup.container.style.top = top + "px";
             }
             else {
@@ -373,7 +376,7 @@ define(function(require, exports, module) {
                 return;
                 
             var ace = lastAce;
-            document.removeEventListener("click", closeCompletionBox);
+            window.document.removeEventListener("click", closeCompletionBox);
             ace.off("mousewheel", closeCompletionBox);
             
             if (oldCommandKey) {

@@ -33,11 +33,12 @@ define(function(require, exports, module) {
 
         language.on("initWorker", function(e){
             e.worker.on("hint", function(event) {
-                var page = tabs.findTab(event.data.path);
-                if (!page) return;
+                var tab = tabs.focussedTab;
+                if (!tab || !tab.path === event.data.path)
+                    return;
                 
-                var editor = page.editor;
-                onHint(event, editor.ace);
+                assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
+                onHint(event, tab.editor.ace);
             });
         });
     
@@ -64,13 +65,13 @@ define(function(require, exports, module) {
             draw();
             editor = _editor;
             
+            
             if (!isVisible) {
                 isVisible = true;
                 
                 editor.renderer.scroller.appendChild(tooltipEl);
-                //editor.selection.on("changeCursor", this.hide);
-                editor.session.on("changeScrollTop", hide);
-                editor.session.on("changeScrollLeft", hide);
+                editor.on("mousewheel", hide);
+                document.addEventListener("click", hide);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -84,7 +85,7 @@ define(function(require, exports, module) {
                 isTopdown = true;
                 if (position.pageY < labelHeight)
                     isTopdown = true;
-                else if (position.pageY > labelHeight - cursorConfig.lineHeight - 20)
+                else if (position.pageY + labelHeight > window.innerHeight - offset.top)
                     isTopdown = false;
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)
@@ -109,10 +110,13 @@ define(function(require, exports, module) {
             
         function hide() {
             if (isVisible) {
-                editor.renderer.scroller.removeChild(tooltipEl);
-                //editor.selection.removeListener("changeCursor", hide);
-                editor.session.removeListener("changeScrollTop", hide);
-                editor.session.removeListener("changeScrollLeft", hide);
+                try {
+                    tooltipEl.parentElement.removeChild(tooltipEl);
+                } catch(e) {
+                    console.error(e);
+                }
+                window.document.removeEventListener("close", hide);
+                editor.off("mousewheel", hide);
                 isVisible = false;
             }
         }
