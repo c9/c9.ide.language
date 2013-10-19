@@ -48,6 +48,7 @@ define(function(require, exports, module) {
         var matches, completionElement;
         var docElement, cursorConfig, lineHeight, lastAce, forceBox, worker; 
         var eventMatches, popup;
+        var lastUpDownEvent;
         
         var idRegexes         = {};
         var completionRegexes = {}; 
@@ -62,6 +63,7 @@ define(function(require, exports, module) {
         var MENU_WIDTH = 330;
         var MENU_SHOWN_ITEMS = 8;
         var EXTRA_LINE_HEIGHT = 4;
+        var REPEAT_IGNORE_RATE = 200
         
         var deferredInvoker = lang.deferredCall(function() {
             isInvokeScheduled = false;
@@ -558,20 +560,25 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
                 case 40: // Down
+                    var time = new Date().getTime();
                     if (popup.getRow() == popup.matches.length - 1) {
-                        if (popup.onLastLine)
+                        if (popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
                             return closeCompletionBox();
                         popup.onLastLine = true;
                     }
+                    lastUpDownEvent = time;
                     if (!popup.onLastLine)
                         popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
                 case 38: // Up
-                    if (!popup.getRow())
+                    var time = new Date().getTime();
+                    if (!popup.getRow() && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
                         return closeCompletionBox();
-                    popup.setRow(popup.getRow() - 1);
+                    lastUpDownEvent = time;
+                    if (popup.getRow())
+                        popup.setRow(popup.getRow() - 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
