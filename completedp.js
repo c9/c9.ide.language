@@ -55,10 +55,10 @@ define(function(require, exports, module) {
         
         var prefix = match.identifierRegex
             ? this.calcPrefix(match.identifierRegex)
-            : this.prefix;
+            : match.replaceText.substr(0, this.prefix.length);
         
         var trim = match.meta ? " maintrim" : "";
-        if (!this.isNonGenericAvailable || !match.isGeneric) {
+        if (!this.ignoreGenericMatches || !match.isGeneric) {
             html += '<span class="main' + trim + '"><u>' 
                 + prefix + "</u>" + match.name.substring(prefix.length) 
                 + '</span>';

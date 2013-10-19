@@ -41,7 +41,7 @@
 }
 
 .ace_autocomplete{
-    z-index: 20000;
+    z-index: 100000;
 }
 
 .code_complete_doc_text{
@@ -51,7 +51,7 @@
     padding : 5px;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
-    z-index: 10000;
+    z-index: 100000;
     /*background-color: #748512;*/
     /*color: #f1f1f1;*/
     /*border-color: rgb(132, 146, 76);*/

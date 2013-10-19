@@ -28,9 +28,10 @@ define(function(require, exports, module) {
         var lang           = require("ace/lib/lang");
         var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("../c9.ide.language/complete_util");
+        var completeUtil   = require("plugins/c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
+        var assert         = require("plugins/c9.util/assert");
         
         /***** Initialization *****/
         
@@ -119,11 +120,12 @@ define(function(require, exports, module) {
                 e.worker.on("complete", function(event) {
                     if (language.disabled || plugin.disabled) return;
                     
-                    var tab = tabs.findTab(event.data.path);
-                    if (!tab) return;
+                    var tab = tabs.focussedTab;
+                    if (!tab || !tab.path === event.data.path)
+                        return;
                     
-                    var editor = tab.editor;
-                    onComplete(event, editor);
+                    assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
+                    onComplete(event, tab.editor);
                 });
             });
             
@@ -140,7 +142,7 @@ define(function(require, exports, module) {
                     win: "Ctrl-Space|Alt-Space"
                 },
                 isAvailable : function(editor){
-                    return editor && language.isEditorSupported(editor);
+                    return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec : invoke
             }, plugin);
@@ -339,12 +341,11 @@ define(function(require, exports, module) {
             lastAce = ace;
             
             populateCompletionBox(ace, matches);
-            document.addEventListener("click", closeCompletionBox);
+            window.document.addEventListener("mousedown", closeCompletionBox);
             ace.on("mousewheel", closeCompletionBox);
 
             var renderer = ace.renderer;
             popup.setFontSize(ace.getFontSize());
-
             var lineHeight = renderer.layerConfig.lineHeight;
             
             var base = ace.getCursorPosition();
@@ -354,30 +355,40 @@ define(function(require, exports, module) {
             if (base.column > 0 && line.substr(base.column - 1, 1).match(/["'"]/))
                 base.column--;
             
-            var pos = renderer.$cursorLayer.getPixelPosition(base, true);
+            var loc = ace.renderer.textToScreenCoordinates(base.row, base.column);
+            var pos = { left: loc.pageX, top: loc.pageY };
             pos.left -= popup.getTextLeftOffset();
-            var rect = ace.container.getBoundingClientRect();
-            pos.top += rect.top - renderer.layerConfig.offset;
             tooltipHeightAdjust = 0;
-            pos.left += rect.left;
-            pos.left += renderer.$gutterLayer.gutterWidth;
 
-            popup.show(pos, lineHeight, true);
-            adjustToToolTipHeight(tooltip.getHeight());         
+            popup.show(pos, lineHeight);
+            adjustToToolTipHeight(tooltip.getHeight());
             
             ignoreMouseOnce = !isPopupVisible();
         }
         
         function adjustToToolTipHeight(height) {
+            // Give function to tooltip to adjust completer
+            tooltip.adjustCompleterTop = adjustToToolTipHeight;
+            
             if (!isPopupVisible())
                 return;
-            if (height)
-                height -= 3;
-            var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
-            top += height;
-            popup.container.style.top = top + "px";
+            
+            var left = parseInt(popup.container.style.left, 10);
+            if (popup.isTopdown !== tooltip.isTopdown() || left > tooltip.getRight())
+                height = 0;
+            
+            if (popup.isTopdown) {
+                var top = parseInt(popup.container.style.top, 10) - tooltipHeightAdjust;
+                height -= height ? 3 : 0;
+                top += height;
+                popup.container.style.top = top + "px";
+            }
+            else {
+                var bottom = parseInt(popup.container.style.bottom, 10) - tooltipHeightAdjust;
+                bottom += height;
+                popup.container.style.bottom = bottom + "px";
+            }
             tooltipHeightAdjust = height;
-            tooltip.adjustCompleterTop = adjustToToolTipHeight;
         }
     
         function closeCompletionBox(event) {
@@ -390,7 +401,7 @@ define(function(require, exports, module) {
                 return;
                 
             var ace = lastAce;
-            document.removeEventListener("click", closeCompletionBox);
+            window.document.removeEventListener("mousedown", closeCompletionBox);
             ace.off("mousewheel", closeCompletionBox);
             
             if (oldCommandKey) {
@@ -414,23 +425,29 @@ define(function(require, exports, module) {
             popup.ace = ace;
             popup.matches = matches;
             popup.prefix = prefix;
-            popup.isNonGenericAvailable = false;
-            for (var i = 0; i < matches.length; i++) {
-                if (!matches[i].isGeneric) {
-                    popup.isNonGenericAvailable = true;
-                    break;
-                }
-            }
-            if (popup.isNonGenericAvailable) {
+            
+            popup.ignoreGenericMatches = isIgnoreGenericEnabled(matches);
+            if (popup.ignoreGenericMatches) {
                 // Experiment: disable generic matches when possible
                 matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
             }
             popup.calcPrefix = function(regex){
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
-            
             popup.setData(matches);
             popup.setRow(0);
+        }
+        
+        function isIgnoreGenericEnabled(matches) {
+            var isNonGenericAvailable = false;
+            var isContextualAvailable = false;
+            for (var i = 0; i < matches.length; i++) {
+                if (!matches[i].isGeneric)
+                    isNonGenericAvailable = true;
+                if (matches[i].isContextual)
+                    isContextualAvailable = true;
+            }
+            return isNonGenericAvailable && isContextualAvailable;
         }
         
         function updateDoc(delayPopup) {
@@ -598,7 +615,7 @@ define(function(require, exports, module) {
         
         function invoke(forceBox, deleteSuffix) {
             var tab = tabs.focussedTab;
-            if (!tab || !language.isEditorSupported(tab.editor))
+            if (!tab || !language.isEditorSupported(tab))
                 return;
             
             var ace = lastAce = tab.editor.ace;
@@ -643,10 +660,10 @@ define(function(require, exports, module) {
             else if (matches.length > 0) {
                 var idRegex = matches[0].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
                 var identifier = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            if (matches.length === 1 && identifier === matches[0].replaceText)
-                closeCompletionBox();
-            else
-                showCompletionBox(editor, matches, identifier, line);
+                if (matches.length === 1 && identifier === matches[0].replaceText || identifier + " " === matches[0].replaceText)
+                    closeCompletionBox();
+                else
+                    showCompletionBox(editor, matches, identifier, line);
             }
             else {
                 closeCompletionBox();

@@ -24,6 +24,7 @@ define(function(require, exports, module) {
         var labelHeight;
         var completer;
         var adjustCompleterTop;
+        var isTopdown;
         
         var tooltipEl = dom.createElement("div");
         tooltipEl.className = "language_tooltip dark";
@@ -32,11 +33,12 @@ define(function(require, exports, module) {
 
         language.on("initWorker", function(e){
             e.worker.on("hint", function(event) {
-                var page = tabs.findTab(event.data.path);
-                if (!page) return;
+                var tab = tabs.focussedTab;
+                if (!tab || !tab.path === event.data.path)
+                    return;
                 
-                var editor = page.editor;
-                onHint(event, editor.ace);
+                assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
+                onHint(event, tab.editor.ace);
             });
         });
     
@@ -63,13 +65,13 @@ define(function(require, exports, module) {
             draw();
             editor = _editor;
             
+            
             if (!isVisible) {
                 isVisible = true;
                 
                 editor.renderer.scroller.appendChild(tooltipEl);
-                //editor.selection.on("changeCursor", this.hide);
-                editor.session.on("changeScrollTop", hide);
-                editor.session.on("changeScrollLeft", hide);
+                editor.on("mousewheel", hide);
+                document.addEventListener("mousedown", hide);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -80,16 +82,13 @@ define(function(require, exports, module) {
                 labelHeight = dom.getInnerHeight(tooltipEl);
                 position.pageX -= offset.left;
                 position.pageY -= offset.top;
-                /* Always show on bottom, since we put the completer below that
-                var onTop = true;
-                if(onTop && position.pageY < labelHeight)
-                    onTop = false;
-                else if(!onTop && position.pageY > labelHeight - cursorConfig.lineHeight - 20)
-                    onTop = true;
-                */
-                var onTop = false;
+                isTopdown = true;
+                if (position.pageY < labelHeight)
+                    isTopdown = true;
+                else if (position.pageY + labelHeight > window.innerHeight - offset.top)
+                    isTopdown = false;
                 tooltipEl.style.left = (position.pageX - 22) + "px";
-                if (onTop)
+                if (!isTopdown)
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
                 else
                     tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
@@ -100,13 +99,24 @@ define(function(require, exports, module) {
         function getHeight() {
             return isVisible && labelHeight || 0;
         }
+        
+        function isTopdown() {
+            return isTopdown;
+        }
+        
+        function getRight() {
+            return isVisible && tooltipEl.getBoundingClientRect().right;
+        }
             
         function hide() {
             if (isVisible) {
-                editor.renderer.scroller.removeChild(tooltipEl);
-                //editor.selection.removeListener("changeCursor", hide);
-                editor.session.removeListener("changeScrollTop", hide);
-                editor.session.removeListener("changeScrollLeft", hide);
+                try {
+                    tooltipEl.parentElement.removeChild(tooltipEl);
+                } catch(e) {
+                    console.error(e);
+                }
+                window.document.removeEventListener("mousedown", hide);
+                editor.off("mousewheel", hide);
                 isVisible = false;
             }
         }
@@ -119,6 +129,8 @@ define(function(require, exports, module) {
                 hide: hide,
                 show: show,
                 getHeight: getHeight,
+                getRight: getRight,
+                isTopdown: isTopdown,
                 set adjustCompleterTop(f) {
                     adjustCompleterTop = f;
                 }
