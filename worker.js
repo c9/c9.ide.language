@@ -1074,7 +1074,8 @@ function asyncParForEach(array, fn, callback) {
                             isUpdate: event.data.isUpdate,
                             line: _self.doc.getLine(pos.row),
                             path: _self.$path,
-                            forceBox: event.data.forceBox
+                            forceBox: event.data.forceBox,
+                            deleteSuffix: event.data.deleteSuffix
                         });
                     });
                 });
