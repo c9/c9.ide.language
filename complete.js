@@ -316,7 +316,7 @@ define(function(require, exports, module) {
             lastAce = ace;
             
             populateCompletionBox(ace, matches);
-            document.addEventListener("click", closeCompletionBox);
+            window.document.addEventListener("click", closeCompletionBox);
             ace.on("mousewheel", closeCompletionBox);
 
             var renderer = ace.renderer;
@@ -376,7 +376,7 @@ define(function(require, exports, module) {
                 return;
                 
             var ace = lastAce;
-            document.removeEventListener("click", closeCompletionBox);
+            window.document.removeEventListener("click", closeCompletionBox);
             ace.off("mousewheel", closeCompletionBox);
             
             if (oldCommandKey) {

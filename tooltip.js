@@ -33,11 +33,12 @@ define(function(require, exports, module) {
 
         language.on("initWorker", function(e){
             e.worker.on("hint", function(event) {
-                var page = tabs.findTab(event.data.path);
-                if (!page) return;
+                var tab = tabs.focussedTab;
+                if (!tab || !tab.path === event.data.path)
+                    return;
                 
-                var editor = page.editor;
-                onHint(event, editor.ace);
+                assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
+                onHint(event, tab.editor.ace);
             });
         });
     
@@ -64,6 +65,7 @@ define(function(require, exports, module) {
             draw();
             editor = _editor;
             
+            
             if (!isVisible) {
                 isVisible = true;
                 
@@ -71,6 +73,7 @@ define(function(require, exports, module) {
                 //editor.selection.on("changeCursor", this.hide);
                 editor.session.on("changeScrollTop", hide);
                 editor.session.on("changeScrollLeft", hide);
+                document.addEventListener("click", hide);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -108,6 +111,7 @@ define(function(require, exports, module) {
         }
             
         function hide() {
+            window.document.removeEventListener("close", hide);
             if (isVisible) {
                 editor.renderer.scroller.removeChild(tooltipEl);
                 //editor.selection.removeListener("changeCursor", hide);
