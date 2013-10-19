@@ -300,9 +300,9 @@ define(function(require, exports, module) {
             // Remove cursor marker
             paddedLines = paddedLines.replace(/\^\^/g, "");
         
-            if (deleteSuffix)
+            if (deleteSuffix || line.substr(pos.column, postfix.length) === postfix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
-               else
+            else
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
             doc.insert({row: pos.row, column: pos.column - prefix.length}, paddedLines);
         
