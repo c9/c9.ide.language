@@ -27,7 +27,7 @@ function retrieveFollowingIdentifier(line, offset, regex) {
         else
             break;
     }
-    return buf;
+    return buf.join("");
 }
 
 function prefixBinarySearch(items, prefix) {

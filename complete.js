@@ -239,6 +239,7 @@ define(function(require, exports, module) {
             var doc = session.getDocument();
             var idRegex = match.identifierRegex || getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
+            var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
             if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
                 newText = "require(\"^^\")";
@@ -247,8 +248,18 @@ define(function(require, exports, module) {
             }
             
             // Don't insert extra () in front of (
-            if (newText.substr(newText.length - 4) == "(^^)" && line.substr(pos.column, 1) === "(")
-                newText = newText.substr(0, newText.length - 4);
+            var endingParens = newText.substr(newText.length - 4) === "(^^)"
+                ? 4
+                : newText.substr(newText.length - 2) === "()" ? 2 : 0
+            if (endingParens) {
+                if (line.substr(pos.column + (deleteSuffix ? postFix.length : 0), 1) === "(")
+                    newText = newText.substr(0, newText.length - endingParens);
+                if (line.substr(pos.column, postfix.length + 1) === postfix + "(") {
+                    newText = newText.substr(0, newText.length - endingParens);
+                    deleteSuffix = true;
+                }
+            }
+            
         
             newText = newText.replace(/\t/g, session.getTabString());
             
@@ -266,8 +277,6 @@ define(function(require, exports, module) {
             var preId = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
                 newText = newText.substring(1);
-        
-            var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
             // Pad the text to be inserted
             var paddedLines = newText.split("\n").join("\n" + prefixWhitespace);
