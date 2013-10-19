@@ -296,9 +296,17 @@ define(function(require, exports, module) {
             });
         });
         
-        function draw(){
+        function draw() {
             emit("draw");
             draw = function(){};
+        }
+        
+        function getWorker(callback) {
+            if (worker)
+                return setTimeout(callback.bind(null, null, worker)); // always async
+            plugin.once("initWorker", function() {
+                callback(null, worker);
+            });
         }
         
         function updateSettings(e) {
@@ -353,18 +361,15 @@ define(function(require, exports, module) {
                 contents = null;
             }
             
-            if (!worker)
-                return plugin.once("initWorker", function(e) {
-                    registerLanguageHandler(modulePath, contents, callback);
+            getWorker(function(err, worker) {
+                worker.on("registered", function reply(e) {
+                    if (e.data.path !== modulePath)
+                        return;
+                    worker.removeEventListener(reply);
+                    callback && callback(e.data.err);
                 });
-            
-            worker.on("registered", function reply(e) {
-                if (e.data.path !== modulePath)
-                    return;
-                worker.removeEventListener(reply);
-                callback && callback(e.data.err);
+                worker.call("register", [modulePath, contents]);
             });
-            worker.call("register", [modulePath, contents]);
         }
         
         /***** Lifecycle *****/
@@ -393,6 +398,9 @@ define(function(require, exports, module) {
          * They can be registered using the {@link #registerLanguageHandler}
          * function, and should be based on the {@link language.base_handler}
          * base class.
+         * 
+         * @fires initWorker Event indicating the worker is ready,
+         *                   see {@link #getWorker}
          * 
          * @singleton
          **/
@@ -434,7 +442,23 @@ define(function(require, exports, module) {
              * @param {String} [contents]    The contents of the handler script
              * @param {Function} callback    An optional callback called when the handler is initialized
              */
-            registerLanguageHandler : registerLanguageHandler
+            registerLanguageHandler : registerLanguageHandler,
+            
+            /**
+             * Gets the current worker, or waits for it to be ready and gets it.
+             * 
+             * @param {Function} callback                      The callback
+             * @param {String} callback.err                    Any error
+             * @param {Function} callback.result               Our result
+             * @param {Function} callback.result.on            Event handler for worker events
+             * @param {String} callback.result.on.event        Event name
+             * @param {Function} callback.result.on.handler    Event handler function
+             * @param {Object} callback.result.on.handler.data Event data
+             * @param {Function} callback.result.emit          Event emit function for worker
+             * @param {String} callback.result.on.event        Event name
+             * @param {Object} callback.result.on.data         Event data
+             */
+            getWorker : getWorker
         });
         
         register(null, {
