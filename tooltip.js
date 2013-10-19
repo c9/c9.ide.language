@@ -70,9 +70,7 @@ define(function(require, exports, module) {
                 isVisible = true;
                 
                 editor.renderer.scroller.appendChild(tooltipEl);
-                //editor.selection.on("changeCursor", this.hide);
-                editor.session.on("changeScrollTop", hide);
-                editor.session.on("changeScrollLeft", hide);
+                editor.on("mousewheel", hide);
                 document.addEventListener("click", hide);
             }
             tooltipEl.innerHTML = html;
@@ -111,12 +109,14 @@ define(function(require, exports, module) {
         }
             
         function hide() {
-            window.document.removeEventListener("close", hide);
             if (isVisible) {
-                editor.renderer.scroller.removeChild(tooltipEl);
-                //editor.selection.removeListener("changeCursor", hide);
-                editor.session.removeListener("changeScrollTop", hide);
-                editor.session.removeListener("changeScrollLeft", hide);
+                try {
+                    tooltipEl.parentElement.removeChild(tooltipEl);
+                } catch(e) {
+                    console.error(e);
+                }
+                window.document.removeEventListener("close", hide);
+                editor.off("mousewheel", hide);
                 isVisible = false;
             }
         }
