@@ -337,6 +337,7 @@ define(function(require, exports, module) {
 
             popup.show(pos, lineHeight);
             adjustToToolTipHeight(tooltip.getHeight());
+            updateDoc(true);
             
             ignoreMouseOnce = !isPopupVisible();
         }
@@ -364,6 +365,8 @@ define(function(require, exports, module) {
                 popup.container.style.bottom = bottom + "px";
             }
             tooltipHeightAdjust = height;
+            if (isDocShown)
+                showDocPopup();
         }
     
         function closeCompletionBox(event) {
@@ -441,7 +444,6 @@ define(function(require, exports, module) {
                         + completedp.guidToLongString(selected.type) + "</div>";
                 }
             }
-            
             
             selected.$doc = "";
             
