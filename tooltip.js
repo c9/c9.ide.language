@@ -71,7 +71,7 @@ define(function(require, exports, module) {
                 
                 editor.renderer.scroller.appendChild(tooltipEl);
                 editor.on("mousewheel", hide);
-                document.addEventListener("click", hide);
+                document.addEventListener("mousedown", hide);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -115,7 +115,7 @@ define(function(require, exports, module) {
                 } catch(e) {
                     console.error(e);
                 }
-                window.document.removeEventListener("close", hide);
+                window.document.removeEventListener("mousedown", hide);
                 editor.off("mousewheel", hide);
                 isVisible = false;
             }
