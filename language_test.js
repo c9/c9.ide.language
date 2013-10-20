@@ -68,7 +68,7 @@ require(["lib/architect/architect", "lib/chai/chai", "/vfs-root"], function (arc
             consumes : ["apf", "ui", "Plugin"],
             provides : [
                 "commands", "menus", "layout", "watcher", 
-                "save", "preferences", "anims", "clipboard"
+                "save", "preferences", "anims", "clipboard", "auth.bootstrap"
             ],
             setup    : expect.html.mocked
         },
