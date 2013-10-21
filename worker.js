@@ -583,7 +583,7 @@ function asyncParForEach(array, fn, callback) {
      */
     this.inspect = function (event) {
         var _self = this;
-        var pos = { row: event.data.row, column: event.data.col };
+        var pos = { row: event.data.row, column: event.data.column };
         var part = this.getPart({ row: event.data.row, column: event.data.col });
         this.parse(part, function(ast) {
             // find the current node based on the ast and the position data
