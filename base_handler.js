@@ -619,6 +619,26 @@ module.exports = {
      */
     hasResolution: function(doc, fullAst, marker, callback) {
         callback();
+    },
+    
+    /** 
+     * Given the cursor position and the parsed node at that position,
+     * gets the string to send to the debugger for live inspect hovering.
+     * 
+     * Should be overridden by inheritors that implement a debugger
+     * with live inspect. If not implemented, the string value based on
+     * currentNode's position is used.
+     * 
+     * @param {ace.Document} doc             The Document object representing the source
+     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} pos                   The current cursor position
+     * @param {Number} pos.row               The current cursor's row
+     * @param {Number} pos.column            The current cursor's column
+     * @param {Function} callback            The callback; must be called
+     * @param {Object} callback.result       The string representation of the expression to inspect
+     */
+    getInspectExpression: function(doc, fullAst, pos, currentNode, callback) {
+        callback();
     }
 };
 

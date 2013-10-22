@@ -588,23 +588,70 @@ function asyncParForEach(array, fn, callback) {
         var pos = { row: event.data.row, column: event.data.column };
         var part = this.getPart({ row: event.data.row, column: event.data.col });
         this.parse(part, function(ast) {
-            // find the current node based on the ast and the position data
             _self.findNode(ast, pos, function(node) {
-                // find a handler that can build an expression for this language
-                var handler = _self.handlers.filter(function (h) {
-                    return _self.isHandlerMatch(h) && h.buildExpression;
+                _self.nodeToString(node, function(result) {
+                    // Begin with a simple string representation
+                    var lastResult = result;
+                    
+                    // Try and find a better match using getInspectExpression()
+                    asyncForEach(_self.handlers, function(handler, next) {
+                        if (_self.isHandlerMatch(handler, part)) {
+                            handler.language = part.language;
+                            handler.getInspectExpression(part.value, ast, pos, node, function(result) {
+                                if (result)
+                                    lastResult = result || lastResult;
+                                next();
+                            });
+                        }
+                        else {
+                            next();
+                        }
+                    }, function () {
+                        _self.scheduleEmit("inspect", {
+                            pos: pos,
+                            value: lastResult
+                        });
+                    });
                 });
-
-                // then invoke it and build an expression out of this
-                if (node && handler && handler.length) {
-                    var expression = {
-                        pos: node.getPos(),
-                        value: handler[0].buildExpression(node)
-                    };
-                    _self.scheduleEmit("inspect", expression);
-                }
             });
         }, true);
+    };
+    
+    this.nodeToString = function(node, callback) {
+        if (!node)
+            return callback();
+        var _self = this;
+        this.getPos(node, function(pos) {
+            if (!pos)
+                return callback();
+            var doc = _self.doc;
+            if (pos.sl === pos.el)
+                return callback(doc.getLine(pos.sl).substring(pos.sc, pos.ec));
+            
+            var result = doc.getLine(pos.sl).substr(pos.sc);
+            for (var i = pos.sl + 1; i < pos.el; i++) {
+                result += doc.getLine(i);
+            }
+            result += doc.getLine(pos.el).substr(0, pos.ec);
+            callback(result);
+        });
+    };
+    
+    this.getPos = function(node, callback) {
+        var done = false;
+        var _self = this;
+        this.handlers.forEach(function (h) {
+            if (!done && _self.isHandlerMatch(h, null, true)) {
+                h.getPos(node, function(result) {
+                    if (!result)
+                        return;
+                    done = true;
+                    callback(result);
+                });
+            }
+        });
+        if (!done)
+            callback();
     };
     
     this.getIdentifierRegex = function(pos) {
