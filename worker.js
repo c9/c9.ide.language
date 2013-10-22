@@ -33,6 +33,8 @@ var WARNING_LEVELS = {
 };
 
 var UPDATE_TIMEOUT_MIN = 500;
+var UPDATE_TIMEOUT_MAX = 10000;
+var DEBUG = window.location; // ?noworker=1 mode
 
 // Leaking into global namespace of worker, to allow handlers to have access
 /*global disabledFeatures: true*/
@@ -858,16 +860,7 @@ function asyncParForEach(array, fn, callback) {
         if (this.scheduledUpdate && !now)
             return;
         this.scheduledUpdate = setTimeout(function() {
-            try {
-                var startTime = new Date().getTime();
-                handleUpdate();
-                _self.lastUpdateTime = new Date().getTime() - startTime;
-            } finally {
-                _self.scheduledUpdate = null;
-            }
-        }, UPDATE_TIMEOUT_MIN + this.lastUpdateTime);
-        
-        function handleUpdate() {
+            var startTime = new Date().getTime();
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler))
                     handler.onUpdate(_self.doc, next);
@@ -880,8 +873,20 @@ function asyncParForEach(array, fn, callback) {
                         _self.onCursorMove(_self.postponedCursorMove);
                         _self.postponedCursorMove = null;
                     }
+                    _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
+                    _self.scheduledUpdate = null;
+                    clearTimeout(_self.scheduledUpdateFail);
                 });
             });
+        }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
+        if (!DEBUG)
+        this.scheduledUpdateFail = setTimeout(function() {
+            _self.scheduledUpdate = null;
+            console.log("Warning: worker analysis taking too long, rescheduling");
+        }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
+        
+        function handleUpdate() {
+            
         }
     };
     
