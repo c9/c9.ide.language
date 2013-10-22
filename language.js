@@ -91,7 +91,7 @@ define(function(require, exports, module) {
                 return;
             var immediateWindow = session.repl ? tab.name : null;
             
-            if (session !== worker.$doc) {
+            if (session !== worker.$doc && type === "switchFile") {
                 if (worker.$doc) {
                     worker.$doc.off("change", onChange);
                     worker.$doc.off("changeMode", onChangeMode);
