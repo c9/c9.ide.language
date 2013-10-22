@@ -91,7 +91,7 @@ define(function(require, exports, module) {
                 return;
             var immediateWindow = session.repl ? tab.name : null;
             
-            if (session !== worker.$doc) {
+            if (session !== worker.$doc && type === "switchFile") {
                 if (worker.$doc) {
                     worker.$doc.off("change", onChange);
                     worker.$doc.off("changeMode", onChangeMode);
@@ -173,7 +173,7 @@ define(function(require, exports, module) {
                     notifyWorker("switchFile", e);
             });
             
-            emit("initWorker", {worker: worker}, true);
+            emit("initWorker", { worker: worker }, true);
 
             settings.on("read", function() {
                 settings.setDefaults("user/language", [
@@ -271,13 +271,6 @@ define(function(require, exports, module) {
                 initedTabs = true;
             }
             
-            editor.on("draw", function(){
-                // Set selection event
-                
-                // ide.on("liveinspect", function (e) {
-                //     worker.emit("inspect", { data: { row: e.row, col: e.col } });
-                // });
-            }, editor);
             // TODO investigate if this was really needed, editor.ace is already destroyed when this is called
             // editor.on("unload", function h2(){
             //     editor.ace.selection.off("changeCursor", onCursorChangeDefer);

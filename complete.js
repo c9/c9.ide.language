@@ -148,6 +148,19 @@ define(function(require, exports, module) {
                 },
                 exec : invoke
             }, plugin);
+            
+            commands.addCommand({
+                name    : "completeoverwrite",
+                hint    : "code complete & overwrite",
+                bindKey : {
+                    mac: "Ctrl-Shift-Space|Alt-Shift-Space", 
+                    win: "Ctrl-Shift-Space|Alt-Shift-Space"
+                },
+                isAvailable : function(editor){
+                    return editor && language.isEditorSupported({ editor: editor });
+                },
+                exec : invoke.bind(null, false, true)
+            }, plugin);
         }
         
         var drawn;
@@ -222,7 +235,7 @@ define(function(require, exports, module) {
          * If the prefix is already followed by an identifier substring, that string
          * is deleted.
          */
-        function replaceText(ace, match) {
+        function replaceText(ace, match, deleteSuffix) {
             var newText = match.replaceText;
             var pos = ace.getCursorPosition();
             var session = ace.getSession();
@@ -230,6 +243,7 @@ define(function(require, exports, module) {
             var doc = session.getDocument();
             var idRegex = match.identifierRegex || getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
+            var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
             if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
                 newText = "require(\"^^\")";
@@ -238,8 +252,18 @@ define(function(require, exports, module) {
             }
             
             // Don't insert extra () in front of (
-            if (newText.substr(newText.length - 4) == "(^^)" && line.substr(pos.column, 1) === "(")
-                newText = newText.substr(0, newText.length - 4);
+            var endingParens = newText.substr(newText.length - 4) === "(^^)"
+                ? 4
+                : newText.substr(newText.length - 2) === "()" ? 2 : 0
+            if (endingParens) {
+                if (line.substr(pos.column + (deleteSuffix ? postFix.length : 0), 1) === "(")
+                    newText = newText.substr(0, newText.length - endingParens);
+                if (line.substr(pos.column, postfix.length + 1) === postfix + "(") {
+                    newText = newText.substr(0, newText.length - endingParens);
+                    deleteSuffix = true;
+                }
+            }
+            
         
             newText = newText.replace(/\t/g, session.getTabString());
             
@@ -257,8 +281,6 @@ define(function(require, exports, module) {
             var preId = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
                 newText = newText.substring(1);
-        
-            var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
             // Pad the text to be inserted
             var paddedLines = newText.split("\n").join("\n" + prefixWhitespace);
@@ -282,7 +304,10 @@ define(function(require, exports, module) {
             // Remove cursor marker
             paddedLines = paddedLines.replace(/\^\^/g, "");
         
-            doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
+            if (deleteSuffix || paddedLines.slice(-postfix.length) === postfix)
+                doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
+            else
+                doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
             doc.insert({row: pos.row, column: pos.column - prefix.length}, paddedLines);
         
             var cursorCol = rowOffset ? colOffset : pos.column + colOffset - prefix.length;
@@ -529,6 +554,8 @@ define(function(require, exports, module) {
             switch(keyCode) {
                 case 0: break;
                 case 32: // Space
+                case 35: // End
+                case 36: // Home
                     closeCompletionBox();
                     break;
                 case 27: // Esc
@@ -555,7 +582,7 @@ define(function(require, exports, module) {
                         break;
                     }
                     closeCompletionBox();
-                    replaceText(ace, matches[popup.getRow()]);
+                    replaceText(ace, matches[popup.getRow()], e.shiftKey);
                     e.preventDefault();
                     e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
@@ -595,7 +622,7 @@ define(function(require, exports, module) {
             }
         }
         
-        function invoke(forceBox) {
+        function invoke(forceBox, deleteSuffix) {
             var tab = tabs.focussedTab;
             if (!tab || !language.isEditorSupported(tab))
                 return;
@@ -613,7 +640,8 @@ define(function(require, exports, module) {
                 pos: pos,
                 staticPrefix: c9.staticPrefix,
                 line: line,
-                forceBox: true
+                forceBox: true,
+                deleteSuffix: true
             }});
             if (forceBox)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
@@ -636,7 +664,7 @@ define(function(require, exports, module) {
                 matches = filterMatches(matches, line, pos);
             
             if (matches.length === 1 && !event.data.forceBox) {
-                replaceText(editor.ace, matches[0]);
+                replaceText(editor.ace, matches[0], event.data.deleteSuffix);
             }
             else if (matches.length > 0) {
                 var idRegex = matches[0].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
