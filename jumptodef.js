@@ -172,33 +172,18 @@ define(function(require, exports, module) {
             
             tabs.open(
                 {
-                    path: path,
-                    document: {
-                        ace: {
-                            jump: {
-                                row: lastResult.row,
-                                column: lastResult.column
-                            }
-                        }
-                    }
+                    path: path
                 },
                 function(err, tab) {
-                    if (lastResult.column !== undefined || err)
+                    if (err)
                         return;
-                    tabs.open(
-                        {
-                            path: path,
-                            document: {
-                                ace: {
-                                    jump: {
-                                        row: lastResult.row,
-                                        column: _self.getFirstColumn(tab.editor.ace, lastResult.row)
-                                    }
-                                }
-                            }
-                        },
-                        function() {}
-                    );
+                    var state = tab.document && tab.document.getState();
+                    if (state && state.ace)
+                        state.ace.jump = {
+                            row: lastResult.row,
+                            column: lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row)
+                        }
+                    tab.document.setState(state);
                 }
             );
         }
