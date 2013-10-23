@@ -254,11 +254,11 @@ define(function(require, exports, module) {
             // Don't insert extra () in front of (
             var endingParens = newText.substr(newText.length - 4) === "(^^)"
                 ? 4
-                : newText.substr(newText.length - 2) === "()" ? 2 : 0
+                : newText.substr(newText.length - 2) === "()" ? 2 : 0;
             if (endingParens) {
-                if (line.substr(pos.column + (deleteSuffix ? postFix.length : 0), 1) === "(")
+                if (line.substr(pos.column + (deleteSuffix ? postfix.length : 0), 1) === "(")
                     newText = newText.substr(0, newText.length - endingParens);
-                if (line.substr(pos.column, postfix.length + 1) === postfix + "(") {
+                if (postfix && line.substr(pos.column, postfix.length + 1) === postfix + "(") {
                     newText = newText.substr(0, newText.length - endingParens);
                     deleteSuffix = true;
                 }
