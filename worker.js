@@ -589,27 +589,33 @@ function asyncParForEach(array, fn, callback) {
         var part = this.getPart({ row: event.data.row, column: event.data.col });
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(node) {
-                _self.nodeToString(node, function(result) {
-                    // Begin with a simple string representation
-                    var lastResult = result;
-                    
-                    // Try and find a better match using getInspectExpression()
-                    asyncForEach(_self.handlers, function(handler, next) {
-                        if (_self.isHandlerMatch(handler, part)) {
-                            handler.language = part.language;
-                            handler.getInspectExpression(part.value, ast, pos, node, function(result) {
-                                if (result)
-                                    lastResult = result || lastResult;
+                _self.getPos(node, function(fullPos) {
+                    if (!fullPos) {
+                        var identifier = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
+                        fullPos = { sl: pos.row, sc: pos.column, el: pos.row, ec: pos.column + identifier.length };
+                    }
+                    _self.nodeToString(node, function(result) {
+                        // Begin with a simple string representation
+                        var lastResult = {
+                            pos: fullPos,
+                            value: result
+                        };
+                        
+                        // Try and find a better match using getInspectExpression()
+                        asyncForEach(_self.handlers, function(handler, next) {
+                            if (_self.isHandlerMatch(handler, part)) {
+                                handler.language = part.language;
+                                handler.getInspectExpression(part.value, ast, pos, node, function(result) {
+                                    if (result)
+                                        lastResult = result || lastResult;
+                                    next();
+                                });
+                            }
+                            else {
                                 next();
-                            });
-                        }
-                        else {
-                            next();
-                        }
-                    }, function () {
-                        _self.scheduleEmit("inspect", {
-                            pos: pos,
-                            value: lastResult
+                            }
+                        }, function () {
+                            _self.scheduleEmit("inspect", lastResult);
                         });
                     });
                 });
@@ -638,6 +644,8 @@ function asyncParForEach(array, fn, callback) {
     };
     
     this.getPos = function(node, callback) {
+        if (!node)
+            return callback();
         var done = false;
         var _self = this;
         this.handlers.forEach(function (h) {
