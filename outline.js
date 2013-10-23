@@ -26,12 +26,12 @@ define(function(require, exports, module) {
         /***** Initialization *****/
         
         var plugin = new Panel("Ajax.org", main.consumes, {
-            index        : 50,
+            index        : options.index || 50,
             width        : 250,
             caption      : "Outline",
             elementName  : "winOutline",
             minWidth     : 130,
-            where        : "right",
+            where        : options.where || "right",
             autohide     : true
         });
         // var emit   = plugin.getEmitter();
