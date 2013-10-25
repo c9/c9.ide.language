@@ -392,9 +392,6 @@ define(function(require, exports, module) {
          * function, and should be based on the {@link language.base_handler}
          * base class.
          * 
-         * @fires initWorker Event indicating the worker is ready,
-         *                   see {@link #getWorker}
-         * 
          * @singleton
          **/
         plugin.freezePublicAPI({
