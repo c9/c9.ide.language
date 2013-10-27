@@ -372,7 +372,7 @@ define(function(require, exports, module) {
                     if (e.data.path !== modulePath)
                         return;
                     worker.removeEventListener(reply);
-                    callback && callback(e.data.err);
+                    callback && callback(e.data.err, worker);
                 });
                 worker.call("register", [modulePath, contents]);
             });
@@ -443,7 +443,9 @@ define(function(require, exports, module) {
              * 
              * @param {String} modulePath    The require path of the handler
              * @param {String} [contents]    The contents of the handler script
-             * @param {Function} callback    An optional callback called when the handler is initialized
+             * @param {Function} [callback]  An optional callback called when the handler is initialized
+             * @param String callback.err    Any error that occured when loading this handler
+             * @param Object callback.worker The worker object (see {@link #getWorker})
              */
             registerLanguageHandler : registerLanguageHandler,
             
