@@ -7,7 +7,7 @@
     margin: 4px 0 0 3px;
 }
 .outline.ace_tree .toggler:not(.empty){
-    background-image: url(images/tree_close_arrow_small.png);
+    background-image: url("@{image-path}/tree_close_arrow_small.png");
 }
 
 .outline.ace_tree .ace_tree_cell-layer>div>span{
@@ -52,22 +52,22 @@
 }
 
 .outline.ace_tree .tree-row .icon.event{
-    background: url(images/event.png) no-repeat 4px;
+    background: url("@{image-path}/event.png") no-repeat 4px;
 }
 .outline.ace_tree .tree-row .icon.method{
-    background: url(images/method.png) no-repeat 4px;
+    background: url("@{image-path}/method.png") no-repeat 4px;
 }
 .outline.ace_tree .tree-row .icon.method2{
-    background: url(images/method2.png) no-repeat 4px;
+    background: url("@{image-path}/method2.png") no-repeat 4px;
 }
 .outline.ace_tree .tree-row .icon.package{
-    background: url(images/package.png) no-repeat 4px;
+    background: url("@{image-path}/package.png") no-repeat 4px;
 }
 .outline.ace_tree .tree-row .icon.property{
-    background: url(images/property.png) no-repeat 4px;
+    background: url("@{image-path}/property.png") no-repeat 4px;
 }
 .outline.ace_tree .tree-row .icon.property2{
-    background: url(images/property2.png) no-repeat 4px;
+    background: url("@{image-path}/property2.png") no-repeat 4px;
 }
 
 .outline.ace_tree .message{
