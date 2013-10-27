@@ -9,7 +9,7 @@ define(function(require, exports, module) {
         BaseClass.call(this, root || {});
         
         this.rowHeight      = 20;
-        this.innerRowHeight = 18;
+        // this.rowHeightInner = 18;
         
         Object.defineProperty(this, "loaded", {
             get : function(){ return this.visibleItems.length; }
