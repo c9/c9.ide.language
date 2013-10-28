@@ -1,13 +1,13 @@
 .outline.ace_tree{
     border: none;
     background: transparent;
-    color: #e1e1e1;
+    color: @color;
 }
 .outline.ace_tree .toggler{
     margin: 4px 0 0 3px;
 }
 .outline.ace_tree .toggler:not(.empty){
-    background-image: url("@{image-path}/tree_close_arrow_small.png");
+    background-image: url("@{image-path}/@{tree-arrow}");
 }
 
 .outline.ace_tree .ace_tree_cell-layer>div>span{
@@ -23,11 +23,11 @@
 }
 
 .outline.ace_tree .tree-row strong{
-    color: #9FB814;
+    color: @highlight-color;
     /*font-weight: normal;*/
 }
 .outline.ace_tree .tree-row.selected strong{
-    color : white;
+    color : @highlight-selected-color;
 }
 
 .outline.ace_tree .tree-row{
@@ -35,13 +35,16 @@
     cursor: pointer;
 }
 .outline.ace_tree .tree-row:hover{
-    background: #2E2E2E;
+    background: @selected-hover-background;
+    color: @selected-hover-color;
 }
 .outline.ace_tree .tree-row.selected{
-    background: #252525;
+    background: @selected-background;
+    color: @selected-color;
 }
 .outline.ace_tree.focus .tree-row.selected{
-    background: #748512;
+    background: @selected-focus-background;
+    color: @selected-focus-color;
 }
 
 .outline.ace_tree .tree-row .icon{
