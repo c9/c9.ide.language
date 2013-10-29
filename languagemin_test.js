@@ -33,6 +33,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
             minimal : true
         },
         "plugins/c9.ide.language/language",
+        "plugins/c9.ide.language/tooltip",
         "plugins/c9.ide.language/keyhandler",
         "plugins/c9.ide.language/complete",
         "plugins/c9.ide.language/marker",
@@ -42,27 +43,31 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         "plugins/logicblox.language.logiql_commands/logiql_commands",
         {
             packagePath: "plugins/logicblox.core/logicblox",
-            connectBloxURL: "http://lbdemo.c9.io/connectblox",
-            connectBloxAdminURL: "http://lbdemo.c9.io:55183/connectblox",
+            bloxWebURL: "http://lbdemo.c9.io/connectblox",
             fileServerURL: "http://lbdemo.c9.io",
             lbWorkspace: null
         },
         "plugins/c9.ide.keys/commands",
         
-        "plugins/c9.ide.ace/min/pane",
         "plugins/c9.ide.ace/min/settings",
         "plugins/c9.ide.ace/min/ui",
         "plugins/c9.ide.ace/min/api",
         "plugins/c9.ide.browsersupport/browsersupport",
+        // Mock
         {
-            provides : ["log"],
             consumes: [],
+            provides : ["log", "auth.bootstrap", "clipboard", "fs", "Tab"],
             setup    : function(options, imports, register) {
-                register(null, {log: {}});
+                register(null, {
+                    log: {},
+                    "auth.bootstrap": {
+                        login: function() {}
+                    }
+                });
             }
         },
         {
-            consumes : ["ace", "c9", "commands", "language.keyhandler", "language.complete"],
+            consumes : ["ace", "c9", "commands", "language.keyhandler", "language.complete", "Document"],
             provides : [],
             setup    : main
         }
@@ -76,7 +81,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         var c9       = imports.c9;
         var ace      = imports.ace;
         var commands = imports.commands;
-        var Document = c9.Document;
+        var Document = imports.Document;
         var tabs     = c9.tabs;
         var complete = imports["language.complete"];
         
