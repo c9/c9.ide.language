@@ -6,7 +6,8 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "settings", "ace", "tabManager", "preferences", "browsersupport"
+        "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
+        "browsersupport", "proc"
     ];
     main.provides = ["language"];
     return main;
@@ -19,6 +20,7 @@ define(function(require, exports, module) {
         var tabs      = imports.tabManager;
         var prefs     = imports.preferences;
         var browsers  = imports.browsersupport;
+        var proc      = imports.proc;
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
@@ -43,15 +45,6 @@ define(function(require, exports, module) {
         emit.setMaxListeners(50); // avoid warnings during initialization
         
         var worker;
-        
-        var loaded = false;
-
-        function load() {
-            if (loaded) return false;
-            loaded = true;
-
-            return doLoad();
-        }
         
         var onCursorChangeDeferred;
         function onCursorChangeDefer() {
@@ -81,7 +74,7 @@ define(function(require, exports, module) {
          * @param type  the event type, documentOpen or switchFile
          * @param e     the originating event, should have an e.tab.path and e.tab.editor.ace
          */
-        function notifyWorker(type, e){
+        function notifyWorker(type, e) {
             if (!worker)
                 return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
@@ -130,17 +123,18 @@ define(function(require, exports, module) {
             clearTimeout(delayedTransfer);
             
             if (type === "switchFile" && value.length > BIG_FILE_LINES) {
-                return delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
+                delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
+                return delayedTransfer;
             }
             
-            console.log("Sent to worker [" + type + "] " + path + " (" + value.length + ")");
+            console.log("[language] Sent to worker (" + type + "): " + path);
 
             notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
         }
         
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
             if (options.workspaceDir === undefined)
-                console.error("options.workspaceDir is undefined!")
+                console.error("[language] options.workspaceDir is undefined!");
             // background tabs=open document, foreground tab=switch to file
             // this is needed because with concorde changeSession event is fired when document is still empty
             worker.call(type, [
@@ -148,8 +142,11 @@ define(function(require, exports, module) {
                 options.workspaceDir
             ]);
         }
-
-        function doLoad() {
+        
+        var loaded = false;
+        function load() {
+            if (loaded) return false;
+            loaded = true;
             // Create main worker for language processing
             if (useUIWorker) {
                 worker = new UIWorkerClient(["treehugger", "ext", "ace", "c9", "plugins"], "plugins/c9.ide.language/worker", "LanguageWorker");
@@ -162,17 +159,27 @@ define(function(require, exports, module) {
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
                     throw e;
                 }
-                
-            } 
+            }
+            
+            worker.on("execFile", function(e) {
+                proc.execFile(e.data.path, e.data.options, function(err, stdout, stderr) {
+                    worker.emit("execFileResult", { data: {
+                        id: e.data.id,
+                        err: err,
+                        stdout: stdout,
+                        stderr: stderr
+                    }});
+                });
+            });
 
-            tabs.on("tabDestroy", function(e){
+            tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
                 if (path)
                     worker.emit("documentClose", {data: path});
             });
             
             // Hook all newly opened files
-            tabs.on("open", function(e){
+            tabs.on("open", function(e) {
                 if (isEditorSupported(e.tab)) {
                     notifyWorker("documentOpen", e);
                     if (!tabs.getPanes) // single-pane minimal UI
@@ -181,7 +188,7 @@ define(function(require, exports, module) {
             });
             
             // Switch to any active file
-            tabs.on("focusSync", function(e){
+            tabs.on("focusSync", function(e) {
                 if (isEditorSupported(e.tab))               
                     notifyWorker("switchFile", e);
             });
@@ -260,7 +267,7 @@ define(function(require, exports, module) {
         }
         
         // Initialize an Ace editor
-        aceHandle.on("create", function(e){
+        aceHandle.on("create", function(e) {
             var editor = e.editor;
             
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
@@ -285,10 +292,10 @@ define(function(require, exports, module) {
             }
             
             // TODO investigate if this was really needed, editor.ace is already destroyed when this is called
-            // editor.on("unload", function h2(){
+            // editor.on("unload", function h2() {
             //     editor.ace.selection.off("changeCursor", onCursorChangeDefer);
             // }, editor);
-            editor.on("documentLoad", function(e){
+            editor.on("documentLoad", function(e) {
                 var session = e.doc.getSession().session;
                 
                 updateSettings(e); //@todo
@@ -298,13 +305,13 @@ define(function(require, exports, module) {
                 });
 
             });
-            editor.on("documentUnload", function(e){
+            editor.on("documentUnload", function(e) {
             });
         });
         
         function draw() {
             emit("draw");
-            draw = function(){};
+            draw = function() {};
         }
         
         function getWorker(callback) {
@@ -320,7 +327,7 @@ define(function(require, exports, module) {
                 return plugin.once("initWorker", updateSettings.bind(null, e));
             
             ["jshint", "instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
-              .forEach(function(s){
+              .forEach(function(s) {
                 worker.call(
                     (settings.getBool("user/language/@" + s) ? "enable" : "disable")
                     + "Feature", [s]);
@@ -380,16 +387,16 @@ define(function(require, exports, module) {
         
         /***** Lifecycle *****/
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             // loaded = false;
         });
         
