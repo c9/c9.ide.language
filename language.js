@@ -24,6 +24,7 @@ define(function(require, exports, module) {
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
         var INITIAL_DELAY = 2000;
         var delayedTransfer;
+        var lastWorkerMessage = {};
         
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
@@ -104,6 +105,18 @@ define(function(require, exports, module) {
                 session.on("changeMode", onChangeMode);
                 session.on("change", onChange);
             }
+            
+            // Avoid sending duplicate messages
+            var last = lastWorkerMessage;
+            if (last.type === type && last.path === path && last.immediateWindow === immediateWindow
+                && last.syntax === syntax)
+                return;
+            lastWorkerMessage = {
+                type: type,
+                path: path,
+                immediateWindow: immediateWindow,
+                syntax: syntax
+            };
                 
             var syntax = session.syntax;
             if (session.$modeId)
@@ -120,7 +133,7 @@ define(function(require, exports, module) {
                 return delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
             }
             
-            console.log("Sent to worker [" + type + "] " + path + " (" + value.length + ")"); // DEBUG
+            console.log("Sent to worker [" + type + "] " + path + " (" + value.length + ")");
 
             notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
         }
