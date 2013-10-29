@@ -38,6 +38,8 @@ define(function(require, exports, module) {
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit   = plugin.getEmitter();
         
+        var theme;
+        
         var isInvokeScheduled = false;
         var ignoreMouseOnce = false;
         var enterCompletion = true;
@@ -161,6 +163,20 @@ define(function(require, exports, module) {
                 },
                 exec : invoke.bind(null, false, true)
             }, plugin);
+            
+            aceHandle.on("themeChange", function(e){
+                theme = e.theme;
+                if (!theme || !drawn) return;
+                
+                txtCompleterDoc.className = "code_complete_doc_text" 
+                    + (theme.isDark ? "dark" : "");
+
+                popup.setTheme({
+                    cssClass: "code_complete_text " 
+                        + (theme.isDark ? "dark" : ""), 
+                    padding: 0
+                });
+            }, plugin)
         }
         
         var drawn;
@@ -172,10 +188,15 @@ define(function(require, exports, module) {
             ui.insertCss(require("text!./complete.css"), plugin);
             
             txtCompleterDoc = document.createElement("div");
-            txtCompleterDoc.className = "code_complete_doc_text";
+            txtCompleterDoc.className = "code_complete_doc_text" 
+                + (!theme || theme.isDark ? "dark" : "");
             
             popup = new Popup(document.body);
-            popup.setTheme({cssClass: "code_complete_text", padding: 0});
+            popup.setTheme({
+                cssClass: "code_complete_text" 
+                    + (!theme || theme.isDark ? "dark" : ""), 
+                padding: 0
+            });
             popup.$imageSize = 8 + 5 + 7 + 1;
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
             
