@@ -176,7 +176,7 @@ define(function(require, exports, module) {
                         + (theme.isDark ? "dark" : ""), 
                     padding: 0
                 });
-            }, plugin)
+            }, plugin);
         }
         
         var drawn;

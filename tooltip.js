@@ -6,17 +6,19 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui"
+        "Plugin", "tabManager", "language", "ui", "ace"
     ];
     main.provides = ["language.tooltip"];
     return main;
     
     function main(options, imports, register) {
-        var language = imports.language;
-        var tabs = imports.tabManager;
-        var dom = require("ace/lib/dom");
-        var Plugin = imports.Plugin;
-        var ui = imports.ui;
+        var language  = imports.language;
+        var tabs      = imports.tabManager;
+        var dom       = require("ace/lib/dom");
+        var Plugin    = imports.Plugin;
+        var ui        = imports.ui;
+        var aceHandle = imports.ace;
+        
         var plugin = new Plugin("Ajax.org", main.consumes);
         
         var editor;
@@ -25,21 +27,46 @@ define(function(require, exports, module) {
         var completer;
         var adjustCompleterTop;
         var isTopdown;
-        
-        var tooltipEl = dom.createElement("div");
-        tooltipEl.className = "language_tooltip dark";
+        var tooltipEl;
         
         var assert = require("plugins/c9.util/assert");
-
-        language.on("initWorker", function(e){
-            e.worker.on("hint", function(event) {
-                var tab = tabs.focussedTab;
-                if (!tab || !tab.path === event.data.path)
-                    return;
+        
+        function load(){
+            tooltipEl = dom.createElement("div");
+            tooltipEl.className = "language_tooltip dark";
+            
+            language.on("initWorker", function(e){
+                e.worker.on("hint", function(event) {
+                    var tab = tabs.focussedTab;
+                    if (!tab || !tab.path === event.data.path)
+                        return;
+                    
+                    assert(tab.editor && tab.editor.ace, 
+                        "Could find a tab but no editor for " + event.data.path);
+                    onHint(event, tab.editor.ace);
+                });
+            }, plugin);
+            
+            aceHandle.on("themeChange", function(e){
+                var theme = e.theme;
+                if (!theme) return;
                 
-                assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
-                onHint(event, tab.editor.ace);
-            });
+                tooltipEl.className = "language_tooltip" 
+                    + (theme.isDark ? "dark" : "");
+            }, plugin);
+        }
+        
+        // @todo @lennartcl. This plugin is very messy. I added the things below
+        // but I see that the plugin is never returned. Nor is its interface
+        // set. Could you fix?
+        plugin.on("load", function(){
+            load();
+        });
+        plugin.load("This is not how it is supposed to be");
+        
+        plugin.on("unload", function(){
+            if (tooltipEl)
+                tooltipEl.parentNode.removeChild(tooltipEl);
         });
     
         function onHint(event, editor) {
