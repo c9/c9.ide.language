@@ -504,7 +504,7 @@ define(function(require, exports, module) {
                     + (selected.docHead || docHead || selected.name) + '</div>' 
                     + (selected.$doc || "");
             
-            if (selected && selected.$doc) {
+            if (selected && selected.doc) {
                 if (isDocShown) {
                     showDocPopup();
                 }
@@ -670,6 +670,11 @@ define(function(require, exports, module) {
         }
         
         function onComplete(event, editor) {
+            if (!lastAce || lastAce != editor.ace) {
+                console.error("recieved completion for wrong ace");
+                return;
+            }
+            
             var pos = editor.ace.getCursorPosition();
             var line = editor.ace.getSession().getLine(pos.row);
             
