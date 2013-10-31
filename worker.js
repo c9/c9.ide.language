@@ -1183,15 +1183,15 @@ function asyncParForEach(array, fn, callback) {
      * Retrigger completion if the popup is still open and new
      * information is now available.
      */
-    this.completeUpdate = function(pos) {
+    this.completeUpdate = function(pos, line) {
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {
-                _self.complete({data: {pos: pos, staticPrefix: _self.staticPrefix, isUpdate: true}});
+                _self.complete({data: {pos: pos, line: line, staticPrefix: _self.staticPrefix, isUpdate: true}});
             }, 0);
         }
         else {
-            this.complete({data: {pos: pos, staticPrefix: this.staticPrefix, isUpdate: true}});
+            this.complete({data: {pos: pos, line: line, staticPrefix: this.staticPrefix, isUpdate: true}});
         }
     };
 

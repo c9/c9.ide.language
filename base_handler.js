@@ -102,7 +102,8 @@ module.exports = {
      * 
      * Should not be overridden by inheritors.
      * 
-     * @param {Object} pos The position to retrigger this update
+     * @param {Object} pos   The position to retrigger this update
+     * @param {String} line  The line that this update was triggered for
      */
     completeUpdate: function(pos) {
         // implemented by worker.completeUpdate
@@ -136,14 +137,14 @@ module.exports = {
      * @param {String}   callback.stderr                  The stderr buffer
      */
     execFile: function(path, options, callback) {
-        var id = lastExecId;
+        var id = lastExecId++;
         var _self = this;
         this.sender.emit("execFile", { path: path, options: options, id: id });
         this.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
                 return;
             _self.sender.off("execFileResult", onExecFileResult);
-            callback(event.data.error, event.data.stdout. event.data.stderr);
+            callback(event.data.err, event.data.stdout, event.data.stderr);
         });
     },
 

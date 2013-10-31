@@ -415,8 +415,6 @@ define(function(require, exports, module) {
             }
             oldCommandKey = oldOnTextInput = null;
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
-            
-            lastAce = null;
         }
             
         function populateCompletionBox(ace, matches) {
@@ -651,7 +649,7 @@ define(function(require, exports, module) {
         
         function onComplete(event, editor) {
             if (!lastAce || lastAce != editor.ace) {
-                console.error("recieved completion for wrong ace");
+                console.error("[complete] received completion for wrong ace");
                 return;
             }
             
