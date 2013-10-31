@@ -22,7 +22,6 @@ define(function(require, exports, module) {
         var editor;
         var isVisible;
         var labelHeight;
-        var completer;
         var adjustCompleterTop;
         var isTopdown;
         
@@ -34,7 +33,7 @@ define(function(require, exports, module) {
         language.on("initWorker", function(e){
             e.worker.on("hint", function(event) {
                 var tab = tabs.focussedTab;
-                if (!tab || !tab.path === event.data.path)
+                if (!tab || tab.path !== event.data.path)
                     return;
                 
                 assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
