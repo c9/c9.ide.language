@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport", "proc"
+        "browsersupport", "proc", "fs"
     ];
     main.provides = ["language"];
     return main;
@@ -21,6 +21,7 @@ define(function(require, exports, module) {
         var prefs     = imports.preferences;
         var browsers  = imports.browsersupport;
         var proc      = imports.proc;
+        var fs        = imports.fs;
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
@@ -168,6 +169,16 @@ define(function(require, exports, module) {
                         err: err,
                         stdout: stdout,
                         stderr: stderr
+                    }});
+                });
+            });
+            
+            worker.on("readFile", function(e) {
+                fs.readFile(e.data.path, e.data.encoding, function(err, data) {
+                    worker.emit("readFileResult", { data: {
+                        id: e.data.id,
+                        err: err,
+                        data: data
                     }});
                 });
             });

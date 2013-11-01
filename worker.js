@@ -134,6 +134,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     Mirror.call(this, sender);
     linereport.sender = sender;
     this.setTimeout(0);
+    exports.sender = sender;
 
     sender.on("hierarchy", function(event) {
         _self.hierarchy(event);
