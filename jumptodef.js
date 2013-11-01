@@ -20,7 +20,7 @@ define(function(require, exports, module) {
         var language = imports.language;
         var commands = imports.commands;
         var tabbehavior = imports.tabbehavior;
-        var ace = imports.ace;
+        var aceHandle = imports.ace;
         var tabs = imports.tabManager;
         var ui = imports.ui;
         var util = require("plugins/c9.ide.language/complete_util");
@@ -30,6 +30,7 @@ define(function(require, exports, module) {
         var removeSpinnerNodes;
         var worker;
         var loaded;
+        var lastJump;
         
         /***** Initialization *****/
         
@@ -63,7 +64,7 @@ define(function(require, exports, module) {
                     id: "mnuEditorJumpToDef2"
                 });
     
-                ace.getElement("menu", function(menu) {
+                aceHandle.getElement("menu", function(menu) {
                     menus.addItemToMenu(menu, mnuJumpToDef2, 750, plugin);
                     menu.on("prop.visible", function(e) {
                         // only fire when visibility is set to true
@@ -120,14 +121,27 @@ define(function(require, exports, module) {
         function jumptodef() {
             if (!tabs.focussedTab || !tabs.focussedTab.editor || !tabs.focussedTab.editor.ace)
                 return;
-                
-            var ace = tabs.focussedTab.editor.ace;
+            
+            var tab = tabs.focussedTab;
+            var ace = tab.editor.ace;
+            var sel = ace.getSelection();
+            var pos = sel.getCursor();
     
             activateSpinner(tabs.focussedTab);
             onJumpStart(ace);
-    
-            var sel = ace.getSelection();
-            var pos = sel.getCursor();
+            
+            if (lastJump && lastJump.ace === ace
+                && lastJump.row === pos.row && lastJump.column === pos.column) {
+                clearSpinners(tab);
+                var state = tab.document.getState();
+                state.ace.jump = lastJump.source;
+                tab.document.setState(state);
+                lastJump = null;
+                return;
+            }
+                
+            
+            lastJump = null;
     
             worker.emit("jumpToDefinition", {
                 data: pos
@@ -157,18 +171,6 @@ define(function(require, exports, module) {
     
             var _self = this;
             var path = lastResult && lastResult.path || tab.path;
-    
-            /*
-            editors.gotoDocument({
-                getColumn: function() {
-                    return lastResult.column !== undefined ? lastResult.column : _self.getFirstColumn(lastResult.row);
-                },
-                row: lastResult.row + 1,
-                node: path ? undefined : ide.getActiveTab().xmlRoot,
-                animate: true,
-                path: path
-            });
-            */
             
             tabs.open(
                 {
@@ -178,11 +180,19 @@ define(function(require, exports, module) {
                     if (err)
                         return;
                     var state = tab.document && tab.document.getState();
-                    if (state && state.ace)
+                    if (state && state.ace) {
+                        lastResult.column = lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row);
+                        lastJump = {
+                            ace: tab.editor.ace,
+                            row: lastResult.row,
+                            column: lastResult.column,
+                            source: e.data.pos
+                        };
                         state.ace.jump = {
                             row: lastResult.row,
-                            column: lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row)
+                            column: lastResult.column
                         }
+                    }
                     tab.document.setState(state);
                 }
             );
