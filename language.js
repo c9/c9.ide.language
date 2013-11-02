@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport", "proc", "fs"
+        "browsersupport", "proc", "fs", "save"
     ];
     main.provides = ["language"];
     return main;
@@ -22,6 +22,7 @@ define(function(require, exports, module) {
         var browsers  = imports.browsersupport;
         var proc      = imports.proc;
         var fs        = imports.fs;
+        var save      = imports.save;
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
@@ -164,13 +165,29 @@ define(function(require, exports, module) {
             });
             
             worker.on("readFile", function(e) {
+                // Try to get the contents from a tab first
+                // may not be 100% reliable atm, but good enough for us
+                var allTabs = tabs.getTabs();
+                for (var i = 0; i < allTabs.length; i++) {
+                    var tab = allTabs[i];
+                    var value = tab.value || tab.document && tab.document.value;
+                    var saved = save.getSavingState(tab) === "saved";
+                    if (tab.path !== e.data.path || !value || !saved)
+                        continue;
+                    return done(null, value);
+                }
+                
                 fs.readFile(e.data.path, e.data.encoding, function(err, data) {
+                    done(err, data);
+                });
+                
+                function done(err, data) {
                     worker.emit("readFileResult", { data: {
                         id: e.data.id,
                         err: err,
                         data: data
                     }});
-                });
+                }
             });
 
             tabs.on("tabDestroy", function(e) {

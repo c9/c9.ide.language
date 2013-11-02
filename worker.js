@@ -128,6 +128,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     this.currentMarkers = [];
     this.$lastAggregateActions = {};
     this.$warningLevel = "info";
+    this.$openDocuments = {};
     sender.once = EventEmitter.once;
     this.serverProxy = new ServerProxy(sender);
 
@@ -135,6 +136,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     linereport.sender = sender;
     this.setTimeout(0);
     exports.sender = sender;
+    exports.$lastWorker = this;
 
     sender.on("hierarchy", function(event) {
         _self.hierarchy(event);
@@ -412,25 +414,23 @@ function asyncParForEach(array, fn, callback) {
     this.outline = function(event) {
         var _self = this;
         var foundHandler = false;
+        var result;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler)) {
                     handler.outline(_self.doc, ast, function(outline) {
-                        if (outline) {
-                            foundHandler = true;
-                            outline.ignoreFilter = event.data.ignoreFilter;
-                            return _self.sender.emit("outline", outline);
-                        }
-                        else {
-                            next();
-                        }
+                        if (outline && (!result || !result.isGeneric))
+                            result = outline;
+                        
+                        next();
                     });
                 }
                 else
                     next();
             }, function() {
-                if (!foundHandler)
-                    _self.sender.emit("outline", { body: [] });
+                _self.sender.emit("outline",
+                  { body: result && (result.body || result.items) || [] }
+                );
             });
         });
     };
@@ -995,7 +995,11 @@ function asyncParForEach(array, fn, callback) {
         }
         var _self = this;
         if (!this.$path) {
-            // console.error("Warning: language handler registered without first calling switchFile");
+            // If we don't have a path, we need to wait
+            // which is bad since we're already in the handlers list...
+            if (!this.$warnedForPath)
+                console.error("Warning: language handler registered without first calling switchFile");
+            this.$warnedForPath = true;
             return waitForPath();
         }
         handler.path = this.$path;
@@ -1006,10 +1010,12 @@ function asyncParForEach(array, fn, callback) {
         handler.completeUpdate = this.completeUpdate.bind(this);
         handler.immediateWindow = this.immediateWindow;
         handler.$getIdentifierRegex = this.getIdentifierRegex.bind(this);
-        if (handler.handlesLanguage(_self.$language) && handler.getIdentifierRegex())
-            _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });
-        if (handler.handlesLanguage(_self.$language) && handler.getCompletionRegex())
-            _self.sender.emit("setCompletionRegex", { language: _self.$language, completionRegex: handler.getCompletionRegex() });
+        if (_self.$language) {
+            if (handler.handlesLanguage(_self.$language) && handler.getIdentifierRegex())
+                _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });
+            if (handler.handlesLanguage(_self.$language) && handler.getCompletionRegex())
+                _self.sender.emit("setCompletionRegex", { language: _self.$language, completionRegex: handler.getCompletionRegex() });
+        }
         if (!handler.$isInited) {
             handler.$isInited = true;
             handler.init(function() {
@@ -1021,7 +1027,10 @@ function asyncParForEach(array, fn, callback) {
             });
         }
         else if (onDocumentOpen) {
-            handler.onDocumentOpen(_self.$path, _self.doc, oldPath, callback);
+            // Note: may not return for a while for asynchronous workers,
+            //       don't use this for queueing other tasks
+            handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
+            callback();
         }
         else {
             callback();
@@ -1029,6 +1038,7 @@ function asyncParForEach(array, fn, callback) {
     };
 
     this.documentOpen = function(path, immediateWindow, language, document) {
+        this.$openDocuments["_" + path] = path;
         var _self = this;
         var code = this.$documentToString(document);
         var doc = {getValue: function() {return code;} };
@@ -1039,6 +1049,7 @@ function asyncParForEach(array, fn, callback) {
     
     this.documentClose = function(event) {
         var path = event.data;
+        delete this.$openDocuments["_" + path];
         asyncForEach(this.handlers, function(handler, next) {
             handler.onDocumentClose(path, next);
         });

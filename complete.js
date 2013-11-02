@@ -585,6 +585,7 @@ define(function(require, exports, module) {
                     e.stopImmediatePropagation && e.stopImmediatePropagation();
                     break;
                 case 40: // Down
+                    isDocShown = true;
                     var time = new Date().getTime();
                     if (popup.getRow() == popup.matches.length - 1) {
                         if ((popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
@@ -599,6 +600,7 @@ define(function(require, exports, module) {
                     e.preventDefault();
                     break;
                 case 38: // Up
+                    isDocShown = true;
                     var time = new Date().getTime();
                     if ((!popup.getRow() && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
                         || popup.matches.length === 1)

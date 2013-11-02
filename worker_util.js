@@ -45,7 +45,7 @@ module.exports = {
      * @return {RegExp}
      */
     getIdentifierRegex: function(pos) {
-        return worker.getIdentifierRegex(pos);
+        return worker.$lastWorker.getIdentifierRegex(pos);
     },
     
     /**
@@ -59,7 +59,7 @@ module.exports = {
      * @param {String} line  The line that this update was triggered for
      */
     completeUpdate: function(pos) {
-        return worker.completeUpdate(pos);
+        return worker.$lastWorker.completeUpdate(pos);
     },
     
     /**
@@ -91,7 +91,6 @@ module.exports = {
      */
     execFile: function(path, options, callback) {
         var id = lastExecId++;
-        var _self = this;
         worker.sender.emit("execFile", { path: path, options: options, id: id });
         worker.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
@@ -120,15 +119,67 @@ module.exports = {
      * @fires downloadProgress
      */
     readFile: function(path, encoding, callback) {
+        if (!callback) { // fix arguments
+            callback = encoding;
+            encoding = null;
+        }
+        
         var id = lastReadId++;
-        var _self = this;
         worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
         worker.sender.on("readFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
                 return;
             worker.sender.off("readFileResult", onExecFileResult);
-            callback(event.data.err, event.data.stdout, event.data.stderr);
+            callback(event.data.err, event.data.data);
         });
+    },
+    
+    /**
+     * @internal
+     */
+    asyncForEach: function(array, fn, callback) {
+        worker.asyncForEach(array, fn, callback);
+    },
+    
+    /**
+     * @internal
+     * @deprecated
+     */
+    readMultipleFiles: function(paths, encoding, callback) {
+        if (!callback) { // fix arguments
+            callback = encoding;
+            encoding = null;
+        }
+        
+        var errors = [];
+        var docs = [];
+        var _self = this;
+        this.asyncForEach(
+            paths,
+            function(path, next) {
+                _self.readFile(path, encoding, function(err, result) {
+                    errors.push(err);
+                    docs.push(result);
+                    next();
+                });
+            },
+            function() {
+                callback(errors, docs);
+            }
+        );
+    },
+    
+    /**
+     * Get a list of the current open files.
+     * @return {String[]}
+     */
+    getOpenFiles: function() {
+        var results = [];
+        var set = worker.$lastWorker.$openDocuments;
+        for (var e in set) {
+            results.push(set[e]);
+        }
+        return results;
     }
 };
 

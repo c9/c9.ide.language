@@ -476,7 +476,7 @@ module.exports = {
      * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Object} callback.result                 The function's result, a JSON outline structure or null if not supported
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"}
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown","unknown2"}
      *        callback.result.icon                     The icon to display for the first outline item
      * @param {String} callback.result.name            The name to display for the first outline item
      * @param {Object} callback.result.pos             The item's position
@@ -490,6 +490,7 @@ module.exports = {
      * @param {Number} callback.result.displayPos.sc   The item's starting column
      * @param {Number} [callback.result.displayPos.ec] The item's ending column
      * @param {Object[]} callback.result.items         Any items nested under the curent item.
+     * @param {Boolean [callback.result.isGeneric]     Indicates that this is a generic, language-independent outline
      */
     outline: function(doc, fullAst, callback) {
         callback();

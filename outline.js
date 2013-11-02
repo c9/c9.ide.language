@@ -45,7 +45,7 @@ define(function(require, exports, module) {
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
-        var worker, focussed, isActive, outline, timer, dirty;
+        var focussed, isActive, outline, timer, dirty;
         
         var COLLAPSE_AREA = 14;
         
@@ -77,9 +77,7 @@ define(function(require, exports, module) {
             menus.addItemByPath("Goto/Goto Symbol...", 
                 new apf.item({ command : "outline" }), 110, plugin);
             
-            // Get the worker
-            language.once("initWorker", function(e){
-                worker = e.worker;
+            language.getWorker(function(err, worker) {
                 worker.on("outline", openOutline); 
             });
             
@@ -314,12 +312,14 @@ define(function(require, exports, module) {
             c9.on("stateChange", offlineHandler, plugin);
             offlineHandler({ state: c9.status });
             
-            timer = setInterval(function(){
-                if (dirty && worker) {
-                    worker.emit("outline", { data : { ignoreFilter: false } });
-                    dirty = false;
-                }
-            }, 25);
+            language.getWorker(function(err, worker) {
+                timer = setInterval(function(){
+                    if (dirty) {
+                        worker.emit("outline", { data : { ignoreFilter: false } });
+                        dirty = false;
+                    }
+                }, 25);
+            });
         }
         
         /***** Methods *****/
