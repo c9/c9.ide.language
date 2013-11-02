@@ -18,6 +18,7 @@
 define(function(require, exports, module) {
 
 var lastExecId = 0;
+var lastReadId = 0;
 
 module.exports = {
     
@@ -138,8 +139,39 @@ module.exports = {
      */
     execFile: function(path, options, callback) {
         var id = lastExecId++;
+        var lastReadId = 0;
         var _self = this;
         this.sender.emit("execFile", { path: path, options: options, id: id });
+        this.sender.on("execFileResult", function onExecFileResult(event) {
+            if (event.data.id !== id)
+                return;
+            _self.sender.off("execFileResult", onExecFileResult);
+            callback(event.data.err, event.data.stdout, event.data.stderr);
+        });
+    },
+    
+    /**
+     * Reads the entire contents from a file in the workspace.
+     * 
+     * Example:
+     * 
+     *     fs.readFile('/config/server.js', function (err, data) {
+     *         if (err) throw err;
+     *         console.log(data);
+     *     });
+     * 
+     * @param {String}   path           the path of the file to read
+     * @param {Object}   [encoding]     the encoding of the content for the file
+     * @param {Function} callback       called after the file is read
+     * @param {Error}    callback.err   the error information returned by the operation
+     * @param {String}   callback.data  the contents of the file that was read
+     * @fires error
+     * @fires downloadProgress
+     */
+    readFile: function(path, encoding, callback) {
+        var id = lastExecId++;
+        var _self = this;
+        this.sender.emit("readFile", { path: path, options: options, id: id });
         this.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
                 return;
@@ -630,7 +662,7 @@ module.exports = {
     },
 
     /**
-     * Invoked when jumping to a definition
+     * Performs jumping to a definition.
      * 
      * Should be overridden by inheritors that implement jump to definition.
      * 
@@ -640,16 +672,27 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Function} callback            The callback; must be called
-     * @param {Object} callback.result       The position of the definition of the currently selected node
+     * @param {Object[]} callback.results    The results
+     * @param {String} [callback.results.path]
+     *                                       The result path
+     * @param {Number} [callback.results.row]
+     *                                       The result row
+     * @param {Number} [callback.results.column]
+     *                                       The result column
+     * @param {Boolean} [callback.results.isGeneric]
+     *                                       Indicates that this is a generic, language-independent
+     *                                       suggestion
      */
     jumpToDefinition: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     },
     
     /**
-     * Invoked after markers were generated in analyze()
+     * Gets marker resolutions for quick fixes.
      * 
-     * Should be overridden by inheritors that implement quick fixes.
+     * Must be overridden by inheritors that implement quick fixes.
+     * 
+     * @see #hasResolutions
      * 
      * @param {ace.Document} doc                    The Document object representing the source
      * @param {Object} fullAst                      The entire AST of the current file (if any)
@@ -663,7 +706,9 @@ module.exports = {
     },
     
     /**
-     * Should be overridden by inheritors that implement quick fixes.
+     * Determines if there are marker resolutions for quick fixes.
+     * 
+     * Must be overridden by inheritors that implement quick fixes.
      * 
      * @param {ace.Document} doc             The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)

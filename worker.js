@@ -33,7 +33,7 @@ var WARNING_LEVELS = {
 
 var UPDATE_TIMEOUT_MIN = 500;
 var UPDATE_TIMEOUT_MAX = 10000;
-var DEBUG = window.location; // ?noworker=1 mode
+var DEBUG = isInWebWorker;
 
 // Leaking into global namespace of worker, to allow handlers to have access
 /*global disabledFeatures: true*/
@@ -204,7 +204,7 @@ function applyEventOnce(eventHandler, waitForMirror) {
 
 oop.inherits(LanguageWorker, Mirror);
 
-function asyncForEach(array, fn, callback) {
+var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
     array = array.slice(0); // Just to be sure
     function processOne() {
         var item = array.pop();
