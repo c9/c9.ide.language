@@ -389,18 +389,23 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement tooltips.
      * 
-     * @param {ace.Document} doc                          Document object representing the source
-     * @param {Object} fullAst                            The entire AST of the current file (if any)
-     * @param {Object} cursorPos                          The current cursor position
-     * @param {Number} cursorPos.row                      The current cursor's row
-     * @param {Number} cursorPos.column                   The current cursor's column
-     * @param {Object} currentNode                        The AST node the cursor is currently at (if any)
-     * @param {Function} callback                         The callback; must be called
-     * @param {Object} callback.result                    The function's result
-     * @param {String} [callback.result.hint]             An HTML string with the tooltip to display
-     * @param {Object} [callback.result.cursorPos]        The current cursor position
-     * @param {Number} [callback.result.cursorPos.row]    The current cursor's row
-     * @param {Number} [callback.result.cursorPos.column] The current cursor's column
+     * @param {ace.Document} doc                           Document object representing the source
+     * @param {Object} fullAst                             The entire AST of the current file (if any)
+     * @param {Object} cursorPos                           The current cursor position
+     * @param {Number} cursorPos.row                       The current cursor's row
+     * @param {Number} cursorPos.column                    The current cursor's column
+     * @param {Object} currentNode                         The AST node the cursor is currently at (if any)
+     * @param {Function} callback                          The callback; must be called
+     * @param {Object} callback.result                     The function's result
+     * @param {String} callback.result.hint                An HTML string with the tooltip to display
+     * @param {Object} callback.result.pos                 The position range for which this tooltip is valid
+     * @param {Number} callback.result.pos.sl              The starting line
+     * @param {Number} callback.result.pos.el              The ending line
+     * @param {Number} callback.result.pos.sc              The starting column
+     * @param {Number} callback.result.pos.ec              The ending column
+     * @param {Object} [callback.result.displayPos]        The position to display this tooltip
+     * @param {Number} [callback.result.displayPos.row]    The display position's row
+     * @param {Number} [callback.result.displayPos.column] The display position's column* @param {Object} callback.result.markers.pos     The marker's position
      */
     tooltip: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
