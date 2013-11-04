@@ -21,11 +21,13 @@ define(function(require, exports, module) {
         var lang = require("ace/lib/lang");
         var plugin = new Plugin("Ajax.org", main.consumes);
         
-        var editor;
+        var ace;
+        var languageWorker;
         var isVisible;
         var labelHeight;
         var adjustCompleterTop;
         var isTopdown;
+        var allowImmediateEmit;
         var lastPos;
         var cursormoveTimeout;
         
@@ -35,6 +37,7 @@ define(function(require, exports, module) {
         var assert = require("plugins/c9.util/assert");
 
         language.getWorker(function(err, worker) {
+            languageWorker = worker;
             worker.on("hint", function(event) {
                 var tab = tabs.focussedTab;
                 if (!tab || tab.path !== event.data.path)
@@ -45,26 +48,46 @@ define(function(require, exports, module) {
             });
             language.on("cursormove", function(e) {
                 clearTimeout(cursormoveTimeout);
-                if (lastPos && !inRange(lastPos, e.data)) {
+                if (lastPos && !inRange(lastPos, e.pos)) {
                     // Just walked outside of tooltip range
-                    worker.emit("cursormove", e)
-                    lastPos = null;
-                    return;
+                    if (lastPos.sl !== e.pos.row)
+                        hide();
+                    if (allowImmediateEmit) {
+                        allowImmediateEmit = false;
+                        return worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                    }
                 }
                 cursormoveTimeout = setTimeout(function() {
-                    worker.emit("cursormove", e);
+                    var latestPos = e.doc.selection.getCursor();
+                    worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row) }});
+                    cursormoveTimeout = null;
                 }, 100);
             });
         });
     
-        function onHint(event, editor) {
+        function onHint(event, ace) {
             var message = event.data.message;
             var pos = event.data.pos;
-            var cursorPos = editor.getCursorPosition();
-            var displayPos = event.data.displayPos || cursorPos;
+            var cursorPos = ace.getCursorPosition();
+            var line = ace.getSession().getDocument().getLine(cursorPos.row);
+            
+            if (line !== event.data.line) {
+                // console.warn("Got outdated tooltip event from worker, retrying");
+                if (!cursormoveTimeout)
+                    cursormoveTimeout = setTimeout(function() {
+                        languageWorker.emit("cursormove", { data: { pos: ace.getCursorPosition(), line: line }});
+                        cursormoveTimeout = null;
+                    }, 50);
+                if (lastPos && lastPos.sl !== cursorPos.row)
+                    hide();
+                return;
+            }
+            
             if (message && inRange(pos, cursorPos)) {
-                show(displayPos.row, displayPos.column, message, editor);
+                var displayPos = event.data.displayPos || cursorPos;
+                show(displayPos.row, displayPos.column, message, ace);
                 lastPos = pos;
+                allowImmediateEmit = true;
             }
             else if (!(lastPos && inRange(lastPos, cursorPos))) {
                 hide();
@@ -85,23 +108,23 @@ define(function(require, exports, module) {
             ui.insertCss(require("text!./complete.css"), plugin);
         }
         
-        function show(row, column, html, _editor) {
+        function show(row, column, html, _ace) {
             draw();
-            editor = _editor;
+            ace = _ace;
             
             
             if (!isVisible) {
                 isVisible = true;
                 
-                editor.renderer.scroller.appendChild(tooltipEl);
-                editor.on("mousewheel", hide.bind(null, true));
+                ace.renderer.scroller.appendChild(tooltipEl);
+                ace.on("mousewheel", hide.bind(null, true));
                 document.addEventListener("mouseup", hide.bind(null, true));
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
-                var offset = editor.renderer.scroller.getBoundingClientRect();
-                var position = editor.renderer.textToScreenCoordinates(row, column);
-                var cursorConfig = editor.renderer.$cursorLayer.config;
+                var offset = ace.renderer.scroller.getBoundingClientRect();
+                var position = ace.renderer.textToScreenCoordinates(row, column);
+                var cursorConfig = ace.renderer.$cursorLayer.config;
                 var labelWidth = dom.getInnerWidth(tooltipEl);
                 labelHeight = dom.getInnerHeight(tooltipEl);
                 position.pageX -= offset.left;
@@ -142,7 +165,7 @@ define(function(require, exports, module) {
                     console.error(e);
                 }
                 window.document.removeEventListener("mouseup", hide);
-                editor.off("mousewheel", hide);
+                ace.off("mousewheel", hide);
                 isVisible = false;
             }
         }
