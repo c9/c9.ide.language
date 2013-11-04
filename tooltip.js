@@ -45,8 +45,12 @@ define(function(require, exports, module) {
             });
             language.on("cursormove", function(e) {
                 clearTimeout(cursormoveTimeout);
-                if (lastPos && !inRange(lastPos, e.data))
-                    hide(true);
+                if (lastPos && !inRange(lastPos, e.data)) {
+                    // Just walked outside of tooltip range
+                    worker.emit("cursormove", e)
+                    lastPos = null;
+                    return;
+                }
                 cursormoveTimeout = setTimeout(function() {
                     worker.emit("cursormove", e);
                 }, 100);
@@ -58,11 +62,13 @@ define(function(require, exports, module) {
             var pos = event.data.pos;
             var cursorPos = editor.getCursorPosition();
             var displayPos = event.data.displayPos || cursorPos;
-            lastPos = pos;
-            if (message && inRange(pos, cursorPos))
+            if (message && inRange(pos, cursorPos)) {
                 show(displayPos.row, displayPos.column, message, editor);
-            else
+                lastPos = pos;
+            }
+            else if (!(lastPos && inRange(lastPos, cursorPos))) {
                 hide();
+            }
         }
         
         function inRange(pos, cursorPos) {

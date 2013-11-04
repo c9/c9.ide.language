@@ -33,7 +33,7 @@ var WARNING_LEVELS = {
 
 var UPDATE_TIMEOUT_MIN = 500;
 var UPDATE_TIMEOUT_MAX = 10000;
-var DEBUG = isInWebWorker;
+var DEBUG = !isInWebWorker;
 
 // Leaking into global namespace of worker, to allow handlers to have access
 /*global disabledFeatures: true*/
@@ -942,14 +942,12 @@ function asyncParForEach(array, fn, callback) {
                 });
             });
         }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
-        if (!DEBUG)
-        this.scheduledUpdateFail = setTimeout(function() {
-            _self.scheduledUpdate = null;
-            console.log("Warning: worker analysis taking too long, rescheduling");
-        }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
-        
-        function handleUpdate() {
-            
+        if (!DEBUG) {
+            clearTimeout(this.scheduledUpdateFail);
+            this.scheduledUpdateFail = setTimeout(function() {
+                _self.scheduledUpdate = null;
+                console.log("Warning: worker analysis taking too long, rescheduling");
+            }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
     };
     

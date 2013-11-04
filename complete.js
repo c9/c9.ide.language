@@ -399,8 +399,15 @@ define(function(require, exports, module) {
         function closeCompletionBox(event) {
             if (!popup)
                 return;
+            
+            if (event && event.target) {
+                if (popup.container.contains(event.target)
+                  || docElement.contains(event.target))
+                    return;
+            }
+            
             popup.hide();
-            hideDocPopup()
+            hideDocPopup();
             
             if (!lastAce) // no editor, try again later
                 return;
