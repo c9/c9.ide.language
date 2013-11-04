@@ -207,9 +207,9 @@ function applyEventOnce(eventHandler, waitForMirror) {
 oop.inherits(LanguageWorker, Mirror);
 
 var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
-    array = array.slice(0); // Just to be sure
+    array = array.slice(); // copy before use
     function processOne() {
-        var item = array.pop();
+        var item = array.shift();
         fn(item, function(result, err) {
             if (array.length > 0) {
                 processOne();

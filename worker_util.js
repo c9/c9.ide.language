@@ -130,10 +130,10 @@ module.exports = {
         
         var id = lastReadId++;
         worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
-        worker.sender.on("readFileResult", function onExecFileResult(event) {
+        worker.sender.on("readFileResult", function onReadFileResult(event) {
             if (event.data.id !== id)
                 return;
-            worker.sender.off("readFileResult", onExecFileResult);
+            worker.sender.off("readFileResult", onReadFileResult);
             callback(event.data.err, event.data.data);
         });
     },
