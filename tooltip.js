@@ -47,6 +47,12 @@ define(function(require, exports, module) {
                 clearTimeout(cursormoveTimeout);
                 if (lastPos && inRange(lastPos, e.data))
                     return;
+                if (lastPos) {
+                    // Just walked outside of tooltip range
+                    worker.emit("cursormove", e)
+                    lastPos = null;
+                    return;
+                }
                 cursormoveTimeout = setTimeout(function() {
                     worker.emit("cursormove", e);
                 }, 100);
