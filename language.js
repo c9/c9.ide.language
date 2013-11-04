@@ -52,18 +52,8 @@ define(function(require, exports, module) {
             return doLoad();
         }
         
-        var onCursorChangeDeferred;
-        function onCursorChangeDefer() {
-            if (!onCursorChangeDeferred) {
-                onCursorChangeDeferred = lang.delayedCall(onCursorChange);
-            }
-            onCursorChangeDeferred.delay(250);
-        }
-    
         function onCursorChange() {
-            worker.emit("cursormove", {
-                data: worker.$doc.selection.getCursor()
-            });
+            emit("cursormove", { data: worker.$doc.selection.getCursor() });
         }
         function onChange(e) {
             worker.changeListener(e);
@@ -95,12 +85,12 @@ define(function(require, exports, module) {
                 if (worker.$doc) {
                     worker.$doc.off("change", onChange);
                     worker.$doc.off("changeMode", onChangeMode);
-                    worker.$doc.selection.off("changeCursor", onCursorChangeDefer);
+                    worker.$doc.selection.off("changeCursor", onCursorChange);
                 }
                 
                 worker.$doc = session;
                 
-                session.selection.on("changeCursor", onCursorChangeDefer);
+                session.selection.on("changeCursor", onCursorChange);
                 session.on("changeMode", onChangeMode);
                 session.on("change", onChange);
             }
