@@ -118,7 +118,7 @@ define(function(require, exports, module) {
                 
                 ace.renderer.scroller.appendChild(tooltipEl);
                 ace.on("mousewheel", hide.bind(null, true));
-                document.addEventListener("mouseup", hide.bind(null, true));
+                ace.on("mousedown", hide.bind(null, true));
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -164,7 +164,7 @@ define(function(require, exports, module) {
                 } catch(e) {
                     console.error(e);
                 }
-                window.document.removeEventListener("mouseup", hide);
+                ace.off("mousedown", hide);
                 ace.off("mousewheel", hide);
                 isVisible = false;
             }
