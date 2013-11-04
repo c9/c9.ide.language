@@ -262,7 +262,10 @@ define(function(require, exports, module) {
         });
         
         register(null, {
-            "language.jumptodef": plugin.freezePublicAPI({})
+            "language.jumptodef": plugin.freezePublicAPI({
+                /** @ignore */
+                getFirstColumn : getFirstColumn
+            })
         });
     }
 });

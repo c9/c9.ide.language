@@ -483,12 +483,12 @@ module.exports = {
      * @param {Object} callback.result.pos             The item's range, e.g. from the starting line to the ending line of a method
      * @param {Number} callback.result.pos.sl          The item's starting row
      * @param {Number} [callback.result.pos.el]        The item's ending row
-     * @param {Number} callback.result.pos.sc          The item's starting column
+     * @param {Number} [callback.result.pos.sc]        The item's starting column
      * @param {Number} [callback.result.pos.ec]        The item's ending column
-     * @param {Object} callback.result.displayPos      The item's display position, e.g. the starting line of a method
+     * @param {Object} [callback.result.displayPos]    The item's display position, e.g. the starting line of a method
      * @param {Number} callback.result.displayPos.sl   The item's starting row
      * @param {Number} [callback.result.displayPos.el] The item's ending row
-     * @param {Number} callback.result.displayPos.sc   The item's starting column
+     * @param {Number} [callback.result.displayPos.sc] The item's starting column
      * @param {Number} [callback.result.displayPos.ec] The item's ending column
      * @param {Object[]} callback.result.items         Any items nested under the curent item.
      * @param {Boolean [callback.result.isGeneric]     Indicates that this is a generic, language-independent outline

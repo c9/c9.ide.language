@@ -1,26 +1,27 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
-        "language", "util"
+        "language", "util", "language.jumptodef"
     ];
     main.provides = ["outline"];
     return main;
 
     function main(options, imports, register) {
-        var c9       = imports.c9;
-        var Panel    = imports.Panel;
+        var c9 = imports.c9;
+        var Panel = imports.Panel;
         var settings = imports.settings;
-        var ui       = imports.ui;
-        var util     = imports.util;
-        var menus    = imports.menus;
-        var panels   = imports.panels;
-        var tabs     = imports.tabManager;
+        var ui = imports.ui;
+        var util = imports.util;
+        var menus = imports.menus;
+        var panels = imports.panels;
+        var tabs = imports.tabManager;
         var language = imports.language;
+        var jumptodef = imports["language.jumptodef"];
         
-        var Range    = require("ace/range").Range;
-        var search   = require("../c9.ide.navigate/search");
-        var markup   = require("text!./outline.xml");
-        var Tree     = require("ace_tree/tree");
+        var Range = require("ace/range").Range;
+        var search = require("../c9.ide.navigate/search");
+        var markup = require("text!./outline.xml");
+        var Tree = require("ace_tree/tree");
         var TreeData = require("./outlinedp");
         
         /***** Initialization *****/
@@ -407,7 +408,8 @@ define(function(require, exports, module) {
             
             var pos = node.displayPos || node.pos;
             var ace = originalTab.editor.ace; 
-            var range = new Range(pos.sl, pos.sc, pos.el, pos.ec);
+            pos.sc = pos.sc || jumptodef.getFirstColumn(ace, pos.sl, node.name);
+            var range = new Range(pos.sl, pos.sc || 0, pos.el || pos.sl, pos.ec || pos.sc);
             scrollToDefinition(ace, pos.sl, pos.elx || pos.el);
             ace.selection.setSelectionRange(range);
         }
