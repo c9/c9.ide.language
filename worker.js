@@ -804,8 +804,8 @@ function asyncParForEach(array, fn, callback) {
         var pos = event.data;
         var line = this.doc.getLine(pos.row);
         var regex = this.getIdentifierRegex();
-        var identifier = completeUtil.retrieveFollowingIdentifier(line, pos.column, regex)
-            + completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
+        var identifier = completeUtil.retrievePrecedingIdentifier(line, pos.column, regex)
+            + completeUtil.retrieveFollowingIdentifier(line, pos.column, regex);
 
         _self.$getDefinitionDeclarations(pos.row, pos.column, function(results) {
             _self.sender.emit(

@@ -9,17 +9,15 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager",
-        "tabbehavior", "ui"
+        "ui"
     ];
     main.provides = ["language.jumptodef"];
     return main;
     
     function main(options, imports, register) {
         var Plugin = imports.Plugin;
-        var editors = imports.editors;
         var language = imports.language;
         var commands = imports.commands;
-        var tabbehavior = imports.tabbehavior;
         var aceHandle = imports.ace;
         var tabs = imports.tabManager;
         var ui = imports.ui;
@@ -27,7 +25,6 @@ define(function(require, exports, module) {
         var menus = imports.menus;
         
         var CRASHED_JOB_TIMEOUT = 30000;
-        var removeSpinnerNodes;
         var worker;
         var loaded;
         var lastJump;
@@ -137,10 +134,7 @@ define(function(require, exports, module) {
             if (lastJump && lastJump.ace === ace
                 && lastJump.row === pos.row && lastJump.column === pos.column) {
                 clearSpinners(tab);
-                var state = tab.document.getState();
-                state.ace.jump = lastJump.source;
-                tab.document.setState(state);
-                lastJump = null;
+                jumpToPos(lastJump.sourcePath, lastJump.sourcePos);
                 return;
             }
                 
@@ -173,30 +167,37 @@ define(function(require, exports, module) {
                     break;
             }
     
-            var _self = this;
             var path = lastResult && lastResult.path || tab.path;
             
+            jumpToPos(path, lastResult, e.data.path, e.data.pos, e.data.identifier);
+        }
+        
+        function jumpToPos(path, pos, sourcePath, sourcePos, identifier) {
             tabs.open(
                 {
-                    path: path
+                    path: path,
+                    active: true
                 },
                 function(err, tab) {
                     if (err)
                         return;
                     var state = tab.document && tab.document.getState();
                     if (state && state.ace) {
-                        lastResult.column = lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row, e.data.identifier);
-                        lastJump = {
+                        pos.column = pos.column || getFirstColumn(tab.editor.ace, pos.row, identifier);
+                        lastJump = sourcePos && {
                             ace: tab.editor.ace,
-                            row: lastResult.row,
-                            column: lastResult.column,
-                            source: e.data.pos
+                            row: pos.row,
+                            column: pos.column,
+                            path: path,
+                            sourcePos: sourcePos,
+                            sourcePath: sourcePath
                         };
                         state.ace.jump = {
-                            row: lastResult.row,
-                            column: lastResult.column
-                        }
+                            row: pos.row,
+                            column: pos.column
+                        };
                     }
+                    delete state.value;
                     tab.document.setState(state);
                 }
             );
@@ -213,7 +214,7 @@ define(function(require, exports, module) {
             var preceding = util.retrievePrecedingIdentifier(line, cursor.column);
             var column = cursor.column - preceding.length;
             if (column === oldPos.column)
-                column = getFirstColumn(cursor.row);
+                column = getFirstColumn(ace, cursor.row);
             var newPos = { row: cursor.row, column: column };
             ace.getSelection().setSelectionRange({ start: newPos, end: newPos });
         }
