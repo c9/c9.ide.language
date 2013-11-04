@@ -1205,6 +1205,7 @@ function asyncParForEach(array, fn, callback) {
      * information is now available.
      */
     this.completeUpdate = function(pos, line) {
+        assert(line);
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {
