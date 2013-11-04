@@ -103,11 +103,12 @@ module.exports = {
      * 
      * Should not be overridden by inheritors.
      * 
+     * @deprecated Use worker_util#completeUpdate instead
      * @param {Object} pos   The position to retrigger this update
      * @param {String} line  The line that this update was triggered for
      */
     completeUpdate: function(pos) {
-        // implemented by worker.completeUpdate
+        throw new Error("Use worker_util.completeUpdate instead()"); // implemented by worker.completeUpdate
     },
     
     /**

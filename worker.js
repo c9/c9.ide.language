@@ -413,13 +413,12 @@ function asyncParForEach(array, fn, callback) {
 
     this.outline = function(event) {
         var _self = this;
-        var foundHandler = false;
         var result;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler)) {
                     handler.outline(_self.doc, ast, function(outline) {
-                        if (outline && (!result || !result.isGeneric))
+                        if (outline && (!result || result.isGeneric))
                             result = outline;
                         
                         next();
