@@ -98,11 +98,15 @@ define(function(require, exports, module) {
             });
         }
         
-        function getFirstColumn(ace, row) {
-            var line = ace.document.getLine(row);
+        function getFirstColumn(ace, row, identifier) {
+            var document = ace.document || ace.getSession().getDocument();
+            if (!document)
+                return 0;
+            var line = document.getLine(row);
             if (!line)
                 return 0;
-            return line.match(/^(\s*)/)[1].length;
+            var safeIdentifier = identifier.replace(/[^A-Za-z0-9\/$_/']/g, "");
+            return line.match("^(\s*(.*(?=" + safeIdentifier + "))?)")[1].length;
         }
     
         /**
@@ -165,7 +169,7 @@ define(function(require, exports, module) {
             var lastResult;
             for (var i = results.length - 1; i >=0; i--) {
                 lastResult = results[results.length - 1];
-                if (!lastResult.isDeferred)
+                if (!lastResult.isGeneric)
                     break;
             }
     
@@ -181,7 +185,7 @@ define(function(require, exports, module) {
                         return;
                     var state = tab.document && tab.document.getState();
                     if (state && state.ace) {
-                        lastResult.column = lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row);
+                        lastResult.column = lastResult.column || getFirstColumn(tab.editor.ace, lastResult.row, e.data.identifier);
                         lastJump = {
                             ace: tab.editor.ace,
                             row: lastResult.row,

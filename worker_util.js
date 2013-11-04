@@ -15,6 +15,7 @@
 define(function(require, exports, module) {
 
 var worker = require("./worker");
+var completeUtil = require("./complete_util");
 
 var lastExecId = 0;
 var lastReadId = 0;
@@ -25,7 +26,7 @@ module.exports = {
      * Utility function, used to determine whether a certain feature is enabled
      * in the user's preferences.
      * 
-     * Should not be overridden by inheritors.
+     * @method
      * 
      * @param {String} name  The name of the feature, e.g. "unusedFunctionArgs"
      * @return {Boolean}
@@ -39,13 +40,13 @@ module.exports = {
      * Utility function, used to determine the identifier regex for the 
      * current language, by invoking {@link #getIdentifierRegex} on its handlers.
      * 
-     * Should not be overridden by inheritors.
+     * @method
      * 
-     * @param {Object} [pos] The position to determine the identifier regex of
+     * @param {Object} [offset] The position to determine the identifier regex of
      * @return {RegExp}
      */
-    getIdentifierRegex: function(pos) {
-        return worker.$lastWorker.getIdentifierRegex(pos);
+    getIdentifierRegex: function(offset) {
+        return worker.$lastWorker.getIdentifierRegex(offset);
     },
     
     /**
@@ -53,7 +54,7 @@ module.exports = {
      * in case new information was collected and should
      * be displayed, and assuming the popup is still open.
      * 
-     * Should not be overridden by inheritors.
+     * @method
      * 
      * @param {Object} pos   The position to retrigger this update
      * @param {String} line  The line that this update was triggered for
@@ -63,12 +64,11 @@ module.exports = {
     },
     
     /**
-     * Utility function, used to call {@link proc#execFile}
-     * from the worker.
-     * 
-     * Should not be overridden by inheritors.
+     * Calls {@link proc#execFile} from the worker.
      * 
      * @see proc#execFile
+     * 
+     * @method
      * 
      * @param {String}   path                             the path to the file to execute
      * @param {Object}   [options]
@@ -109,6 +109,10 @@ module.exports = {
      *         if (err) throw err;
      *         console.log(data);
      *     });
+     *
+     * @see fs#readFile
+     *
+     * @method
      * 
      * @param {String}   path           the path of the file to read
      * @param {Object}   [encoding]     the encoding of the content for the file
@@ -135,6 +139,7 @@ module.exports = {
     },
     
     /**
+     * @method
      * @internal
      */
     asyncForEach: function(array, fn, callback) {
@@ -142,35 +147,10 @@ module.exports = {
     },
     
     /**
-     * @internal
-     * @deprecated
-     */
-    readMultipleFiles: function(paths, encoding, callback) {
-        if (!callback) { // fix arguments
-            callback = encoding;
-            encoding = null;
-        }
-        
-        var errors = [];
-        var docs = [];
-        var _self = this;
-        this.asyncForEach(
-            paths,
-            function(path, next) {
-                _self.readFile(path, encoding, function(err, result) {
-                    errors.push(err);
-                    docs.push(result);
-                    next();
-                });
-            },
-            function() {
-                callback(errors, docs);
-            }
-        );
-    },
-    
-    /**
      * Get a list of the current open files.
+     * 
+     * @method
+     * 
      * @return {String[]}
      */
     getOpenFiles: function() {
@@ -180,6 +160,52 @@ module.exports = {
             results.push(set[e]);
         }
         return results;
+    },
+    
+    /**
+     * Gets the identifier string preceding the current position.
+     * 
+     * @method
+     * 
+     * @param {String} line     The line to search in
+     * @param {Number} offset   The offset to start
+     * @param {RegExp} [regex]  The regular expression to use
+     * @return {String}
+     */
+    getPrecedingIdentifier: function(line, offset, regex) {
+        regex = regex || this.getIdentifierRegex(offset);
+        return completeUtil.retrievePrecedingIdentifier(line, offset, regex);
+    },
+    
+    /**
+     * Retrieves the identifier string following the current position.
+     * 
+     * @method
+     * 
+     * @param {String} line     The line to search in
+     * @param {Number} offset   The offset to start
+     * @param {RegExp} [regex]  The regular expression to use
+     * @return {String}
+     */
+    getFollowingIdentifier: function(line, offset, regex) {
+        regex = regex || this.getIdentifierRegex(offset);
+        return completeUtil.retrieveFollowingIdentifier(line, offset, regex);
+    },
+    
+    /**
+     * Retrieves the identifier string at the current position.
+     * 
+     * @method
+     * 
+     * @param {String} line     The line to search in
+     * @param {Number} offset   The offset to start
+     * @param {RegExp} [regex]  The regular expression to use
+     * @return {String}
+     */
+    getIdentifier: function(line, offset, regex) {
+        regex = regex || this.getIdentifierRegex(offset);
+        return this.getPrecedingIdentifier(line, offset, regex)
+            + this.getFollowingIdentifier(line, offset, regex);
     }
 };
 

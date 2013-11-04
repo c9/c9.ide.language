@@ -413,6 +413,15 @@ function asyncParForEach(array, fn, callback) {
 
     this.outline = function(event) {
         var _self = this;
+        this.getOutline(function(result) {
+            _self.sender.emit("outline",
+              { body: result && (result.body || result.items) || [] }
+            );
+        });
+    };
+    
+    this.getOutline = function(callback) {
+        var _self = this;
         var result;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
@@ -427,9 +436,7 @@ function asyncParForEach(array, fn, callback) {
                 else
                     next();
             }, function() {
-                _self.sender.emit("outline",
-                  { body: result && (result.body || result.items) || [] }
-                );
+                callback(result);
             });
         });
     };
@@ -771,9 +778,6 @@ function asyncParForEach(array, fn, callback) {
 
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
-                if (!currentNode)
-                    return callback();
-                
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
                         handler.jumpToDefinition(_self.doc, ast, pos, currentNode, function(results) {
@@ -798,6 +802,10 @@ function asyncParForEach(array, fn, callback) {
     this.jumpToDefinition = function(event) {
         var _self = this;
         var pos = event.data;
+        var line = this.doc.getLine(pos.row);
+        var regex = this.getIdentifierRegex();
+        var identifier = completeUtil.retrieveFollowingIdentifier(line, pos.column, regex)
+            + completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
 
         _self.$getDefinitionDeclarations(pos.row, pos.column, function(results) {
             _self.sender.emit(
@@ -805,7 +813,8 @@ function asyncParForEach(array, fn, callback) {
                 {
                     pos: pos,
                     results: results || [],
-                    path: _self.$path
+                    path: _self.$path,
+                    identifier: identifier
                 }
             );
         });
@@ -1165,16 +1174,17 @@ function asyncParForEach(array, fn, callback) {
         var line = _self.doc.getLine(pos.row);
         this.waitForCompletionSyncThread = this.waitForCompletionSyncThread || 0;
         var threadId = ++this.waitForCompletionSyncThread;
-        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, this.getIdentifierRegex())) {
+        var regex = this.getIdentifierRegex(pos);
+        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
             setTimeout(function() {
                 if (threadId !== _self.waitForCompletionSyncThread)
                     return;
                 line = _self.doc.getLine(pos.row);
-                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, _self.getIdentifierRegex())) {
+                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
                     setTimeout(function() {
                         if (threadId !== _self.waitForCompletionSyncThread)
                             return;
-                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, _self.getIdentifierRegex())) {
+                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
                             if (!line) { // sanity check
                                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
                             }

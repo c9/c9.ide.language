@@ -395,7 +395,7 @@ define(function(require, exports, module) {
     
         function onSelect(node) {
             if (!node) 
-                node = tree.selection.getCursor()
+                node = tree.selection.getCursor();
                 
             if (ignoreSelectOnce) {
                 ignoreSelectOnce = false;
@@ -421,7 +421,7 @@ define(function(require, exports, module) {
         
         function scrollToDefinition(ace, line, lineEnd) {
             var lineHeight = ace.renderer.$cursorLayer.config.lineHeight;
-            var lineVisibleStart = ace.renderer.scrollTop / lineHeight
+            var lineVisibleStart = ace.renderer.scrollTop / lineHeight;
             var linesVisible = ace.renderer.$size.height / lineHeight;
             lineEnd = Math.min(lineEnd, line + linesVisible);
             if (lineVisibleStart <= line && lineEnd <= lineVisibleStart + linesVisible)

@@ -480,12 +480,12 @@ module.exports = {
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown","unknown2"}
      *        callback.result.icon                     The icon to display for the first outline item
      * @param {String} callback.result.name            The name to display for the first outline item
-     * @param {Object} callback.result.pos             The item's position
+     * @param {Object} callback.result.pos             The item's range, e.g. from the starting line to the ending line of a method
      * @param {Number} callback.result.pos.sl          The item's starting row
      * @param {Number} [callback.result.pos.el]        The item's ending row
      * @param {Number} callback.result.pos.sc          The item's starting column
      * @param {Number} [callback.result.pos.ec]        The item's ending column
-     * @param {Object} callback.result.displayPos      The item's display position
+     * @param {Object} callback.result.displayPos      The item's display position, e.g. the starting line of a method
      * @param {Number} callback.result.displayPos.sl   The item's starting row
      * @param {Number} [callback.result.displayPos.el] The item's ending row
      * @param {Number} callback.result.displayPos.sc   The item's starting column
@@ -541,7 +541,7 @@ module.exports = {
      * @param {String} callback.result.name  The name to show in the popup
      * @param {String} callback.result.replaceText
      *                                       The text to replace the selection with
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"}
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown","unknown2"}
      *                [callback.result.icon] The icon to use
      * @param {String} callback.result.meta  Additional information to show
      * @param {String} callback.result.doc   Documentation to display
@@ -686,9 +686,11 @@ module.exports = {
      *                                       The result row
      * @param {Number} [callback.results.column]
      *                                       The result column
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown","unknown2"}
+     *        [callback.result.icon]         The icon to display (in case of multiple results)
      * @param {Boolean} [callback.results.isGeneric]
      *                                       Indicates that this is a generic, language-independent
-     *                                       suggestion
+     *                                       suggestion (that should be deferred)
      */
     jumpToDefinition: function(doc, fullAst, pos, currentNode, callback) {
         callback();

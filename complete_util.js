@@ -156,15 +156,6 @@ function inCompletableCodeContext(line, column, id, ace) {
 
 /**
  * @ignore
- * @deprecated Use retrievePrecedingIdentifier
- */
-exports.retrievePreceedingIdentifier = function() {
-    console.error("Deprecated: 'retrievePreceedingIdentifier' - use 'retrievePrecedingIdentifier' instead"); 
-    return retrievePrecedingIdentifier.apply(null, arguments);
-};
-
-/**
- * @ignore
  * @return {Boolean}
  */
 exports.precededByIdentifier = precededByIdentifier;
@@ -175,26 +166,12 @@ exports.precededByIdentifier = precededByIdentifier;
 exports.isRequireJSCall = isRequireJSCall;
 
 /**
- * Retrieves the identifier string preceding the current position.
- * 
- * @method
- * 
- * @param {String} line     The line to search in
- * @param {Number} offset   The offset to start
- * @param {RegExp} regex    The regular expression to use
- * @return {String}
+ * @internal Use {@link worker_util#getPrecedingIdentifier() instead.
  */
 exports.retrievePrecedingIdentifier = retrievePrecedingIdentifier;
 
 /**
- * Retrieves the identifier string following the current position.
- * 
- * @method
- * 
- * @param {String} line     The line to search in
- * @param {Number} offset   The offset to start
- * @param {RegExp} regex    The regular expression to use
- * @return {String}
+ * @internal Use {@link worker_util#getFollowingIdentifier() instead. 
  */
 exports.retrieveFollowingIdentifier = retrieveFollowingIdentifier;
 
