@@ -17,9 +17,6 @@
  */
 define(function(require, exports, module) {
 
-var lastExecId = 0;
-var lastReadId = 0;
-
 module.exports = {
     
     /**
@@ -76,6 +73,8 @@ module.exports = {
      * 
      * Should not be overridden by inheritors.
      * 
+     * @deprecated Use worker_util#isFeatureEnabled instead
+     * 
      * @param {String} name  The name of the feature, e.g. "unusedFunctionArgs"
      * @return {Boolean}
      */
@@ -89,6 +88,8 @@ module.exports = {
      * current language, by invoking {@link #getIdentifierRegex} on its handlers.
      * 
      * Should not be overridden by inheritors.
+     * 
+     * @deprecated Use worker_util#getIdentifierRegex instead
      * 
      * @return {RegExp}
      */
@@ -104,6 +105,7 @@ module.exports = {
      * Should not be overridden by inheritors.
      * 
      * @deprecated Use worker_util#completeUpdate instead
+     * 
      * @param {Object} pos   The position to retrigger this update
      * @param {String} line  The line that this update was triggered for
      */
@@ -111,76 +113,6 @@ module.exports = {
         throw new Error("Use worker_util.completeUpdate instead()"); // implemented by worker.completeUpdate
     },
     
-    /**
-     * Utility function, used to call {@link proc#execFile}
-     * from the worker.
-     * 
-     * Should not be overridden by inheritors.
-     * 
-     * @see proc#execFile
-     * 
-     * @param {String}   path                             the path to the file to execute
-     * @param {Object}   [options]
-     * @param {Array}    [options.args]                   An array of args to pass to the executable.
-     * @param {String}   [options.stdoutEncoding="utf8"]  The encoding to use on the stdout stream. Defaults to .
-     * @param {String}   [options.stderrEncoding="utf8"]  The encoding to use on the stderr stream. Defaults to "utf8".
-     * @param {String}   [options.cwd]                    Current working directory of the child process
-     * @param {Array}    [options.stdio]                  Child's stdio configuration. (See above)
-     * @param {Object}   [options.env]                    Environment key-value pairs
-     * @param {String}   [options.encoding="utf8"]        
-     * @param {Number}   [options.timeout=0]         
-     * @param {Number}   [options.maxBuffer=200*1024]
-     * @param {String}   [options.killSignal="SIGTERM"]
-     * @param {Boolean}  [options.resumeStdin]            Start reading from stdin, so the process doesn't exit
-     * @param {Boolean}  [options.resolve]                Resolve the path to the VFS root before executing file
-     * @param {Function} callback 
-     * @param {Error}    callback.error                   The error object if an error occurred.
-     * @param {String}   callback.stdout                  The stdout buffer
-     * @param {String}   callback.stderr                  The stderr buffer
-     */
-    execFile: function(path, options, callback) {
-        var id = lastExecId++;
-        var lastReadId = 0;
-        var _self = this;
-        this.sender.emit("execFile", { path: path, options: options, id: id });
-        this.sender.on("execFileResult", function onExecFileResult(event) {
-            if (event.data.id !== id)
-                return;
-            _self.sender.off("execFileResult", onExecFileResult);
-            callback(event.data.err, event.data.stdout, event.data.stderr);
-        });
-    },
-    
-    /**
-     * Reads the entire contents from a file in the workspace.
-     * 
-     * Example:
-     * 
-     *     fs.readFile('/config/server.js', function (err, data) {
-     *         if (err) throw err;
-     *         console.log(data);
-     *     });
-     * 
-     * @param {String}   path           the path of the file to read
-     * @param {Object}   [encoding]     the encoding of the content for the file
-     * @param {Function} callback       called after the file is read
-     * @param {Error}    callback.err   the error information returned by the operation
-     * @param {String}   callback.data  the contents of the file that was read
-     * @fires error
-     * @fires downloadProgress
-     */
-    readFile: function(path, encoding, callback) {
-        var id = lastExecId++;
-        var _self = this;
-        this.sender.emit("readFile", { path: path, options: options, id: id });
-        this.sender.on("execFileResult", function onExecFileResult(event) {
-            if (event.data.id !== id)
-                return;
-            _self.sender.off("execFileResult", onExecFileResult);
-            callback(event.data.err, event.data.stdout, event.data.stderr);
-        });
-    },
-
     // OVERRIDABLE ACCESORS
 
     /**
