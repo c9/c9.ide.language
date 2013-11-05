@@ -121,7 +121,7 @@ define(function(require, exports, module) {
                 
                 ace.renderer.scroller.appendChild(tooltipEl);
                 ace.on("mousewheel", hide);
-                ace.on("mousedown", onMouseDown);
+                window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -172,7 +172,7 @@ define(function(require, exports, module) {
                 } catch(e) {
                     console.error(e);
                 }
-                ace.off("mousedown", onMouseDown);
+                window.document.removeEventListener("mousedown", onMouseDown);
                 ace.off("mousewheel", hide);
                 isVisible = false;
             }

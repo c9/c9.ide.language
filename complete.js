@@ -343,7 +343,7 @@ define(function(require, exports, module) {
             lastAce = ace;
             
             populateCompletionBox(ace, matches);
-            ace.on("mousedown", closeCompletionBox);
+            window.document.addEventListener("mousedown", closeCompletionBox);
             ace.on("mousewheel", closeCompletionBox);
 
             var renderer = ace.renderer;
@@ -413,7 +413,7 @@ define(function(require, exports, module) {
                 return;
                 
             var ace = lastAce;
-            ace.off("mousedown", closeCompletionBox);
+            window.document.removeEventListener("mousedown", closeCompletionBox);
             ace.off("mousewheel", closeCompletionBox);
             
             if (oldCommandKey) {
