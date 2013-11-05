@@ -30,6 +30,7 @@ define(function(require, exports, module) {
         var allowImmediateEmit;
         var lastPos;
         var cursormoveTimeout;
+        var onMouseDownTimeout;
         
         var tooltipEl = dom.createElement("div");
         tooltipEl.className = "language_tooltip dark";
@@ -70,6 +71,8 @@ define(function(require, exports, module) {
             var pos = event.data.pos;
             var cursorPos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(cursorPos.row);
+            
+            clearTimeout(onMouseDownTimeout);
             
             if (line !== event.data.line) {
                 // console.warn("Got outdated tooltip event from worker, retrying");
@@ -117,8 +120,8 @@ define(function(require, exports, module) {
                 isVisible = true;
                 
                 ace.renderer.scroller.appendChild(tooltipEl);
-                ace.on("mousewheel", hide.bind(null, true));
-                ace.on("mousedown", hide.bind(null, true));
+                ace.on("mousewheel", hide);
+                ace.on("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
@@ -143,6 +146,11 @@ define(function(require, exports, module) {
             //});
         }
         
+        function onMouseDown() {
+            clearTimeout(onMouseDownTimeout);
+            onMouseDownTimeout = setTimeout(hide, 300);
+        }
+        
         function getHeight() {
             return isVisible && labelHeight || 0;
         }
@@ -164,7 +172,7 @@ define(function(require, exports, module) {
                 } catch(e) {
                     console.error(e);
                 }
-                ace.off("mousedown", hide);
+                ace.off("mousedown", onMouseDown);
                 ace.off("mousewheel", hide);
                 isVisible = false;
             }
