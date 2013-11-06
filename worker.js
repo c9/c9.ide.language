@@ -677,8 +677,14 @@ function asyncParForEach(array, fn, callback) {
      * Process a cursor move. We do way too much here.
      */
     this.onCursorMove = function(event) {
-        var pos = event.data;
+        var pos = event.data.pos;
         var part = this.getPart(pos);
+        var line = this.doc.getLine(pos.row);
+        
+        if (line != event.data.line) {
+            // Our intelligence is outdated, tell the client
+            return this.scheduleEmit("hint", { line: null });
+        }
 
         var _self = this;
         var hintMessage = ""; // this.checkForMarker(pos) || "";
@@ -708,9 +714,10 @@ function asyncParForEach(array, fn, callback) {
                 else
                     aggregateActions.hint = response.hint;
             }
-            if (response.displayPos) {
+            if (response.pos)
+                aggregateActions.pos = response.pos;
+            if (response.displayPos)
                 aggregateActions.displayPos = response.displayPos;
-            }
         }
         
         function cursorMoved(ast, currentNode, currentPos) {
@@ -744,9 +751,10 @@ function asyncParForEach(array, fn, callback) {
                 _self.lastCurrentPos = currentPos;
                 _self.setLastAggregateActions(aggregateActions);
                 _self.scheduleEmit("hint", {
-                    pos: pos,
+                    pos: aggregateActions.pos,
                     displayPos: aggregateActions.displayPos,
-                    message: hintMessage
+                    message: hintMessage,
+                    line: line
                 });
             });
 
@@ -929,7 +937,6 @@ function asyncParForEach(array, fn, callback) {
                         _self.postponedCursorMove = null;
                     }
                     _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
-                    _self.scheduledUpdate = null;
                     clearTimeout(_self.scheduledUpdateFail);
                 });
             });

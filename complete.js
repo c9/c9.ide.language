@@ -421,8 +421,15 @@ define(function(require, exports, module) {
         function closeCompletionBox(event) {
             if (!popup)
                 return;
+            
+            if (event && event.target) {
+                if (popup.container.contains(event.target)
+                  || docElement.contains(event.target))
+                    return;
+            }
+            
             popup.hide();
-            hideDocPopup()
+            hideDocPopup();
             
             if (!lastAce) // no editor, try again later
                 return;
@@ -611,7 +618,8 @@ define(function(require, exports, module) {
                 case 40: // Down
                     var time = new Date().getTime();
                     if (popup.getRow() == popup.matches.length - 1) {
-                        if (popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                        if ((popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                            || popup.matches.length === 1)
                             return closeCompletionBox();
                         popup.onLastLine = true;
                     }
@@ -623,7 +631,8 @@ define(function(require, exports, module) {
                     break;
                 case 38: // Up
                     var time = new Date().getTime();
-                    if (!popup.getRow() && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                    if ((!popup.getRow() && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                        || popup.matches.length === 1)
                         return closeCompletionBox();
                     lastUpDownEvent = time;
                     if (popup.getRow())
