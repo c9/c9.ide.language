@@ -1,5 +1,7 @@
 /*global describe it before after  =*/
 
+"use client";
+
 window.connectBloxURL = -1; //"example.json";
 window.lbWorkspace    = "awesomedb";
 
