@@ -683,8 +683,14 @@ function asyncParForEach(array, fn, callback) {
      * Process a cursor move. We do way too much here.
      */
     this.onCursorMove = function(event) {
-        var pos = event.data;
+        var pos = event.data.pos;
         var part = this.getPart(pos);
+        var line = this.doc.getLine(pos.row);
+        
+        if (line != event.data.line) {
+            // Our intelligence is outdated, tell the client
+            return this.scheduleEmit("hint", { line: null });
+        }
 
         var _self = this;
         var hintMessage = ""; // this.checkForMarker(pos) || "";
@@ -753,7 +759,8 @@ function asyncParForEach(array, fn, callback) {
                 _self.scheduleEmit("hint", {
                     pos: aggregateActions.pos,
                     displayPos: aggregateActions.displayPos,
-                    message: hintMessage
+                    message: hintMessage,
+                    line: line
                 });
             });
 

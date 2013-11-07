@@ -1,5 +1,7 @@
 /*global describe it before after  =*/
 
+"use client";
+
 require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai, baseProc) {
     var expect = chai.expect;
     
