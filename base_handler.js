@@ -433,6 +433,7 @@ module.exports = {
      * Constructs a hierarchy.
      * 
      * Should be overridden by inheritors that implement a type hierarchy.
+     * 
      * Not supported right now.
      * 
      * @param {ace.Document} doc         The Document object representing the source
@@ -493,7 +494,7 @@ module.exports = {
     },
 
     /**
-     * Enables the handler to do analysis of the AST and annotate as desired.
+     * Analyzes an AST or file and annotates it as desired.
      * 
      * Example of an annotation to return:
      * 
@@ -587,7 +588,7 @@ module.exports = {
     },
 
     /**
-     * Invoked when an automatic code formating is wanted
+     * Performs code formatting.
      * 
      * Should be overridden by inheritors that implement code formatting.
      * 
