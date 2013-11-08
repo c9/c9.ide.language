@@ -29,6 +29,9 @@
 .outline.ace_tree .tree-row.selected strong{
     color : @highlight-selected-color;
 }
+.outline.ace_tree.focus .tree-row.selected .toggler:not(.empty){
+    background-image: url("@{image-path}/@{tree-arrow-focus-selected}");
+}
 
 .outline.ace_tree .tree-row{
     border-radius: 2px;
