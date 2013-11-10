@@ -20,6 +20,7 @@ var linereport = require("plugins/c9.ide.language.generic.linereport/linereport_
 var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
 var base_handler = require("./base_handler");
+var assert = require("plugins/c9.util/assert");
 
 require("plugins/c9.ide.browsersupport/browsersupport");
 
@@ -1210,7 +1211,7 @@ function asyncParForEach(array, fn, callback) {
      * information is now available.
      */
     this.completeUpdate = function(pos, line) {
-        assert(line);
+        assert(line !== undefined);
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {

@@ -59,8 +59,8 @@ module.exports = {
      * @param {Object} pos   The position to retrigger this update
      * @param {String} line  The line that this update was triggered for
      */
-    completeUpdate: function(pos) {
-        return worker.$lastWorker.completeUpdate(pos);
+    completeUpdate: function(pos, line) {
+        return worker.$lastWorker.completeUpdate(pos, line);
     },
     
     /**
