@@ -74,6 +74,9 @@ define(function(require, exports, module) {
             
             clearTimeout(onMouseDownTimeout);
             
+            if (ace.inMultiSelectMode)
+                return hide();
+            
             if (line !== event.data.line) {
                 // console.warn("Got outdated tooltip event from worker, retrying");
                 if (!cursormoveTimeout)
@@ -114,7 +117,6 @@ define(function(require, exports, module) {
         function show(row, column, html, _ace) {
             draw();
             ace = _ace;
-            
             
             if (!isVisible) {
                 isVisible = true;
