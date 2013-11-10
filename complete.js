@@ -263,7 +263,6 @@ define(function(require, exports, module) {
                     deleteSuffix = true;
                 }
             }
-            
         
             newText = newText.replace(/\t/g, session.getTabString());
             
