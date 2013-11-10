@@ -154,14 +154,17 @@ define(function(require, exports, module) {
             }
             
             worker.on("execFile", function(e) {
-                proc.execFile(e.data.path, e.data.options, function(err, stdout, stderr) {
-                    worker.emit("execFileResult", { data: {
-                        id: e.data.id,
-                        err: err,
-                        stdout: stdout,
-                        stderr: stderr
-                    }});
-                });
+                ensureConnected(
+                    proc.execFile.bind(proc, e.data.path, e.data.options),
+                    function(err, stdout, stderr) {
+                        worker.emit("execFileResult", { data: {
+                            id: e.data.id,
+                            err: err,
+                            stdout: stdout,
+                            stderr: stderr
+                        }});
+                    }
+                );
             });
             
             worker.on("readFile", function(e) {
@@ -177,9 +180,10 @@ define(function(require, exports, module) {
                     return done(null, value);
                 }
                 
-                fs.readFile(e.data.path, e.data.encoding, function(err, data) {
-                    done(err, data);
-                });
+                ensureConnected(
+                    fs.readFile.bind(fs, e.data.path, e.data.encoding),
+                    done
+                );
                 
                 function done(err, data) {
                     worker.emit("readFileResult", { data: {
@@ -326,6 +330,23 @@ define(function(require, exports, module) {
             editor.on("documentUnload", function(e) {
             });
         });
+        
+        function ensureConnected(f, callback, timeout) {
+            timeout = timeout || 200;
+            if (!c9.NETWORK) {
+                return c9.once("stateChange", function(e) {
+                    setTimeout(
+                        ensureConnected.bind(null, f, callback, timeout * 2),
+                        timeout
+                    );
+                });
+            }
+            f(function(err) {
+                if (err && err.code === "EDISCONNECT")
+                    return ensureConnected(f, callback, timeout);
+                callback.apply(null, arguments);
+            });
+        }
         
         function draw() {
             emit("draw");
