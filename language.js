@@ -191,6 +191,9 @@ define(function(require, exports, module) {
                 ]);
                 updateSettings();
             });
+            
+            settings.on("user/language", updateSettings);
+            settings.on("project/language", updateSettings);
     
             // Preferences
             prefs.add({
@@ -305,9 +308,9 @@ define(function(require, exports, module) {
             });
         }
         
-        function updateSettings(e) {
+        function updateSettings() {
             if (!worker)
-                return plugin.once("initWorker", updateSettings.bind(null, e));
+                return plugin.once("initWorker", updateSettings);
             
             ["jshint", "instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
               .forEach(function(s){
