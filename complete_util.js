@@ -1,4 +1,10 @@
 /**
+ * Completion utilities for language workers.
+ * 
+ * Import using
+ * 
+ *     require("plugins/c9.language/complete_util")
+ * 
  * @class language.complete_util
  */
 define(function(require, exports, module) {

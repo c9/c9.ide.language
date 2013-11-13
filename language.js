@@ -464,14 +464,14 @@ define(function(require, exports, module) {
 
             /**
              * Returns true if the "continuous completion" IDE setting is enabled
-             * @internal
+             * @ignore
              * @return {Boolean}
              */
             isContinuousCompletionEnabled : isContinuousCompletionEnabled,
             
             /**
              * Sets whether the "continuous completion" IDE setting is enabled
-             * @internal
+             * @ignore
              * @param {Boolean} value
              */
             setContinuousCompletionEnabled : setContinuousCompletionEnabled,
@@ -490,11 +490,11 @@ define(function(require, exports, module) {
              * because it is hosted elsewhere), clients can also specify a string
              * source for the handler.
              * 
-             * @param {String} modulePath    The require path of the handler
-             * @param {String} [contents]    The contents of the handler script
-             * @param {Function} [callback]  An optional callback called when the handler is initialized
-             * @param String callback.err    Any error that occured when loading this handler
-             * @param Object callback.worker The worker object (see {@link #getWorker})
+             * @param {String} modulePath      The require path of the handler
+             * @param {String} [contents]      The contents of the handler script
+             * @param {Function} [callback]    An optional callback called when the handler is initialized
+             * @param {String} callback.err    Any error that occured when loading this handler
+             * @param {Object} callback.worker The worker object (see {@link #getWorker})
              */
             registerLanguageHandler : registerLanguageHandler,
             
