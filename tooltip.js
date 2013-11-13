@@ -65,7 +65,7 @@ define(function(require, exports, module) {
                 var theme = e.theme;
                 if (!theme) return;
                 
-                tooltipEl.className = "language_tooltip" 
+                tooltipEl.className = "language_tooltip " 
                     + (theme.isDark ? "dark" : "");
             }, plugin);
         }
