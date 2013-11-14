@@ -53,8 +53,7 @@
     overflow : auto;
     position: absolute;
     padding : 5px;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
+    .box-sizing(border-box);
     z-index: 100000;
     background-color: @complete-docs-background;
     color: @complete-docs-color;
@@ -188,8 +187,7 @@
 }
 .code_complete_text .ace_line>span{
     padding : 0px 2px 0 1px;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
+    .box-sizing(border-box);
 }
 .code_complete_text .ace_line.ace_selected{
     background: @complete-selected-background;
