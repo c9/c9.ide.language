@@ -142,8 +142,10 @@ define(function(require, exports, module) {
                 plugin.autohide = true;
             }, plugin);
             
-            if (isActive && tabs.focussedTab)
+            if (isActive && tabs.focussedTab) {
+                plugin.autohide = false;
                 updateOutline();
+            }
         }
         
         function changeHandler(){

@@ -6,64 +6,81 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui"
+        "Plugin", "tabManager", "language", "ui", "ace"
     ];
     main.provides = ["language.tooltip"];
     return main;
     
     function main(options, imports, register) {
-        var language = imports.language;
-        var tabs = imports.tabManager;
-        var dom = require("ace/lib/dom");
-        var Plugin = imports.Plugin;
-        var ui = imports.ui;
-        var tree = require("treehugger/tree");
-        var lang = require("ace/lib/lang");
+        var language  = imports.language;
+        var tabs      = imports.tabManager;
+        var dom       = require("ace/lib/dom");
+        var Plugin    = imports.Plugin;
+        var ui        = imports.ui;
+        var aceHandle = imports.ace;
+        var tree      = require("treehugger/tree");
+        var lang      = require("ace/lib/lang");
+        var assert    = require("plugins/c9.util/assert");
+        
         var plugin = new Plugin("Ajax.org", main.consumes);
         
-        var ace;
-        var languageWorker;
-        var isVisible;
-        var labelHeight;
-        var adjustCompleterTop;
-        var isTopdown;
-        var allowImmediateEmit;
-        var lastPos;
-        var cursormoveTimeout;
-        var onMouseDownTimeout;
+        var ace, languageWorker, isVisible, labelHeight, adjustCompleterTop;
+        var isTopdown, tooltipEl, allowImmediateEmit, lastPos;
+        var cursormoveTimeout, onMouseDownTimeout;
         
-        var tooltipEl = dom.createElement("div");
-        tooltipEl.className = "language_tooltip dark";
-        
-        var assert = require("plugins/c9.util/assert");
-
-        language.getWorker(function(err, worker) {
-            languageWorker = worker;
-            worker.on("hint", function(event) {
-                var tab = tabs.focussedTab;
-                if (!tab || tab.path !== event.data.path)
-                    return;
-                
-                assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
-                onHint(event, tab.editor.ace);
-            });
-            language.on("cursormove", function(e) {
-                clearTimeout(cursormoveTimeout);
-                if (lastPos && !inRange(lastPos, e.pos)) {
-                    // Just walked outside of tooltip range
-                    if (lastPos.sl !== e.pos.row)
-                        hide();
-                    if (allowImmediateEmit) {
-                        allowImmediateEmit = false;
-                        return worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+        function load(){
+            tooltipEl = dom.createElement("div");
+            tooltipEl.className = "language_tooltip dark";
+            
+            language.getWorker(function(err, worker) {
+                languageWorker = worker;
+                worker.on("hint", function(event) {
+                    var tab = tabs.focussedTab;
+                    if (!tab || tab.path !== event.data.path)
+                        return;
+                    
+                    assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
+                    onHint(event, tab.editor.ace);
+                });
+                language.on("cursormove", function(e) {
+                    clearTimeout(cursormoveTimeout);
+                    if (lastPos && !inRange(lastPos, e.pos)) {
+                        // Just walked outside of tooltip range
+                        if (lastPos.sl !== e.pos.row)
+                            hide();
+                        if (allowImmediateEmit) {
+                            allowImmediateEmit = false;
+                            return worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                        }
                     }
-                }
-                cursormoveTimeout = setTimeout(function() {
-                    var latestPos = e.doc.selection.getCursor();
-                    worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row) }});
-                    cursormoveTimeout = null;
-                }, 100);
+                    cursormoveTimeout = setTimeout(function() {
+                        var latestPos = e.doc.selection.getCursor();
+                        worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row) }});
+                        cursormoveTimeout = null;
+                    }, 100);
+                });
             });
+            
+            aceHandle.on("themeChange", function(e){
+                var theme = e.theme;
+                if (!theme) return;
+                
+                tooltipEl.className = "language_tooltip " 
+                    + (theme.isDark ? "dark" : "");
+            }, plugin);
+        }
+        
+        // @todo @lennartcl. This plugin is very messy. I added the things below
+        // but I see that the plugin is never returned. Nor is its interface
+        // set. Could you fix?
+        plugin.on("load", function(){
+            load();
+        });
+        plugin.load("This is not how it is supposed to be");
+        
+        plugin.on("unload", function(){
+            if (tooltipEl)
+                tooltipEl.parentNode.removeChild(tooltipEl);
         });
     
         function onHint(event, ace) {
