@@ -24,9 +24,7 @@
 
 .language_highlight_occurrence_main {
     position: absolute;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    .box-sizing(border-box);
     border: solid 1px #888;
     z-index: 2000;
 }
@@ -37,9 +35,7 @@
 
 .language_highlight_occurrence_other {
     position: absolute;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    .box-sizing(border-box);
     border: solid 1px #888;
     z-index: 2000;
 }
@@ -52,9 +48,7 @@
     background-color: #FFF4C9;
     position: absolute;
     border: solid 1px #777;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    .box-sizing(border-box);
     z-index: 3;
 }
 
@@ -67,9 +61,7 @@
     background-color: #FFF4C9;
     border: solid 1px #666;
     position: absolute;
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
+    .box-sizing(border-box);
     opacity: 0.7;
     z-index: 3;
 }
