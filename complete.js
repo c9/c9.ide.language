@@ -704,7 +704,7 @@ define(function(require, exports, module) {
             else if (matches.length > 0) {
                 var idRegex = matches[0].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
                 var identifier = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-                if (matches.length === 1 && identifier === matches[0].replaceText || identifier + " " === matches[0].replaceText)
+                if (matches.length === 1 && (identifier === matches[0].replaceText || identifier + " " === matches[0].replaceText))
                     closeCompletionBox();
                 else
                     showCompletionBox(editor, matches, identifier, line);
