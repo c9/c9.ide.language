@@ -172,9 +172,10 @@ define(function(require, exports, module) {
                     + (theme.isDark ? " dark" : "");
 
                 popup.setTheme({
-                    cssClass: "code_complete_text",
-                    isDark: theme.isDark,
-                    padding: 0
+                    cssClass : "code_complete_text"
+                        + (theme.isDark ? " dark" : ""),
+                    isDark   : theme.isDark,
+                    padding  : 0
                 });
             }, plugin);
         }
@@ -193,9 +194,10 @@ define(function(require, exports, module) {
             
             popup = new Popup(document.body);
             popup.setTheme({
-                cssClass: "code_complete_text",
-                isDark: !theme || theme.isDark,
-                padding: 0
+                cssClass : "code_complete_text"
+                    + (!theme || theme.isDark ? " dark" : ""),
+                isDark   : !theme || theme.isDark,
+                padding  : 0
             });
             popup.$imageSize = 8 + 5 + 7 + 1;
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
