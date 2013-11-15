@@ -856,7 +856,9 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
-                        handler.getVariablePositions(_self.doc, ast, regionPos, currentNode, function(response) {
+                        if (handler.getVariablePositions)
+                            console.error("handler implements getVariablePositions, should implement getRenamePositions instead")
+                        handler.getRenamePositions(_self.doc, ast, regionPos, currentNode, function(response) {
                             if (response) {
                                 response.uses = response.uses.map(regionToPos);
                                 response.declarations = response.declarations.map(regionToPos);

@@ -517,7 +517,7 @@ module.exports = {
     },
 
     /**
-     * Invoked when inline variable renaming is activated.
+     * Gets all positions to select for a rename refactoring.
      * 
      * Example result, renaming a 3-character identfier
      * on line 10 that also occurs on line 11 and 12:
@@ -545,7 +545,7 @@ module.exports = {
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result.
      */
-    getVariablePositions: function(doc, fullAst, pos, currentNode, callback) {
+    getRenamePositions: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     },
 
