@@ -6,28 +6,37 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui" , "menus", "dialogs.alert",
-        "ace", "ide", "language.marker", "editors"
+        "Plugin", "tabManager", "language", "ui" , "menus", "dialog.alert",
+        "ace", "language.marker", "editors", "language", "commands",
+        "language.complete"
     ];
     main.provides = ["language.refactor"];
     return main;
 
     function main(options, imports, register) {
-        throw Error("This plugin hasn't been fully ported to newclient yet");
-        
         var Plugin = imports.Plugin;
         var plugin = new Plugin("Ajax.org", main.consumes);
         var language = imports.language;
         var menus = imports.menus;
         var commands = imports.commands;
+        var complete = imports["language.complete"];
         var ui = imports.ui;
+        var tabs = imports.tabManager;
         var ace = imports.ace;
         var editors = imports.editors;
         var marker = imports["language.marker"];
         var alert = imports["dialogs.alert"];
+        var completeUtil = require("plugins/c9.ide.language/complete_util");
+        var PlaceHolder = require("ace/placeholder").PlaceHolder;
+
         var worker;
         var mnuRename;
         var mnuRename2;
+        var placeHolder;
+        var enableVariableRename;
+        var oldCommandKey;
+        var oldIdentifier;
+        var lastAce;
         
         var loaded;
         function load() {
@@ -35,14 +44,18 @@ define(function(require, exports, module) {
                 return;
             loaded = true;
             
-            language.on("initWorker", function(e) {
-                worker = e.worker;
+            language.getWorker(function(err, langWorker) {
+                if (err)
+                    return console.error(err);
+                worker = langWorker;
                 worker.on("enableRefactorings", function(event) {
                     enableRefactorings(event);
                 });
         
                 worker.on("variableLocations", function(event) {
-                    enableVariableRefactor(event.data);
+                    if (!tabs.focussedTab || !tabs.focussedTab.editor || tabs.focussedTab.editor.ace !== lastAce)
+                        return;
+                    initRenameUI(event.data, lastAce);
                     worker.emit("onRenameBegin", {data: {}});
                 });
         
@@ -54,7 +67,7 @@ define(function(require, exports, module) {
                     } else {
                         placeHolder.detach();
                     }
-                    $cleanup();
+                    cleanup();
                 });
             });
             
@@ -63,10 +76,10 @@ define(function(require, exports, module) {
                 hint    : "Rename refactor",
                 bindKey : {mac: "Option-Command-R", win: "Ctrl-Alt-R"},
                 isAvailable: function(editor) {
-                    return editor && editor.amlEditor && enableVariableRename;
+                    return editor && editor.ace && enableVariableRename;
                 },
                 exec: function(editor) {
-                    renameVariable();
+                    beginRename(editor);
                 }
             }, plugin);
             mnuRename = new ui.item({
@@ -90,14 +103,14 @@ define(function(require, exports, module) {
         
         function enableRefactorings(event) {
             var names = event.data;
-            var enableVariableRename = false;
+            var enabled = false;
             for (var i = 0; i < names.length; i++) {
                 var name = names[i];
                 if (name === 'renameVariable') {
-                    enableVariableRename = true;
+                    enabled = true;
                 }
             }
-            this.enableVariableRename = enableVariableRename;
+            enableVariableRename = enabled;
             
             if (!window.mnuCtxEditorRename)
                 return;
@@ -106,14 +119,27 @@ define(function(require, exports, module) {
             else
                 mnuRename2.disable();
         }
-        
-        function enableVariableRefactor(data) {
-            var _self = this;
     
+        function beginRename(editor) {
+            var ace = lastAce = editor.ace;
+    
+            ace.focus();
+            var curPos = ace.getCursorPosition();
+            var doc = ace.getSession().getDocument();
+            var line = doc.getLine(curPos.row);
+            var oldId = getFullIdentifier(line, curPos.column, ace);
+            oldIdentifier = {
+                column: oldId.sc,
+                row: curPos.row,
+                text: oldId.text
+            };
+            worker.emit("fetchVariablePositions", {data: curPos});
+        }
+        
+        function initRenameUI(data, ace) {
             // Temporarily disable these markers, to prevent weird slow-updating events whilst typing
-            marker.disableMarkerType('occurrence_main');
-            marker.disableMarkerType('occurrence_other');
-            var ace = editors.currentEditor.amlEditor.$editor;
+            marker.disableMarkerType('occurrence_main', ace);
+            marker.disableMarkerType('occurrence_other', ace);
             var cursor = ace.getCursorPosition();
     
             var mainPos = data.pos;
@@ -121,87 +147,70 @@ define(function(require, exports, module) {
             var others = data.others.filter(function (o) {
                 return !(o.row === mainPos.row && o.column === mainPos.column);
             });
-            var p = this.placeHolder = new PlaceHolder(ace.session, data.length, mainPos, others, "language_rename_main", "language_rename_other");
+            placeHolder = new PlaceHolder(ace.session, data.length, mainPos, others, "language_rename_main", "language_rename_other");
             if (cursor.row !== mainPos.row || cursor.column < mainPos.column || cursor.column > mainPos.column + data.length) {
                 // Cursor is not "inside" the main identifier, move it there
                 ace.moveCursorTo(mainPos.row, mainPos.column);
             }
-            p.showOtherMarkers();
-            if (this.ext.isContinuousCompletionEnabled())
-                this.ext.setContinuousCompletionEnabled(false);
+            placeHolder.showOtherMarkers();
+            if (language.isContinuousCompletionEnabled())
+                language.setContinuousCompletionEnabled(false);
             
             // Monkey patch
             if (!oldCommandKey) {
                 oldCommandKey = ace.keyBinding.onCommandKey;
-                ace.keyBinding.onCommandKey = this.onKeyPress.bind(this);
+                ace.keyBinding.onCommandKey = onKeyPress;
             }
     
-            if (this.ext.isContinuousCompletionEnabled())
-                this.ext.setContinuousCompletionEnabled(false);
-            p.on("cursorLeave", function() {
+            if (language.isContinuousCompletionEnabled())
+                language.setContinuousCompletionEnabled(false);
+            placeHolder.on("cursorLeave", function() {
                 commitRename();
             });
-        }
-    
-        function renameVariable() {
-            var amlEditor = editors.currentEditor.amlEditor;
-            var ace = amlEditor.$editor;
-    
-            ace.focus();
-            var curPos = ace.getCursorPosition();
-            var doc = amlEditor.getDocument();
-            var line = doc.getLine(curPos.row);
-            var oldId = retrieveFullIdentifier(line, curPos.column);
-            this.oldIdentifier = {
-                column: oldId.sc,
-                row: curPos.row,
-                text: oldId.text
-            };
-            this.worker.emit("fetchVariablePositions", {data: curPos});
         }
     
         function commitRename() {
             // Finished refactoring in editor
             // -> continue with the worker giving the initial refactor cursor position
-            var doc = editors.currentEditor.amlEditor.getDocument();
-            var oPos = this.placeHolder.pos;
+            var doc = lastAce.getSession().getDocument();
+            var oPos = placeHolder.pos;
             var line = doc.getLine(oPos.row);
-            var newIdentifier = retrieveFullIdentifier(line, oPos.column);
-            this.worker.emit("commitRename", {data: { oldId: this.oldIdentifier, newName: newIdentifier.text } });
+            var newIdentifier = getFullIdentifier(line, oPos.column, lastAce);
+            worker.emit("commitRename", {data: { oldId: oldIdentifier, newName: newIdentifier.text } });
         }
     
         function onRenameCancel() {
-            if (this.placeHolder) {
-                this.placeHolder.detach();
-                this.placeHolder.cancel();
+            if (placeHolder) {
+                placeHolder.detach();
+                placeHolder.cancel();
             }
-            this.worker.emit("onRenameCancel", {data: {}});
+            worker.emit("onRenameCancel", {data: {}});
         }
     
-        function $cleanup() {
-            if (this.ext.isContinuousCompletionEnabled())
-                this.ext.setContinuousCompletionEnabled(true);
+        function cleanup() {
+            if (language.isContinuousCompletionEnabled())
+                language.setContinuousCompletionEnabled(true);
             marker.enableMarkerType('occurrence_main');
             marker.enableMarkerType('occurrence_other');
-            this.placeHolder = null;
-            this.oldIdentifier = null;
+            placeHolder = null;
+            oldIdentifier = null;
             if (oldCommandKey) {
-                editors.currentEditor.amlEditor.$editor.keyBinding.onCommandKey = oldCommandKey;
+                lastAce.keyBinding.onCommandKey = oldCommandKey;
                 oldCommandKey = null;
             }
         }
     
         function onKeyPress(e, hashKey, keyCode) {
-            var keyBinding = editors.currentEditor.amlEditor.$editor.keyBinding;
+            var keyBinding = lastAce.keyBinding;
     
             switch(keyCode) {
                 case 32: // Space can't be accepted as it will ruin the logic of retrieveFullIdentifier
                 case 27: // Esc
-                    this.onRenameCancel();
+                    onRenameCancel();
                     e.preventDefault();
                     break;
                 case 13: // Enter
-                    this.commitRename();
+                    commitRename();
                     e.preventDefault();
                     break;
                 default:
@@ -210,34 +219,22 @@ define(function(require, exports, module) {
             }
         }
     
-        function destroy (){
+        function destroy() {
             commands.removeCommand("renameVar");
         }
     
-        function retrieveFullIdentifier(text, pos) {
-            var buf = [];
-            var i = pos >= text.length ? (text.length - 1) : pos;
-            while (i < text.length && ID_REGEX.test(text[i]))
-                i++;
-            // e.g edge semicolon check
-            i = pos == text.length ? i : i-1;
-            for (; i >= 0 && ID_REGEX.test(text[i]); i--) {
-                buf.push(text[i]);
-            }
-            i++;
-            text = buf.reverse().join("");
-            if (text.length === 0)
-                return null;
-            return {
-                sc: i,
-                text: text
-            };
-        };
+        function getFullIdentifier(line, offset, ace) {
+            var regex = complete.getIdentifierRegex(null, ace);
+            return completeUtil.retrievePrecedingIdentifier(line, offset, regex)
+                + completeUtil.retrieveFollowingIdentifier(line, offset, regex);
+        }
         
         plugin.on("load", function(){
             load();
         });
         
-        register(null, {});
+        register(null, {
+            "language.refactor": plugin
+        });
     }
 });
