@@ -176,6 +176,7 @@ define(function(require, exports, module) {
                     isDark   : theme.isDark,
                     padding  : 0
                 });
+                popup.renderer.setStyle("dark", theme.isDark);
             }, plugin);
         }
         
@@ -200,6 +201,7 @@ define(function(require, exports, module) {
             popup.$imageSize = 8 + 5 + 7 + 1;
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
             popup.renderer.$extraHeight = 4
+            popup.renderer.setStyle("dark", !theme || theme.isDark);
             
             completedp.initPopup(popup);
             //@TODO DEPRECATE: onKeyPress
