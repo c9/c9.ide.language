@@ -534,25 +534,25 @@ module.exports = {
      *         ]
      *     }
      * 
-     * Should be overridden by inheritors that implement rename refactoring.
+     * Must be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
-     * @param {Object} callback.result       The function's result.
+     * @param {Object} callback.result       The function's result (see function description).
      */
     getRenamePositions: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     },
 
     /**
-     * Invoked when refactoring is started -> So, for java, saving the file is no more legal to do
+     * Invoked when refactoring is started.
      * 
-     * Should be overridden by inheritors that implement rename refactoring.
+     * May be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Document} doc             The Document object representing the source
      * @param {Function} callback            The callback; must be called
@@ -562,11 +562,11 @@ module.exports = {
     },
 
     /**
-     * Invoked when a refactor request is being finalized and waiting for a status
+     * Confirms that a refactoring before committing it.
      * 
      * May be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param oldName                        The old identifier was being renamed
      * @param newName                        The new name of the element after refactoring
      * @param {Function} callback            The callback; must be called
