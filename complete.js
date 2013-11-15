@@ -169,7 +169,7 @@ define(function(require, exports, module) {
                 if (!theme || !drawn) return;
                 
                 txtCompleterDoc.className = "code_complete_doc_text" 
-                    + (theme.isDark ? "dark" : "");
+                    + (theme.isDark ? " dark" : "");
 
                 popup.setTheme({
                     cssClass: "code_complete_text",
@@ -189,7 +189,7 @@ define(function(require, exports, module) {
             
             txtCompleterDoc = document.createElement("div");
             txtCompleterDoc.className = "code_complete_doc_text" 
-                + (!theme || theme.isDark ? "dark" : "");
+                + (!theme || theme.isDark ? " dark" : "");
             
             popup = new Popup(document.body);
             popup.setTheme({
