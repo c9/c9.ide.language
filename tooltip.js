@@ -138,23 +138,20 @@ define(function(require, exports, module) {
             if (!isVisible) {
                 isVisible = true;
                 
-                ace.renderer.scroller.appendChild(tooltipEl);
+                window.document.body.appendChild(tooltipEl);
                 ace.on("mousewheel", hide);
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
             //setTimeout(function() {
-                var offset = ace.renderer.scroller.getBoundingClientRect();
                 var position = ace.renderer.textToScreenCoordinates(row, column);
                 var cursorConfig = ace.renderer.$cursorLayer.config;
                 var labelWidth = dom.getInnerWidth(tooltipEl);
                 labelHeight = dom.getInnerHeight(tooltipEl);
-                position.pageX -= offset.left;
-                position.pageY -= offset.top;
                 isTopdown = true;
                 if (position.pageY < labelHeight)
                     isTopdown = true;
-                else if (position.pageY + labelHeight > window.innerHeight - offset.top)
+                else if (position.pageY + labelHeight > window.innerHeight)
                     isTopdown = false;
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)

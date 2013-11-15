@@ -10,6 +10,7 @@
     text-shadow: @language-tooltip-text-shadow;
     z-index: 300;
     font-family: Arial;
+    z-index: 100000;
 }
 .language_tooltip.dark {
     background-color: @language-tooltip-dark-background;
