@@ -384,7 +384,7 @@ module.exports = {
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result
      * @param {String[]} [callback.result.enableRefactorings]
-     *                                       The refactorings to enable, such as "renameVariable"
+     *                                       The refactorings to enable, such as "rename"
      */
     onRefactoringTest: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
