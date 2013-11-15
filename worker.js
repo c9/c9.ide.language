@@ -1085,7 +1085,7 @@ function asyncParForEach(array, fn, callback) {
         for (var i = 0; i < matches.length - 1; i++) {
             var a = matches[i];
             var b = matches[i + 1];
-            if (a.name === b.name) {
+            if (a.name === b.name || (a.id || a.name) === (b.id || b.name)) {
                 // Duplicate!
                 if (a.priority < b.priority)
                     matches.splice(i, 1);
