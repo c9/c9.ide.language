@@ -172,8 +172,7 @@ define(function(require, exports, module) {
                     + (theme.isDark ? " dark" : "");
 
                 popup.setTheme({
-                    cssClass : "code_complete_text"
-                        + (theme.isDark ? " dark" : ""),
+                    cssClass : "code_complete_text",
                     isDark   : theme.isDark,
                     padding  : 0
                 });
@@ -194,8 +193,7 @@ define(function(require, exports, module) {
             
             popup = new Popup(document.body);
             popup.setTheme({
-                cssClass : "code_complete_text"
-                    + (!theme || theme.isDark ? " dark" : ""),
+                cssClass : "code_complete_text",
                 isDark   : !theme || theme.isDark,
                 padding  : 0
             });
