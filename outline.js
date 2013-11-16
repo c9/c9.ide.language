@@ -332,7 +332,7 @@ define(function(require, exports, module) {
                         worker.emit("outline", { data : { ignoreFilter: false } });
                         dirty = false;
                     }
-                }, 25);
+                }, 1000);
             });
         }
         
