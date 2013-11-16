@@ -304,7 +304,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement tooltips.
      * 
-     * @param {Document} doc                  Document object representing the source
+     * @param {Document} doc                      Document object representing the source
      * @param {Object} fullAst                    The entire AST of the current file (if any)
      * @param {Object} cursorPos                  The current cursor position
      * @param {Number} cursorPos.row              The current cursor's row
@@ -322,7 +322,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement tooltips.
      * 
-     * @param {Document} doc                           Document object representing the source
+     * @param {Document} doc                               Document object representing the source
      * @param {Object} fullAst                             The entire AST of the current file (if any)
      * @param {Object} cursorPos                           The current cursor position
      * @param {Number} cursorPos.row                       The current cursor's row
@@ -349,7 +349,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement occurrence highlighting.
      * 
-     * @param {Document} doc                       Document object representing the source
+     * @param {Document} doc                           Document object representing the source
      * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Object} cursorPos                       The current cursor position
      * @param {Number} cursorPos.row                   The current cursor's row
@@ -375,7 +375,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement refactorings.
      * 
-     * @param {Document} doc             Document object representing the source
+     * @param {Document} doc                 Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} cursorPos             The current cursor position
      * @param {Number} cursorPos.row         The current cursor's row
@@ -383,10 +383,12 @@ module.exports = {
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result
-     * @param {String[]} [callback.result.enableRefactorings]
-     *                                       The refactorings to enable, such as "renameVariable"
+     * @param {String[]} callback.result.refactorings
+     *                                       The refactorings to enable, such as "rename"
+     * @param {String[]} [callback.result.isGeneric]
+     *                                       Whether is a generic answer and should be deferred
      */
-    onRefactoringTest: function(doc, fullAst, cursorPos, currentNode, callback) {
+    getRefactorings: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
 
@@ -405,7 +407,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement an outline.
      * 
-     * @param {Document} doc                       The Document object representing the source
+     * @param {Document} doc                           The Document object representing the source
      * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Object} callback.result                 The function's result, a JSON outline structure or null if not supported
@@ -436,7 +438,7 @@ module.exports = {
      * 
      * Not supported right now.
      * 
-     * @param {Document} doc         The Document object representing the source
+     * @param {Document} doc             The Document object representing the source
      * @param {Object} cursorPos         The current cursor position
      * @param {Number} cursorPos.row     The current cursor's row
      * @param {Number} cursorPos.column  The current cursor's column
@@ -463,7 +465,7 @@ module.exports = {
      *    priority    : 1
      *  };
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
@@ -507,7 +509,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement analysis.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of error and warning markers
@@ -517,7 +519,7 @@ module.exports = {
     },
 
     /**
-     * Invoked when inline variable renaming is activated.
+     * Gets all positions to select for a rename refactoring.
      * 
      * Example result, renaming a 3-character identfier
      * on line 10 that also occurs on line 11 and 12:
@@ -534,27 +536,35 @@ module.exports = {
      *         ]
      *     }
      * 
-     * Should be overridden by inheritors that implement rename refactoring.
+     * Must be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
-     * @param {Object} pos                   The current cursor position
-     * @param {Number} pos.row               The current cursor's row
-     * @param {Number} pos.column            The current cursor's column
-     * @param {Object} currentNode           The AST node the cursor is currently at (if any)
-     * @param {Function} callback            The callback; must be called
-     * @param {Object} callback.result       The function's result.
+     * @param {Document} doc                          The Document object representing the source
+     * @param {Object} ast                            The entire AST of the current file (if any)
+     * @param {Object} pos                            The current cursor position
+     * @param {Number} pos.row                        The current cursor's row
+     * @param {Number} pos.column                     The current cursor's column
+     * @param {Object} currentNode                    The AST node the cursor is currently at (if any)
+     * @param {Function} callback                     The callback; must be called
+     * @param {Object} callback.result                The function's result (see function description).
+     * @param {Boolean} callback.result.isGeneric     Indicates this is a generic refactoring and should be deferred.
+     * @param {Boolean} callback.result.length        The lenght of the rename identifier
+     * @param {Object} callback.result.pos            The position of the current identifier
+     * @param {Number} callback.result.pos.row        The row of the current identifier
+     * @param {Number} callback.result.pos.column     The column of the current identifier
+     * @param {Object[]} callback.result.others       The positions of other identifiers to be renamed
+     * @param {Number} callback.result.others.row     The row of another identifier to be renamed
+     * @param {Number} callback.result.others.column  The column of another identifier to be renamed
      */
-    getVariablePositions: function(doc, fullAst, pos, currentNode, callback) {
+    getRenamePositions: function(doc, ast, pos, currentNode, callback) {
         callback();
     },
 
     /**
-     * Invoked when refactoring is started -> So, for java, saving the file is no more legal to do
+     * Invoked when refactoring is started.
      * 
-     * Should be overridden by inheritors that implement rename refactoring.
+     * May be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Function} callback            The callback; must be called
      */
     onRenameBegin: function(doc, callback) {
@@ -562,17 +572,21 @@ module.exports = {
     },
 
     /**
-     * Invoked when a refactor request is being finalized and waiting for a status
+     * Confirms that a rename refactoring is valid, before committing it.
      * 
      * May be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
-     * @param oldName                        The old identifier was being renamed
-     * @param newName                        The new name of the element after refactoring
+     * @param {Document} doc                 The Document object representing the source
+     * @param {Object} oldId                 The old identifier was being renamed
+     * @param {Number} oldId.row             The row of the identifier that was being renamed
+     * @param {Number} oldId.column          The column of the identifier that was being renamed
+     * @param {String} oldId.value           The value of the identifier that was being renamed
+     * @param {String} newName               The new name of the element after refactoring
+     * @param {Boolean} isGeneric            True if this was a refactoring marked with 'isGeneric' (see {@link #getRenamePositions})
      * @param {Function} callback            The callback; must be called
-     * @param {String} [callback.err]        Indicates whether to progress or an error message if refactoring failed
+     * @param {String} callback.err          Null if the refactoring can be committed, or an error message if refactoring failed
      */
-    commitRename: function(doc, oldName, newName, callback) {
+    commitRename: function(doc, oldName, newName, isGeneric, callback) {
         callback();
     },
 
@@ -606,7 +620,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement jump to definition.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
@@ -636,7 +650,7 @@ module.exports = {
      * 
      * See {@link #hasResolution}.
      * 
-     * @param {Document} doc                    The Document object representing the source
+     * @param {Document} doc                        The Document object representing the source
      * @param {Object} fullAst                      The entire AST of the current file (if any)
      * @param {Object} markers                      The markers to get resolutions for
      * @param {Function} callback                   The callback; must be called
@@ -652,7 +666,7 @@ module.exports = {
      * 
      * Must be overridden by inheritors that implement quick fixes.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @return true iff the resolver for this marker could generate
      * @param {Function} callback            The callback; must be called
@@ -670,7 +684,7 @@ module.exports = {
      * with live inspect. If not implemented, the string value based on
      * currentNode's position is used.
      * 
-     * @param {Document} doc                The Document object representing the source
+     * @param {Document} doc                    The Document object representing the source
      * @param {Object} fullAst                  The entire AST of the current file (if any)
      * @param {Object} pos                      The current cursor position
      * @param {Number} pos.row                  The current cursor's row

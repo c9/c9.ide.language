@@ -22,8 +22,7 @@ define(function(require, exports, module) {
 var worker = require("./worker");
 var completeUtil = require("./complete_util");
 
-var lastExecId = 0;
-var lastReadId = 0;
+var msgId = 0;
 
 module.exports = {
 
@@ -85,7 +84,7 @@ module.exports = {
      * @param {String}   callback.stderr                  The stderr buffer
      */
     execFile: function(path, options, callback) {
-        var id = lastExecId++;
+        var id = msgId++;
         worker.sender.emit("execFile", { path: path, options: options, id: id });
         worker.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
@@ -123,7 +122,7 @@ module.exports = {
             encoding = null;
         }
         
-        var id = lastReadId++;
+        var id = msgId++;
         worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
         worker.sender.on("readFileResult", function onReadFileResult(event) {
             if (event.data.id !== id)
@@ -192,6 +191,31 @@ module.exports = {
         regex = regex || this.getIdentifierRegex(offset);
         return this.getPrecedingIdentifier(line, offset, regex)
             + this.getFollowingIdentifier(line, offset, regex);
+    },
+    
+    /**
+     * Gets all (matching) tokens for the current file.
+     *
+     * @param {Document} doc              The current document
+     * @param {String[]} identifiers      If not null, only return tokens equal to one of these strings
+     * @param {Function} callback
+     * @param {String} callback.err
+     * @param {Object[]} callback.result
+     */
+    getTokens: function(doc, identifiers, callback) {
+        var id = msgId++;
+        worker.sender.emit("getTokens", {
+            path: worker.$lastWorker.$path,
+            identifiers: identifiers,
+            id: id,
+            region: doc.region
+        });
+        worker.sender.on("getTokensResult", function onResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("getTokensResult", onResult);
+            callback(event.data.err, event.data.results);
+        });
     }
 };
 

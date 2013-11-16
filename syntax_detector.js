@@ -116,12 +116,26 @@ function getContextSyntaxPart(doc, pos, originalSyntax) {
         var result = {
             language: originalSyntax,
             region: getSyntaxRegions(doc, originalSyntax)[0],
-            index: 0
+            index: 0,
+            getLine: function(l) {
+                return doc.getLine(l);
+            },
+            getLines: function(firstRow, lastRow) {
+                return doc.getLines(firstRow, lastRow);
+            },
+            getAllLines: function() {
+                return doc.getAllLines();
+            },
+            getValue: function() {
+                if (!value)
+                    value = doc.getValue();
+                return value;
+            }
         };
+        // TODO: remove this; not exposed as public API
         result.__defineGetter__("value", function() {
-            if (!value)
-                value = doc.getValue();
-            return value;
+            console.error("part.value is deprecated: use getValue() instead");
+            return this.getValue();
         });
         return result;
     }
@@ -141,31 +155,55 @@ function getContextSyntax(doc, pos, originalSyntax) {
     return part && part.language; // should never happen
 }
 
-function regionToCodePart (doc, region, index) {
+function regionToCodePart(doc, region, index) {
     var lines = doc.getLines(region.sl, region.el);
+    var allLines;
     var value;
     var result = {
         language: region.syntax,
         region: region,
-        index: index
+        index: index,
+        getLines: function(firstRow, lastRow) {
+            return this.getAllLines().slice(firstRow, lastRow + 1);
+        },
+        getLine: function(l) {
+            if (region.sl === region.el)
+                return lines[0].substring(region.sc, region.ec);
+            if (l === region.sl)
+                return lines[0].substring(region.sc);
+            if (l === region.el)
+                return lines[lines.length-1].substring(0, region.ec);
+            return lines[l];
+        },
+        getAllLines: function() {
+            if (!allLines)
+                allLines = region.sl === region.el
+                    ? [lines[0].substring(region.sc, region.ec)]
+                    : [lines[0].substring(region.sc)].concat(lines.slice(1, lines.length-1)).concat([lines[lines.length-1].substring(0, region.ec)]);
+            return allLines;
+        },
+        getValue: function() {
+            if (!value)
+                value = this.getAllLines().join(doc.getNewLineCharacter());
+            return value;
+        }
     };
+    // TODO: remove this; not exposed as public API
     result.__defineGetter__("value", function() {
-        if (!value)
-            value = region.sl === region.el ? lines[0].substring(region.sc, region.ec) :
-                [lines[0].substring(region.sc)].concat(lines.slice(1, lines.length-1)).concat([lines[lines.length-1].substring(0, region.ec)]).join(doc.getNewLineCharacter());
-        return value;
+        console.error("part.value is deprecated: use getValue() instead");
+        return this.getValue();
     });
     return result;
 }
 
-function getCodeParts (doc, originalSyntax) {
+function getCodeParts(doc, originalSyntax) {
     var regions = getSyntaxRegions(doc, originalSyntax);
     return regions.map(function (region, i) {
         return regionToCodePart(doc, region, i);
     });
 }
 
-function posToRegion (region, pos) {
+function posToRegion(region, pos) {
     return {
         row: pos.row - region.sl,
         column: pos.column,
@@ -173,7 +211,7 @@ function posToRegion (region, pos) {
     };
 }
 
-function regionToPos (region, pos) {
+function posFromRegion(region, pos) {
     return {
         row: pos.row + region.sl,
         column: pos.column,
@@ -186,6 +224,6 @@ exports.getContextSyntaxPart = getContextSyntaxPart;
 exports.getSyntaxRegions = getSyntaxRegions;
 exports.getCodeParts = getCodeParts;
 exports.posToRegion = posToRegion;
-exports.regionToPos = regionToPos;
+exports.posFromRegion = posFromRegion;
 
 });

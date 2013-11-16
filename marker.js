@@ -106,7 +106,7 @@ define(function(require, exports, module) {
          */
         function disableMarkerType(type, ace) {
             disabledMarkerTypes[type] = true;
-            var session = ace.session;
+            var session = ace.getSession();
             var markers = session.getMarkers(false);
             for (var id in markers) {
                 // All language analysis' markers are prefixed with language_highlight

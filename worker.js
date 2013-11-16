@@ -17,7 +17,7 @@ var Mirror = require("ace/worker/mirror").Mirror;
 var tree = require('treehugger/tree');
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var linereport = require("plugins/c9.ide.language.generic.linereport/linereport_base");
-var SyntaxDetector = require("plugins/c9.ide.language/syntax_detector");
+var syntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
 var base_handler = require("./base_handler");
 var assert = require("plugins/c9.util/assert");
@@ -169,8 +169,11 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     sender.on("isJumpToDefinitionAvailable", applyEventOnce(function(event) {
         _self.isJumpToDefinitionAvailable(event);
     }));
-    sender.on("fetchVariablePositions", function(event) {
-        _self.sendVariablePositions(event);
+    sender.on("refactorings", function(event) {
+        _self.getRefactorings(event);
+    });
+    sender.on("renamePositions", function(event) {
+        _self.getRenamePositions(event);
     });
     sender.on("onRenameBegin", function(event) {
         _self.onRenameBegin(event);
@@ -211,7 +214,7 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
     array = array.slice(); // copy before use
     function processOne() {
         var item = array.shift();
-        fn(item, function(result, err) {
+        fn(item, function processNext(result, err) {
             if (array.length > 0) {
                 processOne();
             }
@@ -342,7 +345,7 @@ function asyncParForEach(array, fn, callback) {
                     return;
         }
         var docLength = ignoreSize ? null : part
-            ? part.value.length
+            ? part.getValue().length
             : this.doc.$lines.reduce(function(t,l) { return t + l.length; }, 0);
          return handler.handlesLanguage(part ? part.language : this.$language)
             && (ignoreSize || docLength < handler.getMaxFileSizeSupported());
@@ -350,21 +353,19 @@ function asyncParForEach(array, fn, callback) {
 
     this.parse = function(part, callback, allowCached) {
         var _self = this;
-        part = part || {
-            language: _self.$language,
-            value: _self.doc.getValue()
-        };
+        var value = (part || this.doc).getValue();
+        var language = part ? part.language : this.$language;
 
         if (allowCached && this.cachedAsts) {
             var cached = this.cachedAsts[part.index];
-            if (cached && cached.ast && cached.part.language === part.language)
+            if (cached && cached.ast && cached.part.language === language)
                 return callback(cached.ast);
         }
 
         var resultAst = null;
-        asyncForEach(this.handlers, function(handler, next) {
+        asyncForEach(this.handlers, function parseNext(handler, next) {
             if (_self.isHandlerMatch(handler, part)) {
-                handler.parse(part.value, function onParse(ast) {
+                handler.parse(value, function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
@@ -391,12 +392,11 @@ function asyncParForEach(array, fn, callback) {
             return callback();
 
         // Sanity check for old-style pos objects
-        if (pos.line)
-            throw new Error("Internal error: providing line/col instead of row/column");
+        assert(!pos.line, "Internal error: providing line/col instead of row/column");
         
         var _self = this;
-        var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
-        var posInPart = SyntaxDetector.posToRegion(part.region, pos);
+        var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
         var result;
         asyncForEach(_self.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, part)) {
@@ -504,7 +504,7 @@ function asyncParForEach(array, fn, callback) {
 
     this.analyze = function(callback) {
         var _self = this;
-        var parts = SyntaxDetector.getCodeParts(this.doc, this.$language);
+        var parts = syntaxDetector.getCodeParts(this.doc, this.$language);
         var markers = [];
         var cachedAsts = {};
         asyncForEach(parts, function(part, nextPart) {
@@ -515,9 +515,9 @@ function asyncParForEach(array, fn, callback) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
                         handler.language = part.language;
-                        handler.analyze(part.value, ast, function(result) {
+                        handler.analyze(part.getValue(), ast, function(result) {
                             if (result) {
-                                handler.getResolutions(part.value, ast, result, function(result2) {
+                                handler.getResolutions(part.getValue(), ast, result, function(result2) {
                                     if (result2) {
                                         partMarkers = partMarkers.concat(result2);
                                     } else {
@@ -584,7 +584,7 @@ function asyncParForEach(array, fn, callback) {
     };
 
     this.getPart = function (pos) {
-        return SyntaxDetector.getContextSyntaxPart(this.doc, pos, this.$language);
+        return syntaxDetector.getContextSyntaxPart(this.doc, pos, this.$language);
     };
     
     /**
@@ -594,15 +594,17 @@ function asyncParForEach(array, fn, callback) {
         var _self = this;
         var pos = { row: event.data.row, column: event.data.column };
         var part = this.getPart({ row: event.data.row, column: event.data.col });
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(node) {
                 _self.getPos(node, function(fullPos) {
                     if (!fullPos) {
                         var identifier = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
-                        fullPos = { sl: pos.row, sc: pos.column, el: pos.row, ec: pos.column + identifier.length };
+                        fullPos = { sl: partPos.row, sc: partPos.column, el: partPos.row, ec: partPos.column + identifier.length };
                     }
                     _self.nodeToString(node, function(result) {
                         // Begin with a simple string representation
+                        // TODO: remove initial representation, in case handler doesn't want to handle this node?
                         var lastResult = {
                             pos: fullPos,
                             value: result
@@ -612,9 +614,11 @@ function asyncParForEach(array, fn, callback) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part)) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part.value, ast, pos, node, function(result) {
-                                    if (result)
+                                handler.getInspectExpression(part, ast, partPos, node, function(result) {
+                                    if (result) {
+                                        result.pos = syntaxDetector.posFromRegion(region, result.pos);
                                         lastResult = result || lastResult;
+                                    }
                                     next();
                                 });
                             }
@@ -701,8 +705,8 @@ function asyncParForEach(array, fn, callback) {
         function processResponse(response) {
             if (response.markers && response.markers.length > 0) {
                 aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
-                    var start = SyntaxDetector.regionToPos(part.region, {row: m.pos.sl, column: m.pos.sc});
-                    var end = SyntaxDetector.regionToPos(part.region, {row: m.pos.el, column: m.pos.ec});
+                    var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
+                    var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
                     m.pos = {
                         sl: start.row,
                         sc: start.column,
@@ -727,7 +731,7 @@ function asyncParForEach(array, fn, callback) {
                 aggregateActions.displayPos = response.displayPos;
         }
         
-        function cursorMoved(ast, currentNode, currentPos) {
+        function cursorMoved(ast, currentNode, posInPart) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.scheduledUpdate) {
                     // Postpone the cursor move until the update propagates
@@ -737,8 +741,8 @@ function asyncParForEach(array, fn, callback) {
                 if (_self.isHandlerMatch(handler, part)) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
-                    asyncForEach(["tooltip", "onRefactoringTest", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
-                        handler[method](_self.doc, ast, currentPos, currentNode, function(response) {
+                    asyncForEach(["tooltip", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                        handler[method](part, ast, posInPart, currentNode, function(response) {
                             if (response)
                                 processResponse(response);
                             nextMethod();
@@ -755,7 +759,7 @@ function asyncParForEach(array, fn, callback) {
                 _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
                 _self.scheduleEmit("enableRefactorings", aggregateActions.enableRefactorings);
                 _self.lastCurrentNode = currentNode;
-                _self.lastCurrentPos = currentPos;
+                _self.lastCurrentPos = posInPart;
                 _self.setLastAggregateActions(aggregateActions);
                 _self.scheduleEmit("hint", {
                     pos: aggregateActions.pos,
@@ -767,7 +771,7 @@ function asyncParForEach(array, fn, callback) {
 
         }
 
-        var posInPart = SyntaxDetector.posToRegion(part.region, pos);
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
                 if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
@@ -783,12 +787,13 @@ function asyncParForEach(array, fn, callback) {
 
         var _self = this;
         var part = this.getPart(pos);
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
 
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
-                asyncForEach(_self.handlers, function(handler, next) {
+                asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
-                        handler.jumpToDefinition(_self.doc, ast, pos, currentNode, function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, currentNode, function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
@@ -800,7 +805,7 @@ function asyncParForEach(array, fn, callback) {
                     }
                 }, function () {
                     callback(allResults.map(function (pos) {
-                       return SyntaxDetector.regionToPos(part.region, pos);
+                       return syntaxDetector.posFromRegion(part.region, pos);
                     }));
                 });
             });
@@ -839,30 +844,24 @@ function asyncParForEach(array, fn, callback) {
             );
         });
     };
-
-    this.sendVariablePositions = function(event) {
-        var pos = event.data;
+    
+    this.getRefactorings = function(event) {
         var _self = this;
-        
+        var pos = event.data;
         var part = this.getPart(pos);
-
-        function regionToPos (pos) {
-            return SyntaxDetector.regionToPos(part.region, pos);
-        }
-
-        var regionPos = SyntaxDetector.posToRegion(part.region, pos);
-
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
+        var result;
+        
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
+                var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
-                        handler.getVariablePositions(_self.doc, ast, regionPos, currentNode, function(response) {
+                        handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
                             if (response) {
-                                response.uses = response.uses.map(regionToPos);
-                                response.declarations = response.declarations.map(regionToPos);
-                                response.others = response.others.map(regionToPos);
-                                response.pos = regionToPos(response.pos);
-                                _self.sender.emit("variableLocations", response);
+                                assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
+                                if (!result || result.isGeneric)
+                                    result = response;
                             }
                             next();
                         });
@@ -870,6 +869,48 @@ function asyncParForEach(array, fn, callback) {
                     else {
                         next();
                     }
+                }, function() {
+                    _self.sender.emit("refactoringsResult", result && result.refactorings || []);
+                });
+            });
+        });
+    }
+
+    this.getRenamePositions = function(event) {
+        var _self = this;
+        var pos = event.data;
+        var part = this.getPart(pos);
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
+
+        function posFromRegion(pos) {
+            return syntaxDetector.posFromRegion(part.region, pos);
+        }
+
+        this.parse(part, function(ast) {
+            _self.findNode(ast, pos, function(currentNode) {
+                var result;
+                asyncForEach(_self.handlers, function(handler, next) {
+                    if (_self.isHandlerMatch(handler, part)) {
+                        assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
+                        handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
+                            if (response) {
+                                if (!result || result.isGeneric)
+                                    result = response;
+                            }
+                            next();
+                        });
+                    }
+                    else {
+                        next();
+                    }
+                }, function() {
+                    if (!result)
+                        return _self.sender.emit("renamePositionsResult", []);
+                    result.uses = (result.uses || []).map(posFromRegion);
+                    result.declarations = (result.declarations || []).map(posFromRegion);
+                    result.others = (result.others || []).map(posFromRegion);
+                    result.pos = posFromRegion(result.pos);
+                    _self.sender.emit("renamePositionsResult", result);
                 });
             });
         }, true);
@@ -885,18 +926,20 @@ function asyncParForEach(array, fn, callback) {
 
     this.commitRename = function(event) {
         var _self = this;
-        var data = event.data;
-
-        var oldId = data.oldId;
-        var newName = data.newName;
+        var oldId = event.data.oldId;
+        var newName = event.data.newName;
+        var isGeneric = event.data.isGeneric;
         var commited = false;
+        
+        if (oldId.value === newName)
+          return this.sender.emit("commitRenameResult", {});
 
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler)) {
-                handler.commitRename(_self.doc, oldId, newName, function(response) {
+                handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
                     if (response) {
                         commited = true;
-                        _self.sender.emit("refactorResult", response);
+                        _self.sender.emit("commitRenameResult", { err: response, oldName: oldId.value, newName: newName });
                         // only one handler gets to do this; don't call next();
                     } else {
                         next();
@@ -908,7 +951,7 @@ function asyncParForEach(array, fn, callback) {
             },
             function() {
                 if (!commited)
-                    _self.sender.emit("refactorResult", {success: true});
+                    _self.sender.emit("commitRenameResult", {});
             }
         );
     };
@@ -1083,7 +1126,7 @@ function asyncParForEach(array, fn, callback) {
         for (var i = 0; i < matches.length - 1; i++) {
             var a = matches[i];
             var b = matches[i + 1];
-            if (a.name === b.name) {
+            if (a.name === b.name || (a.id || a.name) === (b.id || b.name)) {
                 // Duplicate!
                 if (a.priority < b.priority)
                     matches.splice(i, 1);
@@ -1106,7 +1149,8 @@ function asyncParForEach(array, fn, callback) {
         var pos = data.pos;
         
         _self.waitForCompletionSync(event, function() {
-            var part = SyntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+            var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+            var partPos = syntaxDetector.posToRegion(part.region, pos);
             var language = part.language;
             _self.parse(part, function(ast) {
                 _self.findNode(ast, pos, function(node) {
@@ -1119,7 +1163,7 @@ function asyncParForEach(array, fn, callback) {
                             handler.language = language;
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
-                            handler.complete(_self.doc, ast, pos, currentNode, function(completions) {
+                            handler.complete(part, ast, partPos, currentNode, function(completions) {
                                 if (completions && completions.length)
                                     matches = matches.concat(completions);
                                 next();

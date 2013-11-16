@@ -7,22 +7,19 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport", "proc", "fs", "save"
+        "browsersupport"
     ];
     main.provides = ["language"];
     return main;
 
     function main(options, imports, register) {
-        var c9        = imports.c9;
-        var Plugin    = imports.Plugin;
-        var settings  = imports.settings;
+        var c9 = imports.c9;
+        var Plugin = imports.Plugin;
+        var settings = imports.settings;
         var aceHandle = imports.ace;
-        var tabs      = imports.tabManager;
-        var prefs     = imports.preferences;
-        var browsers  = imports.browsersupport;
-        var proc      = imports.proc;
-        var fs        = imports.fs;
-        var save      = imports.save;
+        var tabs = imports.tabManager;
+        var prefs = imports.preferences;
+        var browsers = imports.browsersupport;
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
@@ -34,9 +31,7 @@ define(function(require, exports, module) {
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
         var useUIWorker  = window.location && /[?&]noworker=1/.test(window.location.search)
             || (browsers.getIEVersion() && browsers.getIEVersion() < 10);
-        
-        var lang = require("ace/lib/lang");
-        
+
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
         
@@ -152,47 +147,6 @@ define(function(require, exports, module) {
                     throw e;
                 }
             }
-            
-            worker.on("execFile", function(e) {
-                ensureConnected(
-                    proc.execFile.bind(proc, e.data.path, e.data.options),
-                    function(err, stdout, stderr) {
-                        worker.emit("execFileResult", { data: {
-                            id: e.data.id,
-                            err: err,
-                            stdout: stdout,
-                            stderr: stderr
-                        }});
-                    }
-                );
-            });
-            
-            worker.on("readFile", function(e) {
-                // Try to get the contents from a tab first
-                // may not be 100% reliable atm, but good enough for us
-                var allTabs = tabs.getTabs();
-                for (var i = 0; i < allTabs.length; i++) {
-                    var tab = allTabs[i];
-                    var value = tab.value || tab.document && tab.document.value;
-                    var saved = save.getSavingState(tab) === "saved";
-                    if (tab.path !== e.data.path || !value || !saved)
-                        continue;
-                    return done(null, value);
-                }
-                
-                ensureConnected(
-                    fs.readFile.bind(fs, e.data.path, e.data.encoding),
-                    done
-                );
-                
-                function done(err, data) {
-                    worker.emit("readFileResult", { data: {
-                        id: e.data.id,
-                        err: err,
-                        data: data
-                    }});
-                }
-            });
 
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
@@ -333,23 +287,6 @@ define(function(require, exports, module) {
             editor.on("documentUnload", function(e) {
             });
         });
-        
-        function ensureConnected(f, callback, timeout) {
-            timeout = timeout || 200;
-            if (!c9.NETWORK) {
-                return c9.once("stateChange", function(e) {
-                    setTimeout(
-                        ensureConnected.bind(null, f, callback, timeout * 2),
-                        timeout
-                    );
-                });
-            }
-            f(function(err) {
-                if (err && err.code === "EDISCONNECT")
-                    return ensureConnected(f, callback, timeout);
-                callback.apply(null, arguments);
-            });
-        }
         
         function draw() {
             emit("draw");
