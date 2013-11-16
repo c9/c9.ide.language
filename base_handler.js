@@ -554,7 +554,7 @@ module.exports = {
      * 
      * May be overridden by inheritors that implement rename refactoring.
      * 
-     * @param {Document} doc             The Document object representing the source
+     * @param {Document} doc                 The Document object representing the source
      * @param {Function} callback            The callback; must be called
      */
     onRenameBegin: function(doc, callback) {
