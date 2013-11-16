@@ -122,6 +122,11 @@ module.exports = {
             encoding = null;
         }
         
+        if (worker.$lastWorker.$path === path) {
+            callback && setTimeout(callback.bind(null, null, worker.$lastWorker.doc.getValue()), 0);
+            return;
+        }
+        
         var id = msgId++;
         worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
         worker.sender.on("readFileResult", function onReadFileResult(event) {
