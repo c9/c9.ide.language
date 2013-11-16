@@ -191,6 +191,31 @@ module.exports = {
         regex = regex || this.getIdentifierRegex(offset);
         return this.getPrecedingIdentifier(line, offset, regex)
             + this.getFollowingIdentifier(line, offset, regex);
+    },
+    
+    /**
+     * Gets all (matching) tokens for the current file.
+     *
+     * @param {Document} doc              The current document
+     * @param {String[]} identifiers      If not null, only return tokens equal to one of these strings
+     * @param {Function} callback
+     * @param {String} callback.err
+     * @param {Object[]} callback.result
+     */
+    getTokens: function(doc, identifiers, callback) {
+        var id = msgId++;
+        worker.sender.emit("getTokens", {
+            path: worker.$lastWorker.$path,
+            identifiers: identifiers,
+            id: id,
+            region: doc.region
+        });
+        worker.sender.on("getTokensResult", function onResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("getTokensResult", onResult);
+            callback(event.data.err, event.data.results);
+        });
     }
 };
 

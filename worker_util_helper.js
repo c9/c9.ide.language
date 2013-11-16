@@ -20,6 +20,7 @@ define(function(require, exports, module) {
         var fs = imports.fs;
         var tabs = imports.tabManager;
         var save = imports.save;
+        var syntaxDetector = require("./syntax_detector");
         
         var loaded;
         function load() {
@@ -66,6 +67,51 @@ define(function(require, exports, module) {
                             id: e.data.id,
                             err: err,
                             data: data
+                        }});
+                    }
+                });
+                
+                worker.on("getTokens", function(e) {
+                    var path = e.data.path;
+                    var identifiers = e.data.identifiers;
+                    var region = e.data.region;
+                    
+                    var tab = tabs.findTab(path);
+                    if (!tab || !tab.editor || !tab.editor.ace)
+                        return done("Tab is no longer open");
+                    
+                    var session = tab.editor.ace.getSession();
+                    var results = [];
+                    for (var i = 0, len = session.getLength(); i < len; i++) {
+                        if (region && !(region.sl <= i && i <= region.el))
+                            continue;
+                        var offset = 0;
+                        var tokens = session.getTokens(i).forEach(function(t) {
+                            var myOffset = offset;
+                            offset += t.value.length;
+                            if (identifiers && identifiers.indexOf(t.value) === -1)
+                                return;
+                            if (region && region.sl === i && myOffset < region.sc)
+                                return;
+                            if (region && region.el === i && myOffset > region.ec)
+                                return;
+                            var result = {
+                                row: i,
+                                column: myOffset
+                            };
+                            if (region)
+                                result = syntaxDetector.posToRegion(region, result);
+                            result.value = t.value;
+                            results.push(result);
+                        });
+                    }
+                    done(null, results);
+                    
+                    function done(err, results) {
+                        worker.emit("getTokensResult", { data: {
+                            id: e.data.id,
+                            err: err,
+                            results: results
                         }});
                     }
                 });
