@@ -22,8 +22,7 @@ define(function(require, exports, module) {
 var worker = require("./worker");
 var completeUtil = require("./complete_util");
 
-var lastExecId = 0;
-var lastReadId = 0;
+var msgId = 0;
 
 module.exports = {
 
@@ -85,7 +84,7 @@ module.exports = {
      * @param {String}   callback.stderr                  The stderr buffer
      */
     execFile: function(path, options, callback) {
-        var id = lastExecId++;
+        var id = msgId++;
         worker.sender.emit("execFile", { path: path, options: options, id: id });
         worker.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
@@ -123,7 +122,7 @@ module.exports = {
             encoding = null;
         }
         
-        var id = lastReadId++;
+        var id = msgId++;
         worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
         worker.sender.on("readFileResult", function onReadFileResult(event) {
             if (event.data.id !== id)
