@@ -79,7 +79,7 @@ define(function(require, exports, module) {
                 new apf.item({ command : "outline" }), 110, plugin);
             
             language.getWorker(function(err, worker) {
-                worker.on("outline", openOutline); 
+                worker.on("outline", onOutlineData); 
             });
             
             // Hook events to get the focussed tab
@@ -96,39 +96,7 @@ define(function(require, exports, module) {
                 updateOutline();
             });
             
-            tabs.on("focusSync", function(e){
-                var tab = e.tab;
-                var session;
-                
-                if (originalTab == tab)
-                    return;
-                
-                // Remove change listener
-                if (originalTab) {
-                    session = originalTab.document.getSession().session;
-                    session && session.removeListener("changeMode", changeHandler);
-                    originalTab.document.undoManager.off("change", changeHandler);
-                    if (originalTab.editor.ace)
-                        originalTab.editor.ace.selection
-                            .removeListener("changeSelection", cursorHandler);
-                }
-                
-                if (!tab.path && !tab.document.meta.newfile || !tab.editor.ace) {
-                    originalTab = null;
-                    return clear();
-                }
-                    
-                // Add change listener
-                session = tab.document.getSession().session;
-                session && session.on("changeMode", changeHandler);
-                tab.document.undoManager.on("change", changeHandler);
-                tab.editor.ace.selection.on("changeSelection", cursorHandler);
-                
-                originalTab = tab;
-                
-                if (isActive)
-                    updateOutline();
-            });
+            tabs.on("focusSync", onTabFocus);
             
             tabs.on("tabDestroy", function(e){
                 if (isActive && e.last)
@@ -145,7 +113,50 @@ define(function(require, exports, module) {
             if (isActive && tabs.focussedTab) {
                 plugin.autohide = false;
                 updateOutline();
+                onTabFocus({ tab: tabs.focussedTab });
             }
+            // Make sure we get an outline from slow-loading language handlers
+            setTimeout(updateOutline, 2000);
+            setTimeout(updateOutline, 5000);
+            setTimeout(updateOutline, 10000);
+            setTimeout(updateOutline, 15000);
+        }
+        
+        function onTabFocus(event) {
+            var tab = event.tab;
+            var session;
+            
+            if (originalTab == tab)
+                return;
+            
+            // Remove change listener
+            if (originalTab) {
+                session = originalTab.document.getSession().session;
+                session && session.removeListener("changeMode", changeHandler);
+                originalTab.document.undoManager.off("change", changeHandler);
+                if (originalTab.editor.ace)
+                    originalTab.editor.ace.selection
+                        .removeListener("changeSelection", cursorHandler);
+            }
+            
+            if ((!tab.path && !tab.document.meta.newfile) || !tab.editorType === "ace") {
+                originalTab = null;
+                return clear();
+            }
+            
+            if (!tab.editor)
+                return tab.document.once("setEditor", onTabFocus.bind(null, event));
+                
+            // Add change listener
+            session = tab.document.getSession().session;
+            session && session.on("changeMode", changeHandler);
+            tab.document.undoManager.on("change", changeHandler);
+            tab.editor.ace.selection.on("changeSelection", cursorHandler);
+            
+            originalTab = tab;
+            
+            if (isActive)
+                updateOutline();
         }
         
         function changeHandler(){
@@ -276,7 +287,7 @@ define(function(require, exports, module) {
                 onSelect();
             });
             
-            function onallblur(e){
+            function onAllBlur(e){
                 if (!winOutline.visible || !plugin.autohide)
                     return;
                 
@@ -289,9 +300,9 @@ define(function(require, exports, module) {
                 setTimeout(function(){ plugin.hide() }, 10);
             }
     
-            apf.addEventListener("movefocus", onallblur);
+            apf.addEventListener("movefocus", onAllBlur);
             
-            function onfocus(){ 
+            function onFocus(){ 
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
@@ -303,13 +314,13 @@ define(function(require, exports, module) {
                 originalLine   = cursor.row + 1;
                 originalColumn = cursor.column;
             }
-            function onblur(){ 
+            function onBlur(){ 
                 focussed = false;
                 ui.setStyleClass(treeParent.$int, "", ["focus"]); 
             }
             
-            textbox.ace.on("focus", onfocus);
-            textbox.ace.on("blur", onblur);
+            textbox.ace.on("blur", onBlur);
+            textbox.ace.on("focus", onFocus);
             
             // Offline
             c9.on("stateChange", offlineHandler, plugin);
@@ -342,7 +353,7 @@ define(function(require, exports, module) {
             return null;
         }
     
-        function openOutline(event) {
+        function onOutlineData(event) {
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
@@ -352,11 +363,10 @@ define(function(require, exports, module) {
             
             var tab   = tabs.focussedTab;
             var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
+            if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
             
             fullOutline = event.data.body;
-            
             renderOutline(event.data.showNow);
         }
         

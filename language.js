@@ -254,7 +254,7 @@ define(function(require, exports, module) {
                     if (isEditorSupported(tab)) {
                         setTimeout(function() {
                             if (tab.value)
-                                return notifyWorker("documentOpen", { tab: tab });
+                                return notifyWorker("documentOpen", { tab: tab, value: tab.value });
                             var value = tab.document.value;
                             if (value)
                                 return notifyWorker("documentOpen", { tab: tab, value: value });
