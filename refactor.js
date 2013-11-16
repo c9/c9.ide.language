@@ -52,7 +52,7 @@ define(function(require, exports, module) {
                     enableRefactorings(event);
                 });
         
-                worker.on("variableLocations", function(event) {
+                worker.on("renamePositionsResult", function(event) {
                     if (!tabs.focussedTab || !tabs.focussedTab.editor || tabs.focussedTab.editor.ace !== lastAce)
                         return;
                     initRenameUI(event.data, lastAce);
@@ -133,7 +133,7 @@ define(function(require, exports, module) {
                 row: curPos.row,
                 text: oldId.text
             };
-            worker.emit("fetchVariablePositions", {data: curPos});
+            worker.emit("renamePositions", {data: curPos});
         }
         
         function initRenameUI(data, ace) {

@@ -169,8 +169,8 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     sender.on("isJumpToDefinitionAvailable", applyEventOnce(function(event) {
         _self.isJumpToDefinitionAvailable(event);
     }));
-    sender.on("fetchVariablePositions", function(event) {
-        _self.sendVariablePositions(event);
+    sender.on("renamePositions", function(event) {
+        _self.sendRenamePositions(event);
     });
     sender.on("onRenameBegin", function(event) {
         _self.onRenameBegin(event);
@@ -739,6 +739,7 @@ function asyncParForEach(array, fn, callback) {
                 if (_self.isHandlerMatch(handler, part)) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
+                    // TODO: optimize - trigger onRefactoringTest only when demanded by refactor.js
                     asyncForEach(["tooltip", "onRefactoringTest", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
                         handler[method](part, ast, posInPart, currentNode, function(response) {
                             if (response)
@@ -843,7 +844,7 @@ function asyncParForEach(array, fn, callback) {
         });
     };
 
-    this.sendVariablePositions = function(event) {
+    this.sendRenamePositions = function(event) {
         var pos = event.data;
         var _self = this;
         
@@ -856,17 +857,15 @@ function asyncParForEach(array, fn, callback) {
 
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
+                var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
                         if (handler.getVariablePositions)
                             console.error("handler implements getVariablePositions, should implement getRenamePositions instead")
                         handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
                             if (response) {
-                                response.uses = (response.uses || []).map(posFromRegion);
-                                response.declarations = (response.declarations || []).map(posFromRegion);
-                                response.others = (response.others || []).map(posFromRegion);
-                                response.pos = posFromRegion(response.pos);
-                                _self.sender.emit("variableLocations", response);
+                                if (!result || result.isGeneric)
+                                    result = response;
                             }
                             next();
                         });
@@ -874,6 +873,14 @@ function asyncParForEach(array, fn, callback) {
                     else {
                         next();
                     }
+                }, function() {
+                    if (!result)
+                        return; // don't call callback / trigger refactoring
+                    result.uses = (result.uses || []).map(posFromRegion);
+                    result.declarations = (result.declarations || []).map(posFromRegion);
+                    result.others = (result.others || []).map(posFromRegion);
+                    result.pos = posFromRegion(result.pos);
+                    _self.sender.emit("renamePositionsResult", result);
                 });
             });
         }, true);
