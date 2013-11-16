@@ -570,17 +570,21 @@ module.exports = {
     },
 
     /**
-     * Confirms that a refactoring before committing it.
+     * Confirms that a rename refactoring is valid, before committing it.
      * 
      * May be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param oldName                        The old identifier was being renamed
-     * @param newName                        The new name of the element after refactoring
+     * @param {Object} oldId                 The old identifier was being renamed
+     * @param {Number} oldId.row             The row of the identifier that was being renamed
+     * @param {Number} oldId.column          The column of the identifier that was being renamed
+     * @param {String} oldId.value           The value of the identifier that was being renamed
+     * @param {String} newName               The new name of the element after refactoring
+     * @param {Boolean} isGeneric            True if this was a refactoring marked with 'isGeneric' (see {@link #getRenamePositions})
      * @param {Function} callback            The callback; must be called
-     * @param {String} [callback.err]        Indicates whether to progress or an error message if refactoring failed
+     * @param {String} callback.err          Null if the refactoring can be committed, or an error message if refactoring failed
      */
-    commitRename: function(doc, oldName, newName, callback) {
+    commitRename: function(doc, oldName, newName, isGeneric, callback) {
         callback();
     },
 

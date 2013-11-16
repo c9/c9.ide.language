@@ -896,18 +896,20 @@ function asyncParForEach(array, fn, callback) {
 
     this.commitRename = function(event) {
         var _self = this;
-        var data = event.data;
-
-        var oldId = data.oldId;
-        var newName = data.newName;
+        var oldId = event.data.oldId;
+        var newName = event.data.newName;
+        var isGeneric = event.data.isGeneric;
         var commited = false;
+        
+        if (oldId.value === newName)
+          return this.sender.emit("commitRenameResult", {});
 
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler)) {
-                handler.commitRename(_self.doc, oldId, newName, function(response) {
+                handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
                     if (response) {
                         commited = true;
-                        _self.sender.emit("refactorResult", response);
+                        _self.sender.emit("commitRenameResult", { err: response, oldName: oldId.value, newName: newName });
                         // only one handler gets to do this; don't call next();
                     } else {
                         next();
@@ -919,7 +921,7 @@ function asyncParForEach(array, fn, callback) {
             },
             function() {
                 if (!commited)
-                    _self.sender.emit("refactorResult", {success: true});
+                    _self.sender.emit("commitRenameResult", {});
             }
         );
     };

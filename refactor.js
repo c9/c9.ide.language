@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui" , "menus", "dialog.alert",
+        "Plugin", "tabManager", "language", "ui" , "menus", "dialog.question",
         "ace", "language.marker", "editors", "language", "commands",
         "language.complete"
     ];
@@ -25,7 +25,7 @@ define(function(require, exports, module) {
         var ace = imports.ace;
         var editors = imports.editors;
         var marker = imports["language.marker"];
-        var alert = imports["dialogs.alert"];
+        var question = imports["dialog.question"];
         var completeUtil = require("plugins/c9.ide.language/complete_util");
         var PlaceHolder = require("ace/placeholder").PlaceHolder;
 
@@ -37,6 +37,7 @@ define(function(require, exports, module) {
         var oldCommandKey;
         var oldIdentifier;
         var lastAce;
+        var isGenericRefactor;
         
         var loaded;
         function load() {
@@ -55,19 +56,31 @@ define(function(require, exports, module) {
                 worker.on("renamePositionsResult", function(event) {
                     if (!tabs.focussedTab || !tabs.focussedTab.editor || tabs.focussedTab.editor.ace !== lastAce)
                         return;
+                    isGenericRefactor = event.data.isGeneric;
                     initRenameUI(event.data, lastAce);
                     worker.emit("onRenameBegin", {data: {}});
                 });
         
-                worker.on("refactorResult", function(event) {
+                worker.on("commitRenameResult", function(event) {
                     var data = event.data;
-                    if (!data.success) {
-                        alert.show(data.body);
-                        onRenameCancel();
+                    if (data.err) {
+                        question.show(
+                            "Rename",
+                            "Are you sure you would like to rename '" + data.oldName + "' to '" + data.newName + "'?",
+                            data.err,
+                            function() { // yes
+                                placeHolder.detach();
+                                cleanup();
+                            },
+                            function() { // no
+                                cancelRename();
+                                cleanup();
+                            }
+                        );
                     } else {
                         placeHolder.detach();
+                        cleanup();
                     }
-                    cleanup();
                 });
             });
             
@@ -127,12 +140,7 @@ define(function(require, exports, module) {
             var curPos = ace.getCursorPosition();
             var doc = ace.getSession().getDocument();
             var line = doc.getLine(curPos.row);
-            var oldId = getFullIdentifier(line, curPos.column, ace);
-            oldIdentifier = {
-                column: oldId.sc,
-                row: curPos.row,
-                text: oldId.text
-            };
+            oldIdentifier = getFullIdentifier(line, curPos, ace);
             worker.emit("renamePositions", {data: curPos});
         }
         
@@ -175,11 +183,11 @@ define(function(require, exports, module) {
             var doc = lastAce.getSession().getDocument();
             var oPos = placeHolder.pos;
             var line = doc.getLine(oPos.row);
-            var newIdentifier = getFullIdentifier(line, oPos.column, lastAce);
-            worker.emit("commitRename", {data: { oldId: oldIdentifier, newName: newIdentifier.text } });
+            var newIdentifier = getFullIdentifier(line, oPos, lastAce);
+            worker.emit("commitRename", {data: { oldId: oldIdentifier, newName: newIdentifier.value, isGeneric: isGenericRefactor } });
         }
     
-        function onRenameCancel() {
+        function cancelRename() {
             if (placeHolder) {
                 placeHolder.detach();
                 placeHolder.cancel();
@@ -223,10 +231,15 @@ define(function(require, exports, module) {
             commands.removeCommand("renameVar");
         }
     
-        function getFullIdentifier(line, offset, ace) {
+        function getFullIdentifier(line, pos, ace) {
             var regex = complete.getIdentifierRegex(null, ace);
-            return completeUtil.retrievePrecedingIdentifier(line, offset, regex)
-                + completeUtil.retrieveFollowingIdentifier(line, offset, regex);
+            var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
+            var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, regex);
+            return {
+                column: pos.column - prefix.length,
+                row: pos.row,
+                value: prefix + postfix
+            };
         }
         
         plugin.on("load", function(){
