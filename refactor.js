@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "tabManager", "language", "ui" , "menus", "dialog.question",
-        "ace", "language.marker", "editors", "language", "commands",
+        "ace", "language.marker", "language", "commands",
         "language.complete"
     ];
     main.provides = ["language.refactor"];
@@ -22,8 +22,7 @@ define(function(require, exports, module) {
         var complete = imports["language.complete"];
         var ui = imports.ui;
         var tabs = imports.tabManager;
-        var ace = imports.ace;
-        var editors = imports.editors;
+        var aceHandle = imports.ace;
         var marker = imports["language.marker"];
         var question = imports["dialog.question"];
         var completeUtil = require("plugins/c9.ide.language/complete_util");
@@ -33,7 +32,6 @@ define(function(require, exports, module) {
         var mnuRename;
         var mnuRename2;
         var placeHolder;
-        var enableVariableRename;
         var oldCommandKey;
         var oldIdentifier;
         var lastAce;
@@ -49,12 +47,12 @@ define(function(require, exports, module) {
                 if (err)
                     return console.error(err);
                 worker = langWorker;
-                worker.on("enableRefactorings", function(event) {
+                worker.on("refactoringsResult", function(event) {
                     enableRefactorings(event);
                 });
         
                 worker.on("renamePositionsResult", function(event) {
-                    if (!tabs.focussedTab || !tabs.focussedTab.editor || tabs.focussedTab.editor.ace !== lastAce)
+                    if (!tabs.focussedTab || !tabs.focussedTab.editor || tabs.focussedTab.editor.ace !== lastAce || !event.data)
                         return;
                     isGenericRefactor = event.data.isGeneric;
                     initRenameUI(event.data, lastAce);
@@ -88,9 +86,6 @@ define(function(require, exports, module) {
                 name    : "renameVar",
                 hint    : "Rename refactor",
                 bindKey : {mac: "Option-Command-R", win: "Ctrl-Alt-R"},
-                isAvailable: function(editor) {
-                    return editor && editor.ace && enableVariableRename;
-                },
                 exec: function(editor) {
                     beginRename(editor);
                 }
@@ -109,8 +104,18 @@ define(function(require, exports, module) {
             menus.addItemByPath("Tools/Rename Variable", mnuRename, 20000, plugin);
     
             // right click context item in ace
-            ace.getElement("menu", function(menu) {
+            aceHandle.getElement("menu", function(menu) {
                 menus.addItemToMenu(menu, mnuRename2, 750, plugin);
+                menu.on("prop.visible", function(e) {
+                    // only fire when visibility is set to true
+                    if (e.value) {
+                        // because of delays we'll enable by default
+                        mnuRename2.enable();
+                        var ace = tabs.focussedTab.editor.ace;
+                        if (ace)
+                            worker.emit("refactorings", { data: ace.getSelection().getCursor() });
+                    }
+                });
             });
         }
         
@@ -123,14 +128,15 @@ define(function(require, exports, module) {
                     enabled = true;
                 }
             }
-            enableVariableRename = enabled;
             
-            if (!window.mnuCtxEditorRename)
-                return;
-            if (enableVariableRename)
+            if (enabled) {
+                mnuRename.enable();
                 mnuRename2.enable();
-            else
+            }
+            else {
+                mnuRename.disable();
                 mnuRename2.disable();
+            }
         }
     
         function beginRename(editor) {

@@ -169,8 +169,11 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     sender.on("isJumpToDefinitionAvailable", applyEventOnce(function(event) {
         _self.isJumpToDefinitionAvailable(event);
     }));
+    sender.on("refactorings", function(event) {
+        _self.getRefactorings(event);
+    });
     sender.on("renamePositions", function(event) {
-        _self.sendRenamePositions(event);
+        _self.getRenamePositions(event);
     });
     sender.on("onRenameBegin", function(event) {
         _self.onRenameBegin(event);
@@ -389,8 +392,7 @@ function asyncParForEach(array, fn, callback) {
             return callback();
 
         // Sanity check for old-style pos objects
-        if (pos.line)
-            throw new Error("Internal error: providing line/col instead of row/column");
+        assert(!pos.line, "Internal error: providing line/col instead of row/column");
         
         var _self = this;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
@@ -739,8 +741,7 @@ function asyncParForEach(array, fn, callback) {
                 if (_self.isHandlerMatch(handler, part)) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
-                    // TODO: optimize - trigger onRefactoringTest only when demanded by refactor.js
-                    asyncForEach(["tooltip", "onRefactoringTest", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                    asyncForEach(["tooltip", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
                         handler[method](part, ast, posInPart, currentNode, function(response) {
                             if (response)
                                 processResponse(response);
@@ -843,11 +844,41 @@ function asyncParForEach(array, fn, callback) {
             );
         });
     };
-
-    this.sendRenamePositions = function(event) {
-        var pos = event.data;
+    
+    this.getRefactorings = function(event) {
         var _self = this;
+        var pos = event.data;
+        var part = this.getPart(pos);
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
+        var result;
         
+        this.parse(part, function(ast) {
+            _self.findNode(ast, pos, function(currentNode) {
+                var result;
+                asyncForEach(_self.handlers, function(handler, next) {
+                    if (_self.isHandlerMatch(handler, part)) {
+                        handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
+                            if (response) {
+                                assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
+                                if (!result || result.isGeneric)
+                                    result = response;
+                            }
+                            next();
+                        });
+                    }
+                    else {
+                        next();
+                    }
+                }, function() {
+                    _self.sender.emit("refactoringsResult", result && result.refactorings || []);
+                });
+            });
+        });
+    }
+
+    this.getRenamePositions = function(event) {
+        var _self = this;
+        var pos = event.data;
         var part = this.getPart(pos);
         var partPos = syntaxDetector.posToRegion(part.region, pos);
 
@@ -860,8 +891,7 @@ function asyncParForEach(array, fn, callback) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part)) {
-                        if (handler.getVariablePositions)
-                            console.error("handler implements getVariablePositions, should implement getRenamePositions instead")
+                        assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
                         handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
@@ -875,7 +905,7 @@ function asyncParForEach(array, fn, callback) {
                     }
                 }, function() {
                     if (!result)
-                        return; // don't call callback / trigger refactoring
+                        return _self.sender.emit("renamePositionsResult", []);
                     result.uses = (result.uses || []).map(posFromRegion);
                     result.declarations = (result.declarations || []).map(posFromRegion);
                     result.others = (result.others || []).map(posFromRegion);

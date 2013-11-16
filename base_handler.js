@@ -383,10 +383,12 @@ module.exports = {
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result
-     * @param {String[]} [callback.result.enableRefactorings]
+     * @param {String[]} callback.result.refactorings
      *                                       The refactorings to enable, such as "rename"
+     * @param {String[]} [callback.result.isGeneric]
+     *                                       Whether is a generic answer and should be deferred
      */
-    onRefactoringTest: function(doc, fullAst, cursorPos, currentNode, callback) {
+    getRefactorings: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
 
