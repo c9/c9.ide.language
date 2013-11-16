@@ -220,7 +220,7 @@ define(function(require, exports, module) {
             switch(keyCode) {
                 case 32: // Space can't be accepted as it will ruin the logic of retrieveFullIdentifier
                 case 27: // Esc
-                    onRenameCancel();
+                    cancelRename();
                     e.preventDefault();
                     break;
                 case 13: // Enter
