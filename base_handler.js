@@ -473,7 +473,8 @@ module.exports = {
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of completion matches
-     * @param {String} callback.result.name  The name to show in the popup
+     * @param {String} callback.result.name  The full name to show in the completion popup
+     * @param {String} [callback.result.id]  The short name that identifies this completion
      * @param {String} callback.result.replaceText
      *                                       The text to replace the selection with
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} [callback.result.icon]
