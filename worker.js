@@ -760,8 +760,7 @@ function asyncParForEach(array, fn, callback) {
                 if (aggregateActions.hint && !hintMessage) {
                     hintMessage = aggregateActions.hint;
                 }
-                if (disabledFeatures.instanceHighlight)
-                  
+                // TODO use separate events for static and cursor markers
                 _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
                     ? []
                     : _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));

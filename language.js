@@ -48,7 +48,7 @@ define(function(require, exports, module) {
         }
         function onChange(e) {
             worker.changeListener(e);
-            //@todo marker.onChange(session, e);
+            worker._signal("change", e);
         }
         function onChangeMode() {
             if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab)

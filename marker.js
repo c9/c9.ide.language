@@ -42,6 +42,10 @@ define(function(require, exports, module) {
                 var editor = tab.editor;
                 addMarkers(event, editor.ace);
             });
+            
+            e.worker.on("change", function(event, worker) {
+                onChange(worker.$doc, event);
+            });
         });
 
         var disabledMarkerTypes = {};
@@ -64,6 +68,11 @@ define(function(require, exports, module) {
             if (!mySession.markerAnchors) mySession.markerAnchors = [];
             removeMarkers(mySession);
             mySession.languageAnnos = [];
+            
+            var sel = editor.getSelectionRange();
+            var showOccurenceMarkers = sel.isEmpty() ? true
+                : sel.isMultiLine() ? false : null;
+            var occurrenceMarkers = [];
             annos.forEach(function(anno) {
                 // Certain annotations can temporarily be disabled
                 if (disabledMarkerTypes[anno.type])
@@ -71,14 +80,26 @@ define(function(require, exports, module) {
                 // Multi-line markers are not supported, and typically are a result from a bad error recover, ignore
                 if(anno.pos.el && anno.pos.sl !== anno.pos.el)
                     return;
+                
+                var pos = anno.pos || {};
+                
+                var range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
+                if (anno.type == "occurrence_other" || anno.type == "occurrence_main") {
+                    if (!showOccurenceMarkers) {
+                        if (showOccurenceMarkers === false)
+                            return;
+                        if (range.containsRange(sel))
+                            showOccurenceMarkers = true;
+                        occurrenceMarkers.push(mySession.markerAnchors.length);
+                    }
+                }
 
                 mySession.markerAnchors.push(anno);
-                var pos = anno.pos || {};
                 
                 anno.start = new SimpleAnchor(pos.sl, pos.sc);
                 
                 if (pos.sc !== undefined && pos.ec !== undefined) {
-                    anno.range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
+                    anno.range = range;
                     anno.id = mySession.addMarker(anno.range, "language_highlight_" + (anno.type ? anno.type : "default"));
                     anno.range.start = anno.start;
                     anno.colDiff = pos.ec - pos.sc;
@@ -98,6 +119,15 @@ define(function(require, exports, module) {
                 anno.gutterAnno = gutterAnno;
                 mySession.languageAnnos.push(gutterAnno);
             });
+            
+            if (!showOccurenceMarkers) {
+                for (var i = occurrenceMarkers.length; i--;) {
+                    var markerI = occurrenceMarkers[i];
+                    mySession.removeMarker(mySession.markerAnchors[markerI].id);
+                    mySession.markerAnchors.splice(markerI, 1);
+                }
+            }
+            
             mySession.setAnnotations(mySession.languageAnnos);
         }
     
@@ -125,18 +155,18 @@ define(function(require, exports, module) {
          * it does so instanteously, rather than with a 500ms delay, thereby avoid ugly box bouncing etc.
          */
         function onChange(session, event) {
-            if (this.ext.disabled) return;
             var range = event.data.range;
             var isInserting = event.data.action[0] !== "r";
             var text = event.data.text;
             var adaptingId = text && text.search(/[^a-zA-Z0-9\$_]/) === -1;
             var languageAnnos = [];
             var markers = session.markerAnchors || [];
+            var foundOne = false;
+            var marker, start;
             if (!isInserting) { // Removing some text
                 // Run through markers
-                var foundOne = false;
-                for (var i = 0; i < markers.length; i++) {
-                    var marker = markers[i];
+                for (var i = markers.length; i--;) {
+                    marker = markers[i];
                     
                     if (!range.compareInside(marker.start.row, marker.start.column)) {
                         session.removeMarker(marker.id);
@@ -148,7 +178,7 @@ define(function(require, exports, module) {
                         marker.colDiff -= text.length;
                     }
                     
-                    var start = marker.start
+                    start = marker.start;
                     start.onChange(event);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
@@ -166,16 +196,18 @@ define(function(require, exports, module) {
             }
             else { // Inserting some text
                 // Run through markers
-                var foundOne = false;
-                for (var i = 0; i < markers.length; i++) {
-                    var marker = markers[i];
+                for (var i = markers.length; i--;) {
+                    marker = markers[i];
                     // Only if inserting an identifier
-                    if (adaptingId && marker.range && marker.range.contains(range.start.row, range.start.column)) {
+                    if (marker.range && marker.range.contains(range.start.row, range.start.column)) {
                         foundOne = true;
-                        marker.colDiff += text.length;
+                        if (adaptingId) {
+                            marker.colDiff += text.length;
+                        } else if (Range.comparePoints(range.start, marker.range.start) > 0)
+                            session.removeMarker(marker.id);
                     }
                     
-                    var start = marker.start
+                    start = marker.start;
                     start.onChange(event);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
