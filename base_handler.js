@@ -357,7 +357,7 @@ module.exports = {
      * @param {Object} currentNode                     The AST node the cursor is currently at (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Object} callback.result                 The function's result
-     * @param {Object[]} [callback.result.markers]     The markers to highlight
+     * @param {Object[]} [callback.result.markers]     The occurrences to highlight
      * @param {Object} callback.result.markers.pos     The marker's position
      * @param {Number} callback.result.markers.pos.sl  The starting line
      * @param {Number} callback.result.markers.pos.el  The ending line
