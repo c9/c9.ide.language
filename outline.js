@@ -47,6 +47,7 @@ define(function(require, exports, module) {
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
         var focussed, isActive, outline, timer, dirty;
+        var worker;
         
         var COLLAPSE_AREA = 14;
         
@@ -93,7 +94,7 @@ define(function(require, exports, module) {
                 if (!originalTab) 
                     originalTab = e.tab;
                 
-                updateOutline();
+                updateOutline(true);
             });
             
             tabs.on("focusSync", onTabFocus);
@@ -139,7 +140,7 @@ define(function(require, exports, module) {
                         .removeListener("changeSelection", cursorHandler);
             }
             
-            if ((!tab.path && !tab.document.meta.newfile) || !tab.editorType === "ace") {
+            if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
                 originalTab = null;
                 return clear();
             }
@@ -156,7 +157,7 @@ define(function(require, exports, module) {
             originalTab = tab;
             
             if (isActive)
-                updateOutline();
+                updateOutline(true);
         }
         
         function changeHandler(){
@@ -326,7 +327,8 @@ define(function(require, exports, module) {
             c9.on("stateChange", offlineHandler, plugin);
             offlineHandler({ state: c9.status });
             
-            language.getWorker(function(err, worker) {
+            language.getWorker(function(err, _worker) {
+                worker = _worker;
                 timer = setInterval(function(){
                     if (dirty) {
                         worker.emit("outline", { data : { ignoreFilter: false } });
@@ -338,8 +340,10 @@ define(function(require, exports, module) {
         
         /***** Methods *****/
         
-        function updateOutline() {
+        function updateOutline(now) {
             dirty = true;
+            if (now)
+                worker && worker.emit("outline", { data : { ignoreFilter: false } });
         }
     
         function findCursorInOutline(json, cursor) {
@@ -409,6 +413,8 @@ define(function(require, exports, module) {
         function onSelect(node) {
             if (!node) 
                 node = tree.selection.getCursor();
+            if (!node)
+                return; // ok, there really is no node
                 
             if (ignoreSelectOnce) {
                 ignoreSelectOnce = false;
@@ -460,7 +466,7 @@ define(function(require, exports, module) {
             textbox.select();
             tree.resize();
             
-            updateOutline();
+            updateOutline(true);
         });
         plugin.on("hide", function(e){
             // tree.clearSelection();
