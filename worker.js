@@ -756,6 +756,7 @@ function asyncParForEach(array, fn, callback) {
                 if (aggregateActions.hint && !hintMessage) {
                     hintMessage = aggregateActions.hint;
                 }
+                // TODO use separate events for static and cursor markers
                 _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
                 _self.scheduleEmit("enableRefactorings", aggregateActions.enableRefactorings);
                 _self.lastCurrentNode = currentNode;

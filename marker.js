@@ -64,6 +64,11 @@ define(function(require, exports, module) {
             if (!mySession.markerAnchors) mySession.markerAnchors = [];
             removeMarkers(mySession);
             mySession.languageAnnos = [];
+            
+            var sel = editor.getSelectionRange();
+            var showOccurenceMarkers = sel.isEmpty() ? true
+                : sel.isMultiLine() ? false : null;
+            var occurrenceMarkers = [];
             annos.forEach(function(anno) {
                 // Certain annotations can temporarily be disabled
                 if (disabledMarkerTypes[anno.type])
@@ -71,14 +76,26 @@ define(function(require, exports, module) {
                 // Multi-line markers are not supported, and typically are a result from a bad error recover, ignore
                 if(anno.pos.el && anno.pos.sl !== anno.pos.el)
                     return;
+                
+                var pos = anno.pos || {};
+                
+                var range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
+                if (anno.type == "occurrence_other" || anno.type == "occurrence_main") {
+                    if (!showOccurenceMarkers) {
+                        if (showOccurenceMarkers === false)
+                            return;
+                        if (range.containsRange(sel))
+                            showOccurenceMarkers = true;
+                        occurrenceMarkers.push(mySession.markerAnchors.length);
+                    }
+                }
 
                 mySession.markerAnchors.push(anno);
-                var pos = anno.pos || {};
                 
                 anno.start = new SimpleAnchor(pos.sl, pos.sc);
                 
                 if (pos.sc !== undefined && pos.ec !== undefined) {
-                    anno.range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
+                    anno.range = range;
                     anno.id = mySession.addMarker(anno.range, "language_highlight_" + (anno.type ? anno.type : "default"));
                     anno.range.start = anno.start;
                     anno.colDiff = pos.ec - pos.sc;
@@ -98,6 +115,14 @@ define(function(require, exports, module) {
                 anno.gutterAnno = gutterAnno;
                 mySession.languageAnnos.push(gutterAnno);
             });
+            
+            if (!showOccurenceMarkers) {
+                for (var i = occurrenceMarkers.length; i--;) {
+                    mySession.removeMarker(mySession.markerAnchors[i].id);
+                    mySession.markerAnchors.splice(occurrenceMarkers[i], 1);
+                }
+            }
+            
             mySession.setAnnotations(mySession.languageAnnos);
         }
     
