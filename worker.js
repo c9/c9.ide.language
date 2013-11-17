@@ -805,7 +805,10 @@ function asyncParForEach(array, fn, callback) {
                     }
                 }, function () {
                     callback(allResults.map(function (pos) {
-                       return syntaxDetector.posFromRegion(part.region, pos);
+                        var globalPos = syntaxDetector.posFromRegion(part.region, pos);
+                        pos.row = globalPos.row;
+                        pos.column = globalPos.column;
+                        return pos;
                     }));
                 });
             });

@@ -114,7 +114,7 @@ define(function(require, exports, module) {
                 return delayedTransfer;
             }
             
-            console.log("[language] Sent to worker (" + type + "): " + path);
+            console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
 
             notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
         }
