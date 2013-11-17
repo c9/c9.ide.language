@@ -42,6 +42,10 @@ define(function(require, exports, module) {
                 var editor = tab.editor;
                 addMarkers(event, editor.ace);
             });
+            
+            e.worker.on("change", function(event, worker) {
+                onChange(worker.$doc, event);
+            });
         });
 
         var disabledMarkerTypes = {};
@@ -150,18 +154,18 @@ define(function(require, exports, module) {
          * it does so instanteously, rather than with a 500ms delay, thereby avoid ugly box bouncing etc.
          */
         function onChange(session, event) {
-            if (this.ext.disabled) return;
             var range = event.data.range;
             var isInserting = event.data.action[0] !== "r";
             var text = event.data.text;
             var adaptingId = text && text.search(/[^a-zA-Z0-9\$_]/) === -1;
             var languageAnnos = [];
             var markers = session.markerAnchors || [];
+            var foundOne = false;
+            var marker, start;
             if (!isInserting) { // Removing some text
                 // Run through markers
-                var foundOne = false;
-                for (var i = 0; i < markers.length; i++) {
-                    var marker = markers[i];
+                for (var i = markers.length; i--;) {
+                    marker = markers[i];
                     
                     if (!range.compareInside(marker.start.row, marker.start.column)) {
                         session.removeMarker(marker.id);
@@ -173,7 +177,7 @@ define(function(require, exports, module) {
                         marker.colDiff -= text.length;
                     }
                     
-                    var start = marker.start
+                    start = marker.start;
                     start.onChange(event);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
@@ -191,16 +195,18 @@ define(function(require, exports, module) {
             }
             else { // Inserting some text
                 // Run through markers
-                var foundOne = false;
-                for (var i = 0; i < markers.length; i++) {
-                    var marker = markers[i];
+                for (var i = markers.length; i--;) {
+                    marker = markers[i];
                     // Only if inserting an identifier
-                    if (adaptingId && marker.range && marker.range.contains(range.start.row, range.start.column)) {
+                    if (marker.range && marker.range.contains(range.start.row, range.start.column)) {
                         foundOne = true;
-                        marker.colDiff += text.length;
+                        if (adaptingId) {
+                            marker.colDiff += text.length;
+                        } else if (Range.comparePoints(range.start, marker.range.start) > 0)
+                            session.removeMarker(marker.id);
                     }
                     
-                    var start = marker.start
+                    start = marker.start;
                     start.onChange(event);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
