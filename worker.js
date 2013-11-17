@@ -703,7 +703,9 @@ function asyncParForEach(array, fn, callback) {
         var aggregateActions = {markers: [], hint: null, displayPos: null, enableRefactorings: []};
                     
         function processResponse(response) {
-            if (response.markers && response.markers.length > 0) {
+            if (response.markers && (!aggregateActions.markers.found || !response.isGeneric)) {
+                if (aggregateActions.markers.isGeneric)
+                    aggregateActions.markers = [];
                 aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
                     var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
                     var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
@@ -715,6 +717,8 @@ function asyncParForEach(array, fn, callback) {
                     };
                     return m;
                 }));
+                aggregateActions.markers.found = true;
+                aggregateActions.markers.isGeneric = response.isGeneric;
             }
             if (response.enableRefactorings && response.enableRefactorings.length > 0) {
                 aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
@@ -756,7 +760,11 @@ function asyncParForEach(array, fn, callback) {
                 if (aggregateActions.hint && !hintMessage) {
                     hintMessage = aggregateActions.hint;
                 }
-                _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
+                if (disabledFeatures.instanceHighlight)
+                  
+                _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
+                    ? []
+                    : _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
                 _self.scheduleEmit("enableRefactorings", aggregateActions.enableRefactorings);
                 _self.lastCurrentNode = currentNode;
                 _self.lastCurrentPos = posInPart;

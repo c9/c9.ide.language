@@ -363,6 +363,7 @@ module.exports = {
      * @param {Number} callback.result.markers.pos.el  The ending line
      * @param {Number} callback.result.markers.pos.sc  The starting column
      * @param {Number} callback.result.markers.pos.ec  The ending column
+     * @param {Boolean} callback.result.isGeneric      Indicates this is generic highlighting and should be deferred
      * @param {"occurrence_other"|"occurrence_main"} callback.result.markers.type
      *                                                 The type of occurrence: the main one, or any other one.
      */
