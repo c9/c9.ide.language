@@ -122,8 +122,9 @@ define(function(require, exports, module) {
             
             if (!showOccurenceMarkers) {
                 for (var i = occurrenceMarkers.length; i--;) {
-                    mySession.removeMarker(mySession.markerAnchors[i].id);
-                    mySession.markerAnchors.splice(occurrenceMarkers[i], 1);
+                    var markerI = occurrenceMarkers[i];
+                    mySession.removeMarker(mySession.markerAnchors[markerI].id);
+                    mySession.markerAnchors.splice(markerI, 1);
                 }
             }
             
