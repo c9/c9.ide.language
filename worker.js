@@ -908,7 +908,7 @@ function asyncParForEach(array, fn, callback) {
                     }
                 }, function() {
                     if (!result)
-                        return _self.sender.emit("renamePositionsResult", []);
+                        return _self.sender.emit("renamePositionsResult");
                     result.uses = (result.uses || []).map(posFromRegion);
                     result.declarations = (result.declarations || []).map(posFromRegion);
                     result.others = (result.others || []).map(posFromRegion);
