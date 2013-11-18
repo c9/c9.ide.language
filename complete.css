@@ -69,6 +69,7 @@
     border: 1px solid @complete-dark-border-color;
     .box-shadow(~"@{complete-dark-box-shadow}, inset 1px 1px @{complete-dark-inner-border-color}, inset -1px -1px @{complete-dark-inner-border-color}");
     color: @complete-dark-docs-color;
+    background-color: @complete-dark-docs-background;
 }
 
 .language_activeparamindent {
