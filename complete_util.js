@@ -3,7 +3,7 @@
  * 
  * Import using
  * 
- *     require("plugins/c9.language/complete_util")
+ *     require("plugins/c9.ide.language/complete_util")
  * 
  * @class language.complete_util
  */
