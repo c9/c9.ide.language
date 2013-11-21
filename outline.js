@@ -280,10 +280,6 @@ define(function(require, exports, module) {
                 renderOutline();
             });
             
-            // @Harutyun, the select event should be on the tree or the selection object
-            //      I just hacked it into the dataprovider for now, but that is very wrong.
-            // tree.getSelection().on("changeSelection", function(){ previewFile(); });
-            // tree.on("select", function(){ previewFile(); });
             tree.on("changeSelection", function(){ 
                 onSelect();
             });
