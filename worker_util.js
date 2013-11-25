@@ -11,7 +11,7 @@
  * 
  * Import using
  * 
- *     require("plugins/c9.language/worker_util")
+ *     require("plugins/c9.ide.language/worker_util")
  * 
  * See {@link language}
  * 
