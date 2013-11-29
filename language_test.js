@@ -5,7 +5,7 @@
 require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai, baseProc) {
     var expect = chai.expect;
     
-    architect.resolveConfig([
+    expect.setupArchitectTest([
         {
             packagePath  : "plugins/c9.core/c9",
             workspaceId  : "ubuntu/ip-10-35-77-180",
@@ -80,11 +80,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
             provides : [],
             setup    : main
         }
-    ], function (err, config) {
-        if (err) throw err;
-        var app = architect.createApp(config);
-        app.on("service", function(name, plugin){ if (!plugin.name) plugin.name = name; });
-    });
+    ], architect);
     
     function main(options, imports, register) {
         var tabs    = imports.tabManager;
