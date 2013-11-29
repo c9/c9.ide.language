@@ -100,7 +100,7 @@ define(function(require, exports, module) {
             if (!document)
                 return 0;
             var line = document.getLine(row);
-            if (!line)
+            if (!line || !identifier)
                 return 0;
             var safeIdentifier = identifier.replace(/[^A-Za-z0-9\/$_/']/g, "");
             return line.match("^(\s*(.*(?=" + safeIdentifier + "))?)")[1].length;
