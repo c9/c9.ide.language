@@ -116,11 +116,30 @@ define(function(require, exports, module) {
                 updateOutline();
                 onTabFocus({ tab: tabs.focussedTab });
             }
+            updateInitialOutline();
+        }
+        
+        /**
+         * Get an initial outline, taking into account that there may
+         * be some time required before all (unknown number of) outliner
+         * language plugins are loaded.
+         */
+        function updateInitialOutline() {
+            var updated;
+            function update() {
+                updateOutline(updateOutline);
+            }
+            language.getWorker(function(err, worker) {
+                worker.once("outline", function() {
+                    updated = true;
+                }); 
+            });
             // Make sure we get an outline from slow-loading language handlers
-            setTimeout(updateOutline, 2000);
-            setTimeout(updateOutline, 5000);
-            setTimeout(updateOutline, 10000);
-            setTimeout(updateOutline, 15000);
+            setTimeout(update, 4000);
+            setTimeout(update, 6000);
+            setTimeout(update, 8000);
+            setTimeout(update, 10000);
+            setTimeout(update, 20000);
         }
         
         function onTabFocus(event) {
@@ -337,7 +356,7 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
-            dirty = true;
+            dirty = !now;
             if (now)
                 worker && worker.emit("outline", { data : { ignoreFilter: false } });
         }
