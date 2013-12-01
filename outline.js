@@ -40,6 +40,7 @@ define(function(require, exports, module) {
         var fullOutline         = [];
         var filteredOutline     = [];
         var ignoreSelectOnce    = false;
+        var ignoreFocusOnce     = false;
         var isDirty             = false;
         var isKeyDownAfterDirty = false;
         var staticPrefix        = options.staticPrefix;
@@ -139,16 +140,10 @@ define(function(require, exports, module) {
          * language plugins are loaded.
          */
         function updateInitialOutline() {
-            var updated;
             function update() {
-                updateOutline(updateOutline);
+                if (!outline)
+                    updateOutline(updateOutline);
             }
-            language.getWorker(function(err, worker) {
-                worker.once("outline", function() {
-                    updated = true;
-                }); 
-            });
-            // Make sure we get an outline from slow-loading language handlers
             setTimeout(update, 4000);
             setTimeout(update, 6000);
             setTimeout(update, 8000);
@@ -189,15 +184,15 @@ define(function(require, exports, module) {
                 updateOutline(true);
         }
         
-        function changeHandler(){
+        function changeHandler() {
             if (isActive && originalTab == tabs.focussedTab)
                 updateOutline();
         }
         
-        function cursorHandler(e){
+        function cursorHandler(ignoreFocus) {
             if (isActive && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
-                if (!outline || !ace.selection.isEmpty() || tree.isFocused())
+                if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
                     return;
                     
                 var selected = 
@@ -450,7 +445,8 @@ define(function(require, exports, module) {
             }
             
             tree.resize();
-            cursorHandler();
+            cursorHandler(ignoreFocusOnce);
+            ignoreFocusOnce = false;
             
             return selected;
         }
@@ -520,6 +516,8 @@ define(function(require, exports, module) {
             tree.resize();
             
             updateOutline(true);
+            cursorHandler(true);
+            ignoreFocusOnce = true;
         });
         plugin.on("hide", function(e){
             // tree.clearSelection();
