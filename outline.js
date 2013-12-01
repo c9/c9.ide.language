@@ -363,7 +363,13 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
-            if (now && worker) {
+            if (now) {
+                if (!worker) {
+                    return language.getWorker(function(err, _worker) {
+                        worker = _worker;
+                        updateOutline(true);
+                    });
+                }
                 worker.emit("outline", { data: {
                     ignoreFilter: false,
                     path: tabs.focussedTab.path
