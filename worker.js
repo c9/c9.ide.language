@@ -415,8 +415,12 @@ function asyncParForEach(array, fn, callback) {
     this.outline = function(event) {
         var _self = this;
         this.getOutline(function(result) {
-            _self.sender.emit("outline",
-              { body: result && (result.body || result.items) || [] }
+            _self.sender.emit(
+                "outline",
+                {
+                    body: result && (result.body || result.items) || [],
+                    path: _self.$path
+                }
             );
         });
     };

@@ -113,13 +113,12 @@ define(function(require, exports, module) {
                 delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
                 return delayedTransfer;
             }
-            
-            console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
 
             notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
         }
         
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
+            console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
                 console.error("[language] options.workspaceDir is undefined!");
             // background tabs=open document, foreground tab=switch to file

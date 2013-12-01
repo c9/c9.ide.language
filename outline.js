@@ -356,10 +356,8 @@ define(function(require, exports, module) {
             language.getWorker(function(err, _worker) {
                 worker = _worker;
                 timer = setInterval(function(){
-                    if (dirty) {
-                        worker.emit("outline", { data : { ignoreFilter: false } });
-                        dirty = false;
-                    }
+                    if (dirty)
+                        updateOutline(true);
                 }, 1000);
             });
         }
@@ -367,9 +365,15 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
-            dirty = !now;
-            if (now)
-                worker && worker.emit("outline", { data : { ignoreFilter: false } });
+            if (now && worker) {
+                worker.emit("outline", { data: {
+                    ignoreFilter: false,
+                    path: tabs.focussedTab.path
+                }});
+                dirty = false;
+            } else {
+                dirty = true;
+            }
         }
     
         function findCursorInOutline(json, cursor) {
@@ -407,6 +411,8 @@ define(function(require, exports, module) {
             var editor = tab && tab.editor;
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
+            if (tab.path !== data.path)
+                return updateOutline(true);
             
             fullOutline = event.data.body;
             renderOutline(event.data.showNow);
