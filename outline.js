@@ -143,15 +143,11 @@ define(function(require, exports, module) {
          * language plugins are loaded.
          */
         function updateInitialOutline() {
-            function update() {
-                if (!outline)
-                    updateOutline(updateOutline);
-            }
-            setTimeout(update, 4000);
-            setTimeout(update, 6000);
-            setTimeout(update, 8000);
-            setTimeout(update, 10000);
-            setTimeout(update, 20000);
+            setTimeout(updateOutline.bind(null, true), 4000);
+            setTimeout(updateOutline.bind(null, true), 6000);
+            setTimeout(updateOutline.bind(null, true), 8000);
+            setTimeout(updateOutline.bind(null, true), 10000);
+            setTimeout(updateOutline.bind(null, true), 20000);
         }
         
         function onTabFocus(event) {
