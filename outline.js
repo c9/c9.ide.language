@@ -104,6 +104,20 @@ define(function(require, exports, module) {
                     clear();
             });
             
+            var cursorTimeout;
+            language.on("cursormove", function() {
+                if (cursorTimeout)
+                    return;
+                cursorTimeout = setTimeout(function() {
+                    try {
+                        cursorHandler();
+                    }
+                    finally {
+                        cursorTimeout = null;
+                    }
+                }, 100);
+            });
+            
             panels.on("showPanelOutline", function(e){
                 plugin.autohide = !e.button;
             }, plugin);
@@ -154,9 +168,6 @@ define(function(require, exports, module) {
                 session = originalTab.document.getSession().session;
                 session && session.removeListener("changeMode", changeHandler);
                 originalTab.document.undoManager.off("change", changeHandler);
-                if (originalTab.editor.ace)
-                    originalTab.editor.ace.selection
-                        .removeListener("changeSelection", cursorHandler);
             }
             
             if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
@@ -171,7 +182,6 @@ define(function(require, exports, module) {
             session = tab.document.getSession().session;
             session && session.on("changeMode", changeHandler);
             tab.document.undoManager.on("change", changeHandler);
-            tab.editor.ace.selection.on("changeSelection", cursorHandler);
             
             originalTab = tab;
             
@@ -187,11 +197,12 @@ define(function(require, exports, module) {
         function cursorHandler(e){
             if (isActive && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
-                if (!outline || !ace.selection.isEmpty())
+                if (!outline || !ace.selection.isEmpty() || tree.isFocused())
                     return;
                     
                 var selected = 
-                    findCursorInOutline(outline, ace.getCursorPosition());
+                    findCursorInOutline(outline, ace.getCursorPosition())
+                    || findCursorInOutlineImprecise(outline, ace.getCursorPosition());
             
                 if (tdOutline.$selectedNode == selected)
                     return;
@@ -364,19 +375,31 @@ define(function(require, exports, module) {
         function findCursorInOutline(json, cursor) {
             for (var i = 0; i < json.length; i++) {
                 var elem = json[i];
-                if(cursor.row < elem.pos.sl || cursor.row > elem.pos.el)
+                if (cursor.row < elem.pos.sl || cursor.row > (elem.pos.el || elem.pos.sl))
                     continue;
-                var inChildren = findCursorInOutline(elem.items, cursor);
-                return inChildren ? inChildren : elem;
+                var childResult = findCursorInOutline(elem.items, cursor);
+                return childResult || elem;
             }
             return null;
+        }
+    
+        function findCursorInOutlineImprecise(json, cursor) {
+            var result;
+            for (var i = 0; i < json.length; i++) {
+                var elem = json[i];
+                if ((elem.pos.el || elem.pos.sl) > cursor.row)
+                    continue;
+                var childResult = findCursorInOutline(elem.items, cursor);
+                result = childResult || elem;
+            }
+            return result;
         }
     
         function onOutlineData(event) {
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
-                console.log("Oh noes! " + data.error);
+                console.error("Oh noes! " + data.error);
                 return;
             }
             
@@ -421,6 +444,7 @@ define(function(require, exports, module) {
             }
             
             tree.resize();
+            cursorHandler();
             
             return selected;
         }
