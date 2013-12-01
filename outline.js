@@ -420,11 +420,12 @@ define(function(require, exports, module) {
             if (!originalTab.loaded) 
                 return clear();
             
-            var pos = node.displayPos || node.pos;
             var ace = originalTab.editor.ace; 
+            var pos = node.pos;
+            var displayPos = node.displayPos || pos;
             pos.sc = pos.sc || jumptodef.getFirstColumn(ace, pos.sl, node.name);
-            var range = new Range(pos.sl, pos.sc || 0, pos.el || pos.sl, pos.ec || pos.sc);
-            scrollToDefinition(ace, pos.sl, pos.elx || pos.el);
+            scrollToDefinition(ace, displayPos.sl, displayPos.el);
+            var range = new Range(pos.sl, pos.sc, pos.el || pos.sl, pos.el > pos.sl ? pos.ec || 0 : pos.ec || pos.sc);
             ace.selection.setSelectionRange(range);
         }
         
