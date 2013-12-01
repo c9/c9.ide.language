@@ -63,10 +63,13 @@ define(function(require, exports, module) {
                 bindKey : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
                 exec    : function(){
                     if (isActive){
-                        if (focussed)
+                        if (focussed) {
                             panels.deactivate("outline");
-                        else
+                            tabs.focussedTab && tabs.focussedTab.aml.focus();
+                        }
+                        else {
                             textbox.focus();
+                        }
                     }
                     else {
                         panels.activate("outline");
