@@ -422,14 +422,21 @@ define(function(require, exports, module) {
             
             var ace = originalTab.editor.ace; 
             var pos = node.pos;
-            var displayPos = node.displayPos || pos;
+            var displayPos = node.displayPos;
             pos.sc = pos.sc || jumptodef.getFirstColumn(ace, pos.sl, node.name);
-            scrollToDefinition(ace, displayPos.sl, displayPos.el);
-            var range = new Range(pos.sl, pos.sc, pos.el || pos.sl, pos.el > pos.sl ? pos.ec || 0 : pos.ec || pos.sc);
+            scrollToDefinition(ace, pos.sl, pos.el);
+            var range = displayPos
+                ? new Range(
+                      displayPos.sl,
+                      displayPos.sc,
+                      displayPos.el || displayPos.sl,
+                      displayPos.el > pos.sl ? pos.ec || 0 : pos.ec || pos.sc
+                  )
+                : new Range(pos.sl, pos.sc, pos.sl, pos.sc);
             ace.selection.setSelectionRange(range);
         }
         
-        function clear(){
+        function clear() {
             if (textbox) {
                 textbox.setValue("");
                 tdOutline.setRoot({});

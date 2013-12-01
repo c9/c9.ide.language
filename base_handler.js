@@ -415,12 +415,12 @@ module.exports = {
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} callback.result.icon
      *                                                 The icon to display for the first outline item
      * @param {String} callback.result.name            The name to display for the first outline item
-     * @param {Object} callback.result.pos             The item's range to select when it is picked from the outline
+     * @param {Object} callback.result.pos             The item's range, e.g. the full visible range of a method
      * @param {Number} callback.result.pos.sl          The item's starting row
      * @param {Number} [callback.result.pos.el]        The item's ending row
      * @param {Number} [callback.result.pos.sc]        The item's starting column
      * @param {Number} [callback.result.pos.ec]        The item's ending column
-     * @param {Object} [callback.result.displayPos]    The item's display position, e.g. the full visible range of a method
+     * @param {Object} [callback.result.displayPos]    The item's position of the text to select when it's picked from the outline
      * @param {Number} callback.result.displayPos.sl   The item's starting row
      * @param {Number} [callback.result.displayPos.el] The item's ending row
      * @param {Number} [callback.result.displayPos.sc] The item's starting column
