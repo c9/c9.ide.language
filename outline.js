@@ -471,16 +471,17 @@ define(function(require, exports, module) {
                 return clear();
             
             var ace = originalTab.editor.ace; 
-            var pos = node.pos;
-            var displayPos = node.displayPos;
-            pos.sc = pos.sc || jumptodef.getFirstColumn(ace, pos.sl, node.name);
+            var pos = jumptodef.addUnknownColumn(ace, node.pos, node.name);
+            var displayPos = jumptodef.addUnknownColumn(ace, node.displayPos, node.name);
             scrollToDefinition(ace, pos.sl, pos.el);
             var range = displayPos
                 ? new Range(
                       displayPos.sl,
                       displayPos.sc,
                       displayPos.el || displayPos.sl,
-                      displayPos.el > pos.sl ? pos.ec || 0 : pos.ec || pos.sc
+                      displayPos.el > displayPos.sl
+                        ? displayPos.ec || 0
+                        : displayPos.ec || displayPos.sc
                   )
                 : new Range(pos.sl, pos.sc, pos.sl, pos.sc);
             ace.selection.setSelectionRange(range);

@@ -95,15 +95,27 @@ define(function(require, exports, module) {
             });
         }
         
-        function getFirstColumn(ace, row, identifier) {
+        function addUnknownColumn(ace, pos, name) {
+            if (pos.sc)
+                return pos;
             var document = ace.document || ace.getSession().getDocument();
             if (!document)
-                return 0;
-            var line = document.getLine(row);
-            if (!line || !identifier)
-                return 0;
-            var safeIdentifier = identifier.replace(/[^A-Za-z0-9\/$_/']/g, "");
-            return line.match("^(\s*(.*(?=" + safeIdentifier + "))?)")[1].length;
+                return pos;
+            var line = document.getLine(pos.sl);
+            if (!line)
+                return pos;
+            if (!name) {
+                pos.sc = line.match(/^(\s*)/).length;
+                return pos;
+            }
+            var index = line && line.indexOf(name);
+            if (index < 0)
+                return pos;
+            pos.sc = index;
+            pos.el = pos.el || pos.sl;
+            if (pos.el === pos.sl)
+                pos.ec = index + name.length;
+            return pos;
         }
     
         /**
@@ -183,7 +195,7 @@ define(function(require, exports, module) {
                         return;
                     var state = tab.document && tab.document.getState();
                     if (state && state.ace) {
-                        pos.column = pos.column || getFirstColumn(tab.editor.ace, pos.row, identifier);
+                        pos = addUnknownColumn(tab.editor.ace, pos);
                         lastJump = sourcePos && {
                             ace: tab.editor.ace,
                             row: pos.row,
@@ -214,7 +226,7 @@ define(function(require, exports, module) {
             var preceding = util.retrievePrecedingIdentifier(line, cursor.column);
             var column = cursor.column - preceding.length;
             if (column === oldPos.column)
-                column = getFirstColumn(ace, cursor.row);
+                column = line.match(/^(\s*)/).length;
             var newPos = { row: cursor.row, column: column };
             ace.getSelection().setSelectionRange({ start: newPos, end: newPos });
         }
@@ -264,7 +276,7 @@ define(function(require, exports, module) {
         register(null, {
             "language.jumptodef": plugin.freezePublicAPI({
                 /** @ignore */
-                getFirstColumn : getFirstColumn
+                addUnknownColumn : addUnknownColumn
             })
         });
     }
