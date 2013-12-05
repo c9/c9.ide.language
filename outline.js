@@ -359,7 +359,7 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
-            if (now) {
+            if (now && tabs.focussedTab) {
                 if (!worker) {
                     return language.getWorker(function(err, _worker) {
                         worker = _worker;
