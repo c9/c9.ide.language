@@ -47,7 +47,7 @@ define(function(require, exports, module) {
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
-        var focussed, isActive, outline, timer, dirty;
+        var focussed, isActive, outline, timer, dirty, scheduled;
         var worker;
         
         var COLLAPSE_AREA = 14;
@@ -112,7 +112,9 @@ define(function(require, exports, module) {
             language.on("cursormove", function() {
                 if (cursorTimeout)
                     return;
-                cursorTimeout = setTimeout(function() {
+                cursorTimeout = setTimeout(function moveSelection() {
+                    if (isDirty)
+                        return setTimeout(moveSelection, 50);
                     try {
                         cursorHandler();
                     }
@@ -350,7 +352,7 @@ define(function(require, exports, module) {
             language.getWorker(function(err, _worker) {
                 worker = _worker;
                 timer = setInterval(function(){
-                    if (dirty)
+                    if (dirty && !scheduled)
                         updateOutline(true);
                 }, 1000);
             });
@@ -370,10 +372,9 @@ define(function(require, exports, module) {
                     ignoreFilter: false,
                     path: tabs.focussedTab.path
                 }});
-                dirty = false;
-            } else {
-                dirty = true;
+                scheduled = true;
             }
+            dirty = true;
         }
     
         function findCursorInOutline(json, cursor) {
@@ -400,6 +401,7 @@ define(function(require, exports, module) {
         }
     
         function onOutlineData(event) {
+            scheduled = false;
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
