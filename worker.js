@@ -229,7 +229,7 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
     else if (callback) {
         callback();
     }
-}
+};
 
 function asyncParForEach(array, fn, callback) {
     var completed = 0;
@@ -620,7 +620,7 @@ function asyncParForEach(array, fn, callback) {
                                 handler.language = part.language;
                                 handler.getInspectExpression(part, ast, partPos, node, function(result) {
                                     if (result) {
-                                        result.pos = syntaxDetector.posFromRegion(region, result.pos);
+                                        result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
                                     }
                                     next();
@@ -864,7 +864,6 @@ function asyncParForEach(array, fn, callback) {
         var pos = event.data;
         var part = this.getPart(pos);
         var partPos = syntaxDetector.posToRegion(part.region, pos);
-        var result;
         
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
@@ -888,7 +887,7 @@ function asyncParForEach(array, fn, callback) {
                 });
             });
         });
-    }
+    };
 
     this.getRenamePositions = function(event) {
         var _self = this;

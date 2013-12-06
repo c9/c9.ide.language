@@ -86,7 +86,7 @@ define(function(require, exports, module) {
                         if (region && !(region.sl <= i && i <= region.el))
                             continue;
                         var offset = 0;
-                        var tokens = session.getTokens(i).forEach(function(t) {
+                        session.getTokens(i).forEach(function(t) {
                             var myOffset = offset;
                             offset += t.value.length;
                             if (identifiers && identifiers.indexOf(t.value) === -1)

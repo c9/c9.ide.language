@@ -44,7 +44,7 @@ define(function(require, exports, module) {
                     name: "jumptodef",
                     bindKey: {mac: "F3", win: "F3"},
                     hint: "jump to the definition of the variable or function that is under the cursor",
-                    exec: function(){
+                    exec: function() {
                         jumptodef();
                     }
                 }, plugin);
@@ -260,16 +260,16 @@ define(function(require, exports, module) {
             tab.className.remove("loading");
         }
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             loaded = false;
         });
         

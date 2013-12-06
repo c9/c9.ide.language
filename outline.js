@@ -53,7 +53,7 @@ define(function(require, exports, module) {
         var COLLAPSE_AREA = 14;
         
         var loaded = false;
-        function load(){
+        function load() {
             if (loaded) return false;
             loaded = true;
             
@@ -61,8 +61,8 @@ define(function(require, exports, module) {
                 name    : "outline",
                 hint    : "search for a definition and jump to it",
                 bindKey : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
-                exec    : function(){
-                    if (isActive){
+                exec    : function() {
+                    if (isActive) {
                         if (focussed) {
                             panels.deactivate("outline");
                             tabs.focussedTab && tabs.focussedTab.aml.focus();
@@ -88,7 +88,7 @@ define(function(require, exports, module) {
             });
             
             // Hook events to get the focussed tab
-            tabs.on("open", function(e){
+            tabs.on("open", function(e) {
                 var tab = e.tab;
                 if (!isActive 
                   || !tab.path && !tab.document.meta.newfile 
@@ -103,7 +103,7 @@ define(function(require, exports, module) {
             
             tabs.on("focusSync", onTabFocus);
             
-            tabs.on("tabDestroy", function(e){
+            tabs.on("tabDestroy", function(e) {
                 if (isActive && e.last)
                     clear();
             });
@@ -124,10 +124,10 @@ define(function(require, exports, module) {
                 }, 100);
             });
             
-            panels.on("showPanelOutline", function(e){
+            panels.on("showPanelOutline", function(e) {
                 plugin.autohide = !e.button;
             }, plugin);
-            panels.on("hidePanelOutline", function(e){
+            panels.on("hidePanelOutline", function(e) {
                 plugin.autohide = true;
             }, plugin);
             
@@ -213,7 +213,7 @@ define(function(require, exports, module) {
             }
         }
         
-        function offlineHandler(e){
+        function offlineHandler(e) {
             // Online
             if (e.state & c9.STORAGE) {
                 textbox.enable();
@@ -229,7 +229,7 @@ define(function(require, exports, module) {
         }
         
         var drawn = false;
-        function draw(options){
+        function draw(options) {
             if (drawn) return;
             drawn = true;
             
@@ -257,7 +257,7 @@ define(function(require, exports, module) {
             tdOutline.staticPrefix = staticPrefix;
 
             // @TODO this is probably not sufficient
-            window.addEventListener("resize", function(){ tree.resize() });
+            window.addEventListener("resize", function() { tree.resize() });
             
             tree.textInput = textbox.ace.textInput;
             
@@ -265,12 +265,12 @@ define(function(require, exports, module) {
             // tree.renderer.setScrollMargin(0, 10, 0, 0);
             
             // @Harutyun; is this the right way to do it?
-            function available(){ return tree.isFocused() }
+            function available() { return tree.isFocused() }
             
             textbox.ace.commands.addCommands([
                 {
                     bindKey : "ESC",
-                    exec    : function(){
+                    exec    : function() {
                         if (!originalTab.loaded) 
                             return clear();
                         
@@ -287,13 +287,13 @@ define(function(require, exports, module) {
                     }
                 }, {
                     bindKey : "Up",
-                    exec    : function(){ tree.execCommand("goUp"); }
+                    exec    : function() { tree.execCommand("goUp"); }
                 }, {
                     bindKey : "Down",
-                    exec    : function(){ tree.execCommand("goDown"); }
+                    exec    : function() { tree.execCommand("goDown"); }
                 }, {
                     bindKey : "Enter",
-                    exec    : function(){
+                    exec    : function() {
                         onSelect();
                         
                         textbox.setValue("");
@@ -306,11 +306,11 @@ define(function(require, exports, module) {
                 renderOutline();
             });
             
-            tree.on("changeSelection", function(){ 
+            tree.on("changeSelection", function() { 
                 onSelect();
             });
             
-            function onAllBlur(e){
+            function onAllBlur(e) {
                 if (!winOutline.visible || !plugin.autohide)
                     return;
                 
@@ -320,12 +320,12 @@ define(function(require, exports, module) {
                 }
                 
                 // TODO add better support for overlay panels
-                setTimeout(function(){ plugin.hide() }, 10);
+                setTimeout(function() { plugin.hide() }, 10);
             }
     
             apf.addEventListener("movefocus", onAllBlur);
             
-            function onFocus(){ 
+            function onFocus() { 
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
@@ -337,7 +337,7 @@ define(function(require, exports, module) {
                 originalLine   = cursor.row + 1;
                 originalColumn = cursor.column;
             }
-            function onBlur(){ 
+            function onBlur() { 
                 focussed = false;
                 ui.setStyleClass(treeParent.$int, "", ["focus"]); 
             }
@@ -351,7 +351,7 @@ define(function(require, exports, module) {
             
             language.getWorker(function(err, _worker) {
                 worker = _worker;
-                timer = setInterval(function(){
+                timer = setInterval(function() {
                     if (dirty && !scheduled)
                         updateOutline(true);
                 }, 1000);
@@ -510,13 +510,13 @@ define(function(require, exports, module) {
         
         /***** Lifecycle *****/
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("draw", function(e){
+        plugin.on("draw", function(e) {
             draw(e);
         });
-        plugin.on("show", function(e){
+        plugin.on("show", function(e) {
             isActive = true;
             
             textbox.focus();
@@ -527,17 +527,17 @@ define(function(require, exports, module) {
             cursorHandler(true);
             ignoreFocusOnce = true;
         });
-        plugin.on("hide", function(e){
+        plugin.on("hide", function(e) {
             // tree.clearSelection();
             isActive = false;
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             loaded = false;
             drawn  = false;
             

@@ -248,7 +248,7 @@ define(function(require, exports, module) {
             };
         }
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
         
