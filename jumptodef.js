@@ -72,7 +72,7 @@ define(function(require, exports, module) {
                         }
                     });
                 });
-                menus.addItemByPath("Goto/Jump to Definition", mnuJumpToDef, 899, plugin);
+                menus.addItemByPath("Goto/Jump to Definition", mnuJumpToDef, 1450, plugin);
     
                 // when the context menu pops up we'll ask the worker whether we've
                 // jumptodef available here
@@ -103,7 +103,7 @@ define(function(require, exports, module) {
             if (!line)
                 return 0;
             var safeIdentifier = identifier.replace(/[^A-Za-z0-9\/$_/']/g, "");
-            return line.match("^(\s*(.*(?=" + safeIdentifier + "))?)")[1].length;
+            return line.match("^(\\s*(.*(?=" + safeIdentifier + "))?)")[1].length;
         }
     
         /**
