@@ -79,7 +79,7 @@ define(function(require, exports, module) {
         plugin.load("This is not how it is supposed to be");
         
         plugin.on("unload", function(){
-            if (tooltipEl)
+            if (tooltipEl && tooltipEl.parentNode)
                 tooltipEl.parentNode.removeChild(tooltipEl);
         });
     
