@@ -1,3 +1,7 @@
+.outline .tree-row .caption {
+    padding : 4px 5px;
+    display : inline-block;
+}
 .outline.ace_tree{
     border: none;
     background: transparent;
@@ -36,7 +40,8 @@
     border-radius: 2px;
     cursor: pointer;
 }
-.outline.ace_tree .tree-row:hover{
+.outline.ace_tree .tree-row:hover,
+.outline.ace_tree .tree-row.hover{
     background: @selected-hover-background;
     color: @selected-hover-color;
 }
