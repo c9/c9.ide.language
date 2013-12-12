@@ -24,7 +24,7 @@ define(function(require, exports, module) {
     var iconClass = {};
     function defineIcon(icon) {
         var path = define.packaged ? "images/"
-            : (this.staticPrefix || "/static") + "/plugins/c9.ide.language/images/";
+            : (this.staticUrl || "/static") + "/plugins/c9.ide.language/images/";
             
         iconClass[icon] = "lang-icon-" + icon;
         

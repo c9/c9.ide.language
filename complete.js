@@ -670,7 +670,7 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             worker.emit("complete", { data: {
                 pos: pos,
-                staticPrefix: c9.staticPrefix,
+                staticPrefix: c9.staticUrl,
                 line: line,
                 forceBox: true,
                 deleteSuffix: true
