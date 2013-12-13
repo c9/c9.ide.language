@@ -422,11 +422,10 @@ define(function(require, exports, module) {
         function renderOutline(ignoreFilter) {
             var tab   = tabs.focussedTab;
             var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
+            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace || !drawn)
                 return;
                 
             originalTab = tab;
-            draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
             isKeyDownAfterDirty = false;
