@@ -203,7 +203,7 @@ define(function(require, exports, module) {
             popup.renderer.$extraHeight = 4
             popup.renderer.setStyle("dark", !theme || theme.isDark);
             
-            completedp.initPopup(popup);
+            completedp.initPopup(popup, c9);
             //@TODO DEPRECATE: onKeyPress
             function clearLastLine(){ popup.onLastLine = false; }
             popup.on("select", clearLastLine);

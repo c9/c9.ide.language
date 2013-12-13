@@ -23,8 +23,7 @@ define(function(require, exports, module) {
     
     var iconClass = {};
     function defineIcon(icon) {
-        var path = define.packaged ? "images/"
-            : (this.staticUrl || "/static") + "/plugins/c9.ide.language/images/";
+        var path = (this.staticUrl || "/static") + "/plugins/c9.ide.language/images/";
             
         iconClass[icon] = "lang-icon-" + icon;
         
@@ -44,7 +43,7 @@ define(function(require, exports, module) {
         var match = this.data[row];
         
         var html = "<span class='img " + (match.icon 
-            ? iconClass[match.icon] || defineIcon(match.icon)
+            ? iconClass[match.icon] || this.$defineIcon(match.icon)
             : "" ) + "'></span>";
         
         if (match.type) {
@@ -87,11 +86,13 @@ define(function(require, exports, module) {
             stringBuilder.push("</div>");
     }
     
-    exports.initPopup = function (popup) {
+    exports.initPopup = function(popup, c9) {
         popup.session.bgTokenizer.popup = popup;
         popup.session.bgTokenizer.$tokenizeRow = tokenizeRow;
         popup.renderer.$textLayer.popup = popup;
         popup.$renderLineInner = renderLineInner;
+        popup.$defineIcon = defineIcon;
         popup.renderer.$textLayer.$renderLine = renderLine;
+        popup.staticUrl = c9.staticUrl;
     };
 });
