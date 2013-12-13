@@ -350,7 +350,7 @@ define(function(require, exports, module) {
             language.getWorker(function(err, _worker) {
                 worker = _worker;
                 timer = setInterval(function() {
-                    if (dirty && !scheduled)
+                    if (dirty)
                         updateOutline(true);
                 }, 1000);
             });
