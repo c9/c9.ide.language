@@ -86,13 +86,13 @@ define(function(require, exports, module) {
             stringBuilder.push("</div>");
     }
     
-    exports.initPopup = function(popup, c9) {
+    exports.initPopup = function(popup, staticUrl) {
         popup.session.bgTokenizer.popup = popup;
         popup.session.bgTokenizer.$tokenizeRow = tokenizeRow;
         popup.renderer.$textLayer.popup = popup;
         popup.$renderLineInner = renderLineInner;
         popup.$defineIcon = defineIcon;
         popup.renderer.$textLayer.$renderLine = renderLine;
-        popup.staticUrl = c9.staticUrl;
+        popup.staticUrl = staticUrl;
     };
 });
