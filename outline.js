@@ -399,7 +399,6 @@ define(function(require, exports, module) {
         }
     
         function onOutlineData(event) {
-            scheduled = false;
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
@@ -413,6 +412,8 @@ define(function(require, exports, module) {
                 return;
             if (tab.path !== data.path)
                 return updateOutline(true);
+                
+            scheduled = false;
             
             fullOutline = event.data.body;
             renderOutline(event.data.showNow);
