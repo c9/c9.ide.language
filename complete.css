@@ -21,14 +21,14 @@
     .font-smoothing(true);
 }
 
-.code_complete_text.has_apf {
+.code_complete_text.ace_autocomplete {
     background: @complete-background;
     border: 1px solid @complete-border-color;
     .box-shadow(~"@{complete-box-shadow}, inset 1px 1px 0 @{complete-inner-border-color}, inset -1px -1px 0 @{complete-inner-border-color}");
     width: 270px;
     line-height: 20px;
 }
-.code_complete_text.dark.has_apf {
+.code_complete_text.dark.ace_autocomplete {
     background: @complete-dark-background;
     border: 1px solid @complete-dark-border-color;
     .box-shadow(~"@{complete-dark-box-shadow}, inset 1px 1px 0 @{complete-dark-inner-border-color}, inset -1px -1px 0 @{complete-dark-inner-border-color}");
