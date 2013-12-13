@@ -170,7 +170,7 @@ define(function(require, exports, module) {
                     + (theme.isDark ? " dark" : "");
 
                 popup.setTheme({
-                    cssClass : "code_complete_text",
+                    cssClass : "code_complete_text has_apf",
                     isDark   : theme.isDark,
                     padding  : 0
                 });
@@ -192,7 +192,7 @@ define(function(require, exports, module) {
             
             popup = new Popup(document.body);
             popup.setTheme({
-                cssClass : "code_complete_text",
+                cssClass : "code_complete_text has_apf",
                 isDark   : !theme || theme.isDark,
                 padding  : 0
             });
@@ -201,7 +201,7 @@ define(function(require, exports, module) {
             popup.renderer.$extraHeight = 4;
             popup.renderer.setStyle("dark", !theme || theme.isDark);
             
-            completedp.initPopup(popup);
+            completedp.initPopup(popup, c9.staticUrl);
             //@TODO DEPRECATE: onKeyPress
             function clearLastLine() { popup.onLastLine = false; }
             popup.on("select", clearLastLine);
@@ -668,7 +668,7 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             worker.emit("complete", { data: {
                 pos: pos,
-                staticPrefix: c9.staticPrefix,
+                staticPrefix: c9.staticUrl,
                 line: line,
                 forceBox: true,
                 deleteSuffix: true

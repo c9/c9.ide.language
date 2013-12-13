@@ -76,9 +76,9 @@ define(function(require, exports, module) {
             load();
         });
         plugin.load("This is not how it is supposed to be");
-        
+
         plugin.on("unload", function() {
-            if (tooltipEl)
+            if (tooltipEl && tooltipEl.parentNode)
                 tooltipEl.parentNode.removeChild(tooltipEl);
         });
     
