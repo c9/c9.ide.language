@@ -35,13 +35,11 @@ define(function(require, exports, module) {
             where        : options.where || "right",
             autohide     : true
         });
-        // var emit   = plugin.getEmitter();
         
         var fullOutline         = [];
         var filteredOutline     = [];
         var ignoreSelectOnce    = false;
         var ignoreFocusOnce     = false;
-        var isDirty             = false;
         var isKeyDownAfterDirty = false;
         var staticPrefix        = options.staticPrefix;
         
@@ -113,7 +111,7 @@ define(function(require, exports, module) {
                 if (cursorTimeout)
                     return;
                 cursorTimeout = setTimeout(function moveSelection() {
-                    if (isDirty)
+                    if (dirty)
                         return setTimeout(moveSelection, 50);
                     try {
                         cursorHandler();
@@ -430,7 +428,6 @@ define(function(require, exports, module) {
             draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
-            isDirty    = ignoreFilter;
             isKeyDownAfterDirty = false;
             
             outline = search.treeSearch(fullOutline, filter, true);
