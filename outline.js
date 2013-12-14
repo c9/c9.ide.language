@@ -45,7 +45,7 @@ define(function(require, exports, module) {
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
-        var focussed, isActive, outline, timer, dirty, scheduled;
+        var focussed, isActive, outline, timer, dirty, scheduled, scheduleWatcher;
         var worker;
         
         var COLLAPSE_AREA = 14;
@@ -359,7 +359,7 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
-            if (now && tabs.focussedTab) {
+            if (now && tabs.focussedTab && !scheduled) {
                 if (!worker) {
                     return language.getWorker(function(err, _worker) {
                         worker = _worker;
@@ -370,7 +370,13 @@ define(function(require, exports, module) {
                     ignoreFilter: false,
                     path: tabs.focussedTab.path
                 }});
+                
+                // Don't schedule new job until data received or timeout
                 scheduled = true;
+                clearTimeout(scheduleWatcher);
+                scheduleWatcher = setTimeout(function() {
+                    scheduled = false;
+                }, 10000);
             }
             dirty = true;
         }
@@ -414,6 +420,7 @@ define(function(require, exports, module) {
                 return updateOutline(true);
                 
             scheduled = dirty = false;
+            clearTimeout(scheduleWatcher);
             
             fullOutline = event.data.body;
             renderOutline(event.data.showNow);
