@@ -19,7 +19,6 @@ define(function(require, exports, module) {
         var ui        = imports.ui;
         var aceHandle = imports.ace;
         var tree      = require("treehugger/tree");
-        var lang      = require("ace/lib/lang");
         var assert    = require("plugins/c9.util/assert");
         
         var plugin = new Plugin("Ajax.org", main.consumes);
@@ -28,7 +27,7 @@ define(function(require, exports, module) {
         var isTopdown, tooltipEl, allowImmediateEmit, lastPos;
         var cursormoveTimeout, onMouseDownTimeout;
         
-        function load(){
+        function load() {
             tooltipEl = dom.createElement("div");
             tooltipEl.className = "language_tooltip dark";
             
@@ -61,7 +60,7 @@ define(function(require, exports, module) {
                 });
             });
             
-            aceHandle.on("themeChange", function(e){
+            aceHandle.on("themeChange", function(e) {
                 var theme = e.theme;
                 if (!theme) return;
                 
@@ -73,12 +72,12 @@ define(function(require, exports, module) {
         // @todo @lennartcl. This plugin is very messy. I added the things below
         // but I see that the plugin is never returned. Nor is its interface
         // set. Could you fix?
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
         plugin.load("This is not how it is supposed to be");
-        
-        plugin.on("unload", function(){
+
+        plugin.on("unload", function() {
             if (tooltipEl && tooltipEl.parentNode)
                 tooltipEl.parentNode.removeChild(tooltipEl);
         });
@@ -146,7 +145,6 @@ define(function(require, exports, module) {
             //setTimeout(function() {
                 var position = ace.renderer.textToScreenCoordinates(row, column);
                 var cursorConfig = ace.renderer.$cursorLayer.config;
-                var labelWidth = dom.getInnerWidth(tooltipEl);
                 labelHeight = dom.getInnerHeight(tooltipEl);
                 isTopdown = true;
                 if (position.pageY < labelHeight)

@@ -74,7 +74,7 @@ module.exports = {
             name: "quickfix",
             hint: "quickfix",
             bindKey: {mac: "Ctrl-Shift-Q|Ctrl-Alt-Q", win: "Ctrl-Shift-Q|Alt-Shift-Q"},
-            isAvailable : function(editor){
+            isAvailable : function(editor) {
                 return apf.activeElement.localName == "codeeditor";
             },
             exec: function(editor) {
@@ -96,7 +96,7 @@ module.exports = {
     init: function(amlNode) {
     },
     
-    initEditor : function(editor){
+    initEditor : function(editor) {
         var _self = this;
                
         editor.on("guttermousedown", editor.$markerListener = function(e) {
@@ -121,22 +121,22 @@ module.exports = {
         });
     },
         
-    getAnnos: function(row){
+    getAnnos: function(row) {
         var editor = editors.currentEditor.amlEditor.$editor;
         var res = [];
         
-        editor.getSession().languageAnnos.forEach(function(anno, idx){
-            if (anno.row == row){
+        editor.getSession().languageAnnos.forEach(function(anno, idx) {
+            if (anno.row == row) {
                 res.push(anno);
                 
                 /* Select the annotation in the editor */
-                anno.select = function(){
-                    if (!(anno.pos.sl && anno.pos.sc && anno.pos.el && anno.pos.ec)){
+                anno.select = function() {
+                    if (!(anno.pos.sl && anno.pos.sc && anno.pos.el && anno.pos.ec)) {
                         return;
                     }
                     var startPos = { row: anno.pos.sl, column: anno.pos.sc };
                     var endPos = { row: anno.pos.el, column: anno.pos.ec };
-                    if (startPos.row < endPos.row || startPos.column < endPos.column){
+                    if (startPos.row < endPos.row || startPos.column < endPos.column) {
                         editor.getSelection().setSelectionRange(
                             {start: startPos, end: endPos});
                     }
@@ -145,14 +145,14 @@ module.exports = {
                 /*
                  * Returns the screen coordinates of the start of the annotation
                  */
-                anno.getScreenCoordinates = function(){
+                anno.getScreenCoordinates = function() {
                     return editor.renderer.textToScreenCoordinates(anno.pos.sl,
                                                                    anno.pos.sc);  
                 };
             }
         });
         
-        res.sort(function(a,b){ return a.pos.sc - b.pos.sc; });
+        res.sort(function(a,b) { return a.pos.sc - b.pos.sc; });
         
         return res;
     },
@@ -165,14 +165,14 @@ module.exports = {
         // Get the annotation on this line that is containing or left of the 
         // position (row,column)
         var annos = _self.getAnnos(row);
-        if (!annos.length){
+        if (!annos.length) {
             return;
         }
-        for (var i = 0; i < annos.length - 1; i++){
-            if (annos[i+1].pos.sc > column){ break; }
+        for (var i = 0; i < annos.length - 1; i++) {
+            if (annos[i+1].pos.sc > column) { break; }
         }
         var anno = annos[i];
-        if (!anno.resolutions.length){
+        if (!anno.resolutions.length) {
             // TODO If some other annotation on this line has resolutions, 
             // quickfix that one instead
             return;
@@ -246,7 +246,7 @@ module.exports = {
 
     closeQuickfixBox : function(event) {
         var qfBoxTime = new Date().getTime() - quickfix.popupTime;
-        if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME){
+        if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME) {
             return;
         }
         
@@ -278,7 +278,7 @@ module.exports = {
         var cursorConfig = code.amlEditor.$editor.renderer.$cursorLayer.config;
 
         // For each quickfix, create a list entry
-        quickFixes.forEach(function(qfix, qfidx){
+        quickFixes.forEach(function(qfix, qfidx) {
 
             var annoEl = dom.createElement("div");
             annoEl.className = qfidx === _self.selectedIdx ? CLASS_SELECTED : CLASS_UNSELECTED;
@@ -353,14 +353,14 @@ module.exports = {
     destroy : function() {
     },
     
-    applyQuickfix : function(qfix){
+    applyQuickfix : function(qfix) {
         var amlEditor = editors.currentEditor.amlEditor;
         var doc = amlEditor.getSession().getDocument();
 
         doc.applyDeltas(qfix.deltas);
         amlEditor.focus();
     
-        if (qfix.cursorTarget){
+        if (qfix.cursorTarget) {
             var cursorTarget = qfix.cursorTarget;
             var selection = amlEditor.$editor.getSelection();
             selection.clearSelection();

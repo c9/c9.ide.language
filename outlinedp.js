@@ -12,7 +12,7 @@ define(function(require, exports, module) {
         // this.rowHeightInner = 18;
         
         Object.defineProperty(this, "loaded", {
-            get : function(){ return this.visibleItems.length; }
+            get : function() { return this.visibleItems.length; }
         });
     };
     oop.inherits(DataProvider, BaseClass);
@@ -20,11 +20,11 @@ define(function(require, exports, module) {
     (function() {
         this.$sortNodes = false;
         
-        this.getEmptyMessage = function(){
+        this.getEmptyMessage = function() {
             return "No outline available for the active view";
         };
         
-        this.setRoot = function(root){
+        this.setRoot = function(root) {
             if (Array.isArray(root))
                 root = {items: root};
             this.root = root || {};
@@ -47,7 +47,7 @@ define(function(require, exports, module) {
             return node.className || "";
         };
         
-        this.getCaptionHTML = function(node){
+        this.getCaptionHTML = function(node) {
             var value = node.name;
             
             if (this.filter) {

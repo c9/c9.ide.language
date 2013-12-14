@@ -35,24 +35,24 @@ define(function(require, exports, module) {
             where        : options.where || "right",
             autohide     : true
         });
-        // var emit   = plugin.getEmitter();
         
         var fullOutline         = [];
         var filteredOutline     = [];
         var ignoreSelectOnce    = false;
-        var isDirty             = false;
+        var ignoreFocusOnce     = false;
         var isKeyDownAfterDirty = false;
         var staticPrefix        = options.staticPrefix;
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
-        var focussed, isActive, outline, timer, dirty;
+        var focussed, isActive, outline, timer, dirty, scheduled, scheduleWatcher;
+        var isUnordered;
         var worker;
         
         var COLLAPSE_AREA = 14;
         
         var loaded = false;
-        function load(){
+        function load() {
             if (loaded) return false;
             loaded = true;
             
@@ -60,12 +60,15 @@ define(function(require, exports, module) {
                 name    : "outline",
                 hint    : "search for a definition and jump to it",
                 bindKey : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
-                exec    : function(){
-                    if (isActive){
-                        if (focussed)
+                exec    : function() {
+                    if (isActive) {
+                        if (focussed) {
                             panels.deactivate("outline");
-                        else
+                            tabs.focussedTab && tabs.focussedTab.aml.focus();
+                        }
+                        else {
                             textbox.focus();
+                        }
                     }
                     else {
                         panels.activate("outline");
@@ -84,7 +87,7 @@ define(function(require, exports, module) {
             });
             
             // Hook events to get the focussed tab
-            tabs.on("open", function(e){
+            tabs.on("open", function(e) {
                 var tab = e.tab;
                 if (!isActive 
                   || !tab.path && !tab.document.meta.newfile 
@@ -99,15 +102,31 @@ define(function(require, exports, module) {
             
             tabs.on("focusSync", onTabFocus);
             
-            tabs.on("tabDestroy", function(e){
+            tabs.on("tabDestroy", function(e) {
                 if (isActive && e.last)
                     clear();
             });
             
-            panels.on("showPanelOutline", function(e){
+            var cursorTimeout;
+            language.on("cursormove", function() {
+                if (cursorTimeout)
+                    return;
+                cursorTimeout = setTimeout(function moveSelection() {
+                    if (dirty)
+                        return setTimeout(moveSelection, 50);
+                    try {
+                        cursorHandler();
+                    }
+                    finally {
+                        cursorTimeout = null;
+                    }
+                }, 100);
+            });
+            
+            panels.on("showPanelOutline", function(e) {
                 plugin.autohide = !e.button;
             }, plugin);
-            panels.on("hidePanelOutline", function(e){
+            panels.on("hidePanelOutline", function(e) {
                 plugin.autohide = true;
             }, plugin);
             
@@ -116,11 +135,20 @@ define(function(require, exports, module) {
                 updateOutline();
                 onTabFocus({ tab: tabs.focussedTab });
             }
-            // Make sure we get an outline from slow-loading language handlers
-            setTimeout(updateOutline, 2000);
-            setTimeout(updateOutline, 5000);
-            setTimeout(updateOutline, 10000);
-            setTimeout(updateOutline, 15000);
+            updateInitialOutline();
+        }
+        
+        /**
+         * Get an initial outline, taking into account that there may
+         * be some time required before all (unknown number of) outliner
+         * language plugins are loaded.
+         */
+        function updateInitialOutline() {
+            setTimeout(updateOutline.bind(null, true), 4000);
+            setTimeout(updateOutline.bind(null, true), 6000);
+            setTimeout(updateOutline.bind(null, true), 8000);
+            setTimeout(updateOutline.bind(null, true), 10000);
+            setTimeout(updateOutline.bind(null, true), 20000);
         }
         
         function onTabFocus(event) {
@@ -135,9 +163,6 @@ define(function(require, exports, module) {
                 session = originalTab.document.getSession().session;
                 session && session.removeListener("changeMode", changeHandler);
                 originalTab.document.undoManager.off("change", changeHandler);
-                if (originalTab.editor.ace)
-                    originalTab.editor.ace.selection
-                        .removeListener("changeSelection", cursorHandler);
             }
             
             if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
@@ -152,7 +177,6 @@ define(function(require, exports, module) {
             session = tab.document.getSession().session;
             session && session.on("changeMode", changeHandler);
             tab.document.undoManager.on("change", changeHandler);
-            tab.editor.ace.selection.on("changeSelection", cursorHandler);
             
             originalTab = tab;
             
@@ -160,19 +184,18 @@ define(function(require, exports, module) {
                 updateOutline(true);
         }
         
-        function changeHandler(){
+        function changeHandler() {
             if (isActive && originalTab == tabs.focussedTab)
                 updateOutline();
         }
         
-        function cursorHandler(e){
+        function cursorHandler(ignoreFocus) {
             if (isActive && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
-                if (!outline || !ace.selection.isEmpty())
+                if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
                     return;
                     
-                var selected = 
-                    findCursorInOutline(outline, ace.getCursorPosition());
+                var selected = findCursorInOutline(outline, ace.getCursorPosition());
             
                 if (tdOutline.$selectedNode == selected)
                     return;
@@ -187,7 +210,7 @@ define(function(require, exports, module) {
             }
         }
         
-        function offlineHandler(e){
+        function offlineHandler(e) {
             // Online
             if (e.state & c9.STORAGE) {
                 textbox.enable();
@@ -203,7 +226,7 @@ define(function(require, exports, module) {
         }
         
         var drawn = false;
-        function draw(options){
+        function draw(options) {
             if (drawn) return;
             drawn = true;
             
@@ -231,7 +254,7 @@ define(function(require, exports, module) {
             tdOutline.staticPrefix = staticPrefix;
 
             // @TODO this is probably not sufficient
-            window.addEventListener("resize", function(){ tree.resize() });
+            window.addEventListener("resize", function() { tree.resize() });
             
             tree.textInput = textbox.ace.textInput;
             
@@ -239,12 +262,12 @@ define(function(require, exports, module) {
             // tree.renderer.setScrollMargin(0, 10, 0, 0);
             
             // @Harutyun; is this the right way to do it?
-            function available(){ return tree.isFocused() }
+            function available() { return tree.isFocused() }
             
             textbox.ace.commands.addCommands([
                 {
                     bindKey : "ESC",
-                    exec    : function(){
+                    exec    : function() {
                         if (!originalTab.loaded) 
                             return clear();
                         
@@ -261,13 +284,13 @@ define(function(require, exports, module) {
                     }
                 }, {
                     bindKey : "Up",
-                    exec    : function(){ tree.execCommand("goUp"); }
+                    exec    : function() { tree.execCommand("goUp"); }
                 }, {
                     bindKey : "Down",
-                    exec    : function(){ tree.execCommand("goDown"); }
+                    exec    : function() { tree.execCommand("goDown"); }
                 }, {
                     bindKey : "Enter",
-                    exec    : function(){
+                    exec    : function() {
                         onSelect();
                         
                         textbox.setValue("");
@@ -280,11 +303,11 @@ define(function(require, exports, module) {
                 renderOutline();
             });
             
-            tree.on("changeSelection", function(){ 
+            tree.on("changeSelection", function() { 
                 onSelect();
             });
             
-            function onAllBlur(e){
+            function onAllBlur(e) {
                 if (!winOutline.visible || !plugin.autohide)
                     return;
                 
@@ -294,12 +317,12 @@ define(function(require, exports, module) {
                 }
                 
                 // TODO add better support for overlay panels
-                setTimeout(function(){ plugin.hide() }, 10);
+                setTimeout(function() { plugin.hide() }, 10);
             }
     
             apf.addEventListener("movefocus", onAllBlur);
             
-            function onFocus(){ 
+            function onFocus() { 
                 focussed = true;
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
@@ -311,7 +334,7 @@ define(function(require, exports, module) {
                 originalLine   = cursor.row + 1;
                 originalColumn = cursor.column;
             }
-            function onBlur(){ 
+            function onBlur() { 
                 focussed = false;
                 ui.setStyleClass(treeParent.$int, "", ["focus"]); 
             }
@@ -325,11 +348,9 @@ define(function(require, exports, module) {
             
             language.getWorker(function(err, _worker) {
                 worker = _worker;
-                timer = setInterval(function(){
-                    if (dirty) {
-                        worker.emit("outline", { data : { ignoreFilter: false } });
-                        dirty = false;
-                    }
+                timer = setInterval(function() {
+                    if (dirty)
+                        updateOutline(true);
                 }, 1000);
             });
         }
@@ -337,27 +358,60 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
+            if (now && tabs.focussedTab && !scheduled) {
+                if (!worker) {
+                    return language.getWorker(function(err, _worker) {
+                        worker = _worker;
+                        updateOutline(true);
+                    });
+                }
+                worker.emit("outline", { data: {
+                    ignoreFilter: false,
+                    path: tabs.focussedTab.path
+                }});
+                
+                // Don't schedule new job until data received or timeout
+                scheduled = true;
+                clearTimeout(scheduleWatcher);
+                scheduleWatcher = setTimeout(function() {
+                    scheduled = false;
+                }, 10000);
+            }
             dirty = true;
-            if (now)
-                worker && worker.emit("outline", { data : { ignoreFilter: false } });
         }
     
         function findCursorInOutline(json, cursor) {
-            for (var i = 0; i < json.length; i++) {
-                var elem = json[i];
-                if(cursor.row < elem.pos.sl || cursor.row > elem.pos.el)
-                    continue;
-                var inChildren = findCursorInOutline(elem.items, cursor);
-                return inChildren ? inChildren : elem;
+            return isUnordered && findPrecise(json, cursor) || findApprox(json, cursor);
+            
+            function findPrecise(json, cursor) {
+                for (var i = 0; i < json.length; i++) {
+                    var elem = json[i];
+                    if (cursor.row < elem.pos.sl || cursor.row > (elem.pos.el || elem.pos.sl))
+                        continue;
+                    var childResult = elem.items && findPrecise(elem.items, cursor);
+                    return childResult || elem;
+                }
+                return null;
             }
-            return null;
-        }
+            function findApprox(json, cursor) {
+                var result;
+                for (var i = 0; i < json.length; i++) {
+                    var elem = json[i];
+                    var childResult = elem.items && findApprox(elem.items, cursor);
+                    if (childResult)
+                        result = childResult;
+                    else if (elem.pos.sl <= cursor.row)
+                        result = elem;
+                }
+                return result;
+            }
+        }   
     
         function onOutlineData(event) {
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
-                console.log("Oh noes! " + data.error);
+                console.error("Oh noes! " + data.error);
                 return;
             }
             
@@ -365,22 +419,26 @@ define(function(require, exports, module) {
             var editor = tab && tab.editor;
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
+            if (tab.path !== data.path)
+                return updateOutline(true);
+                
+            scheduled = dirty = false;
+            clearTimeout(scheduleWatcher);
             
             fullOutline = event.data.body;
+            isUnordered = event.data.isUnordered;
             renderOutline(event.data.showNow);
         }
         
         function renderOutline(ignoreFilter) {
             var tab   = tabs.focussedTab;
             var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
+            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace || !drawn)
                 return;
                 
             originalTab = tab;
-            draw();
             
             var filter = ignoreFilter ? "" : textbox.getValue();
-            isDirty    = ignoreFilter;
             isKeyDownAfterDirty = false;
             
             outline = search.treeSearch(fullOutline, filter, true);
@@ -402,6 +460,8 @@ define(function(require, exports, module) {
             }
             
             tree.resize();
+            cursorHandler(ignoreFocusOnce);
+            ignoreFocusOnce = false;
             
             return selected;
         }
@@ -420,15 +480,24 @@ define(function(require, exports, module) {
             if (!originalTab.loaded) 
                 return clear();
             
-            var pos = node.displayPos || node.pos;
             var ace = originalTab.editor.ace; 
-            pos.sc = pos.sc || jumptodef.getFirstColumn(ace, pos.sl, node.name);
-            var range = new Range(pos.sl, pos.sc || 0, pos.el || pos.sl, pos.ec || pos.sc);
-            scrollToDefinition(ace, pos.sl, pos.elx || pos.el);
+            var pos = jumptodef.addUnknownColumn(ace, node.pos, node.name);
+            var displayPos = jumptodef.addUnknownColumn(ace, node.displayPos, node.name);
+            scrollToDefinition(ace, pos.sl, pos.el);
+            var range = displayPos
+                ? new Range(
+                      displayPos.sl,
+                      displayPos.sc,
+                      displayPos.el || displayPos.sl,
+                      displayPos.el > displayPos.sl
+                        ? displayPos.ec || 0
+                        : displayPos.ec || displayPos.sc
+                  )
+                : new Range(pos.sl, pos.sc, pos.sl, pos.sc);
             ace.selection.setSelectionRange(range);
         }
         
-        function clear(){
+        function clear() {
             if (textbox) {
                 textbox.setValue("");
                 tdOutline.setRoot({});
@@ -449,13 +518,13 @@ define(function(require, exports, module) {
         
         /***** Lifecycle *****/
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("draw", function(e){
+        plugin.on("draw", function(e) {
             draw(e);
         });
-        plugin.on("show", function(e){
+        plugin.on("show", function(e) {
             isActive = true;
             
             textbox.focus();
@@ -463,18 +532,20 @@ define(function(require, exports, module) {
             tree.resize();
             
             updateOutline(true);
+            cursorHandler(true);
+            ignoreFocusOnce = true;
         });
-        plugin.on("hide", function(e){
+        plugin.on("hide", function(e) {
             // tree.clearSelection();
             isActive = false;
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             loaded = false;
             drawn  = false;
             

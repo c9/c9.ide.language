@@ -403,7 +403,8 @@ module.exports = {
      *          name: "fooMethod",
      *          pos: this.getPos(),
      *          displayPos: { sl: 15, sc: 20 },
-     *          items: [ ...items nested under this method... ]
+     *          items: [ ...items nested under this method... ],
+     *          isUnordered: true
      *     }
      * 
      * Should be overridden by inheritors that implement an outline.
@@ -415,18 +416,20 @@ module.exports = {
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} callback.result.icon
      *                                                 The icon to display for the first outline item
      * @param {String} callback.result.name            The name to display for the first outline item
-     * @param {Object} callback.result.pos             The item's range, e.g. from the starting line to the ending line of a method
+     * @param {Object} callback.result.pos             The item's range, e.g. the full visible range of a method
      * @param {Number} callback.result.pos.sl          The item's starting row
      * @param {Number} [callback.result.pos.el]        The item's ending row
      * @param {Number} [callback.result.pos.sc]        The item's starting column
      * @param {Number} [callback.result.pos.ec]        The item's ending column
-     * @param {Object} [callback.result.displayPos]    The item's display position, e.g. the starting line of a method
+     * @param {Object} [callback.result.displayPos]    The item's position of the text to select when it's picked from the outline
      * @param {Number} callback.result.displayPos.sl   The item's starting row
      * @param {Number} [callback.result.displayPos.el] The item's ending row
      * @param {Number} [callback.result.displayPos.sc] The item's starting column
      * @param {Number} [callback.result.displayPos.ec] The item's ending column
      * @param {Object[]} callback.result.items         Any items nested under the curent item.
-     * @param {Boolean} [callback.result.isGeneric]     Indicates that this is a generic, language-independent outline
+     * @param {Boolean} [callback.result.isGeneric]    Indicates that this is a generic, language-independent outline
+     * @param {Boolean} [callback.result.isUnordered]  Indicates the outline is not ordered by appearance of the items,
+     *                                                 but that they're e.g. grouped as methods, properties, etc.
      */
     outline: function(doc, fullAst, callback) {
         callback();

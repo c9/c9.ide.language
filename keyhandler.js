@@ -16,7 +16,6 @@ define(function(require, exports, module) {
         var Plugin = imports.Plugin;
         var aceHandle = imports.ace;
         var language = imports.language;
-        var marker = imports["language.marker"];
         var complete = imports["language.complete"];
         var tooltip = imports["language.tooltip"];
         var complete_util = require("./complete_util");
@@ -34,10 +33,10 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            aceHandle.on("create", function(e){
+            aceHandle.on("create", function(e) {
                 var editor = e.editor;
                 
-                editor.on("draw", function(){
+                editor.on("draw", function() {
                     var kb = editor.ace.keyBinding;
                     var defaultHandler          = kb.onTextInput.bind(kb);
                     var defaultCommandHandler   = kb.onCommandKey.bind(kb);
@@ -81,7 +80,7 @@ define(function(require, exports, module) {
             return false;
         }
         
-        function typeAlongComplete(e){
+        function typeAlongComplete(e) {
             if (e.metaKey || e.altKey || e.ctrlKey)
                 return false;
             if (e.keyCode === 8) { // Backspace
@@ -141,16 +140,16 @@ define(function(require, exports, module) {
         
         /***** Lifecycle *****/
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             loaded = false;
         });
         

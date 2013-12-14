@@ -2,7 +2,7 @@ define(function(require, exports, module) {
     var guidToShortString = exports.guidToShortString = function(guid) {
         var result = guid && guid.replace(/^[^:]+:(([^\/]+)\/)*?([^\/]*?)(\[\d+[^\]]*\])?(\/prototype)?$|.*/, "$3");
         return result && result !== "Object" ? result : "";
-    }
+    };
 
     var guidToLongString = exports.guidToLongString = function(guid, name) {
         if (guid.substr(0, 6) === "local:")
@@ -14,7 +14,7 @@ define(function(require, exports, module) {
         if (name !== "prototype")
             result = result.replace(/\.prototype$/, "");
         return result;
-    }
+    };
 
     function addStylesheetRule(cssText) {
         var s = document.styleSheets[document.styleSheets.length - 1];

@@ -22,11 +22,9 @@ define(function(require, exports, module) {
         var tabs       = imports.tabManager;
         var commands   = imports.commands;
         var language   = imports.language;
-        var browsers   = imports.browsersupport;
         var tooltip    = imports["language.tooltip"];
         
         var lang           = require("ace/lib/lang");
-        var dom            = require("ace/lib/dom");
         var SyntaxDetector = require("./syntax_detector");
         var completeUtil   = require("plugins/c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
@@ -47,8 +45,8 @@ define(function(require, exports, module) {
         
         var oldCommandKey, oldOnTextInput, isDocShown;
         var txtCompleterDoc; // ui elements
-        var matches, completionElement;
-        var docElement, cursorConfig, lineHeight, lastAce, forceBox, worker; 
+        var matches;
+        var docElement, lastAce, worker; 
         var eventMatches, popup;
         var lastUpDownEvent;
         
@@ -65,7 +63,7 @@ define(function(require, exports, module) {
         var MENU_WIDTH = 330;
         var MENU_SHOWN_ITEMS = 8;
         var EXTRA_LINE_HEIGHT = 4;
-        var REPEAT_IGNORE_RATE = 200
+        var REPEAT_IGNORE_RATE = 200;
         
         var deferredInvoker = lang.deferredCall(function() {
             isInvokeScheduled = false;
@@ -107,11 +105,11 @@ define(function(require, exports, module) {
         });
         
         var loaded = false;
-        function load(){
+        function load() {
             if (loaded) return false;
             loaded = true;
             
-            language.on("initWorker", function(e){
+            language.on("initWorker", function(e) {
                 worker = e.worker;
                 
                 worker.on("setIdentifierRegex", function(event) {
@@ -125,7 +123,7 @@ define(function(require, exports, module) {
                     if (language.disabled || plugin.disabled) return;
                     
                     var tab = tabs.focussedTab;
-                    if (!tab || !tab.path === event.data.path)
+                    if (!tab || tab.path !== event.data.path)
                         return;
                     
                     assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
@@ -145,7 +143,7 @@ define(function(require, exports, module) {
                     mac: "Ctrl-Space|Alt-Space", 
                     win: "Ctrl-Space|Alt-Space"
                 },
-                isAvailable : function(editor){
+                isAvailable : function(editor) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec : invoke
@@ -158,13 +156,13 @@ define(function(require, exports, module) {
                     mac: "Ctrl-Shift-Space|Alt-Shift-Space", 
                     win: "Ctrl-Shift-Space|Alt-Shift-Space"
                 },
-                isAvailable : function(editor){
+                isAvailable : function(editor) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec : invoke.bind(null, false, true)
             }, plugin);
             
-            aceHandle.on("themeChange", function(e){
+            aceHandle.on("themeChange", function(e) {
                 theme = e.theme;
                 if (!theme || !drawn) return;
                 
@@ -181,7 +179,7 @@ define(function(require, exports, module) {
         }
         
         var drawn;
-        function draw(){
+        function draw() {
             if (drawn) return;
             drawn = true;
         
@@ -200,12 +198,12 @@ define(function(require, exports, module) {
             });
             popup.$imageSize = 8 + 5 + 7 + 1;
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
-            popup.renderer.$extraHeight = 4
+            popup.renderer.$extraHeight = 4;
             popup.renderer.setStyle("dark", !theme || theme.isDark);
             
             completedp.initPopup(popup, c9.staticUrl);
             //@TODO DEPRECATE: onKeyPress
-            function clearLastLine(){ popup.onLastLine = false; }
+            function clearLastLine() { popup.onLastLine = false; }
             popup.on("select", clearLastLine);
             popup.on("change", clearLastLine);
             
@@ -221,8 +219,8 @@ define(function(require, exports, module) {
                     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
             
-            popup.on("select", function(){ updateDoc(true) });
-            popup.on("changeHoverMarker", function(){ updateDoc(true) });
+            popup.on("select", function() { updateDoc(true) });
+            popup.on("changeHoverMarker", function() { updateDoc(true) });
             
             popup.on("click", function(e) {
                 onKeyPress(e, 0, 13);
@@ -464,7 +462,7 @@ define(function(require, exports, module) {
                 // Experiment: disable generic matches when possible
                 matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
             }
-            popup.calcPrefix = function(regex){
+            popup.calcPrefix = function(regex) {
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             popup.setData(matches);
@@ -771,16 +769,16 @@ define(function(require, exports, module) {
         
         /***** Lifecycle *****/
         
-        plugin.on("load", function(){
+        plugin.on("load", function() {
             load();
         });
-        plugin.on("enable", function(){
+        plugin.on("enable", function() {
             
         });
-        plugin.on("disable", function(){
+        plugin.on("disable", function() {
             
         });
-        plugin.on("unload", function(){
+        plugin.on("unload", function() {
             loaded = false;
             drawn = false;
         });
