@@ -413,7 +413,7 @@ define(function(require, exports, module) {
             if (tab.path !== data.path)
                 return updateOutline(true);
                 
-            scheduled = false;
+            scheduled = dirty = false;
             
             fullOutline = event.data.body;
             renderOutline(event.data.showNow);
