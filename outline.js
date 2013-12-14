@@ -46,6 +46,7 @@ define(function(require, exports, module) {
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
         var focussed, isActive, outline, timer, dirty, scheduled, scheduleWatcher;
+        var isUnordered;
         var worker;
         
         var COLLAPSE_AREA = 14;
@@ -194,9 +195,7 @@ define(function(require, exports, module) {
                 if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
                     return;
                     
-                var selected = 
-                    findCursorInOutline(outline, ace.getCursorPosition())
-                    || findCursorInOutlineImprecise(outline, ace.getCursorPosition());
+                var selected = findCursorInOutline(outline, ace.getCursorPosition());
             
                 if (tdOutline.$selectedNode == selected)
                     return;
@@ -382,27 +381,31 @@ define(function(require, exports, module) {
         }
     
         function findCursorInOutline(json, cursor) {
-            for (var i = 0; i < json.length; i++) {
-                var elem = json[i];
-                if (cursor.row < elem.pos.sl || cursor.row > (elem.pos.el || elem.pos.sl))
-                    continue;
-                var childResult = findCursorInOutline(elem.items, cursor);
-                return childResult || elem;
+            return isUnordered && findPrecise(json, cursor) || findApprox(json, cursor);
+            
+            function findPrecise(json, cursor) {
+                for (var i = 0; i < json.length; i++) {
+                    var elem = json[i];
+                    if (cursor.row < elem.pos.sl || cursor.row > (elem.pos.el || elem.pos.sl))
+                        continue;
+                    var childResult = elem.items && findPrecise(elem.items, cursor);
+                    return childResult || elem;
+                }
+                return null;
             }
-            return null;
-        }
-    
-        function findCursorInOutlineImprecise(json, cursor) {
-            var result;
-            for (var i = 0; i < json.length; i++) {
-                var elem = json[i];
-                if ((elem.pos.el || elem.pos.sl) > cursor.row)
-                    continue;
-                var childResult = findCursorInOutline(elem.items, cursor);
-                result = childResult || elem;
+            function findApprox(json, cursor) {
+                var result;
+                for (var i = 0; i < json.length; i++) {
+                    var elem = json[i];
+                    var childResult = elem.items && findApprox(elem.items, cursor);
+                    if (childResult)
+                        result = childResult;
+                    else if (elem.pos.sl <= cursor.row)
+                        result = elem;
+                }
+                return result;
             }
-            return result;
-        }
+        }   
     
         function onOutlineData(event) {
             var data = event.data;
@@ -423,6 +426,7 @@ define(function(require, exports, module) {
             clearTimeout(scheduleWatcher);
             
             fullOutline = event.data.body;
+            isUnordered = event.data.isUnordered;
             renderOutline(event.data.showNow);
         }
         

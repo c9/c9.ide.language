@@ -414,12 +414,13 @@ function asyncParForEach(array, fn, callback) {
 
     this.outline = function(event) {
         var _self = this;
-        this.getOutline(function(result) {
+        this.getOutline(function(result, isUnordered) {
             _self.sender.emit(
                 "outline",
                 {
                     body: result && (result.body || result.items) || [],
-                    path: _self.$path
+                    path: _self.$path,
+                    isUnordered: isUnordered
                 }
             );
         });
@@ -428,20 +429,21 @@ function asyncParForEach(array, fn, callback) {
     this.getOutline = function(callback) {
         var _self = this;
         var result;
+        var isUnordered = false;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler)) {
                     handler.outline(_self.doc, ast, function(outline) {
                         if (outline && (!result || result.isGeneric))
                             result = outline;
-                        
+                        isUnordered = isUnordered || outline && outline.isUnordered;
                         next();
                     });
                 }
                 else
                     next();
             }, function() {
-                callback(result);
+                callback(result, isUnordered);
             });
         });
     };

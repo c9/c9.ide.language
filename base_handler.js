@@ -403,7 +403,8 @@ module.exports = {
      *          name: "fooMethod",
      *          pos: this.getPos(),
      *          displayPos: { sl: 15, sc: 20 },
-     *          items: [ ...items nested under this method... ]
+     *          items: [ ...items nested under this method... ],
+     *          isUnordered: true
      *     }
      * 
      * Should be overridden by inheritors that implement an outline.
@@ -426,7 +427,9 @@ module.exports = {
      * @param {Number} [callback.result.displayPos.sc] The item's starting column
      * @param {Number} [callback.result.displayPos.ec] The item's ending column
      * @param {Object[]} callback.result.items         Any items nested under the curent item.
-     * @param {Boolean} [callback.result.isGeneric]     Indicates that this is a generic, language-independent outline
+     * @param {Boolean} [callback.result.isGeneric]    Indicates that this is a generic, language-independent outline
+     * @param {Boolean} [callback.result.isUnordered]  Indicates the outline is not ordered by appearance of the items,
+     *                                                 but that they're e.g. grouped as methods, properties, etc.
      */
     outline: function(doc, fullAst, callback) {
         callback();
