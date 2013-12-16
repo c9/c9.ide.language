@@ -204,19 +204,35 @@ function getCodeParts(doc, originalSyntax) {
 }
 
 function posToRegion(region, pos) {
+    if (pos.row)
+        return {
+            row: pos.row - region.sl,
+            column: pos.column,
+            path: pos.path
+        };
     return {
-        row: pos.row - region.sl,
-        column: pos.column,
+        sl: pos.sl - region.sl,
+        column: pos.sc,
+        el: pos.el - region.sl,
+        ec: pos.ec,
         path: pos.path
-    };
+    }
 }
 
 function posFromRegion(region, pos) {
+    if (pos.row)
+        return {
+            row: pos.row + region.sl,
+            column: pos.column,
+            path: pos.path
+        };
     return {
-        row: pos.row + region.sl,
-        column: pos.column,
+        sl: pos.sl + region.sl,
+        sc: pos.sc,
+        el: pos.el + region.sl,
+        ec: pos.ec,
         path: pos.path
-    };
+    }
 }
 
 exports.getContextSyntax = getContextSyntax;
