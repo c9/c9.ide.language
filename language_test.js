@@ -37,6 +37,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
         },
         "plugins/c9.ide.editors/editor",
         "plugins/c9.ide.editors/tabmanager",
+        "plugins/c9.ide.ui/focus",
         "plugins/c9.ide.editors/pane",
         "plugins/c9.ide.editors/tab",
         {
