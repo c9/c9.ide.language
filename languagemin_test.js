@@ -58,7 +58,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai)
         // Mock
         {
             consumes: [],
-            provides : ["log", "auth.bootstrap", "clipboard", "fs", "Tab"],
+            provides : ["log", "auth.bootstrap", "info", "clipboard", "fs", "Tab"],
             setup    : function(options, imports, register) {
                 register(null, {
                     log: {},
