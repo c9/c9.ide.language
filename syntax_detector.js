@@ -204,7 +204,7 @@ function getCodeParts(doc, originalSyntax) {
 }
 
 function posToRegion(region, pos) {
-    if (pos.row)
+    if ("row" in pos)
         return {
             row: pos.row - region.sl,
             column: pos.column,
@@ -216,11 +216,11 @@ function posToRegion(region, pos) {
         el: pos.el - region.sl,
         ec: pos.ec,
         path: pos.path
-    }
+    };
 }
 
 function posFromRegion(region, pos) {
-    if (pos.row)
+    if ("row" in pos)
         return {
             row: pos.row + region.sl,
             column: pos.column,
@@ -232,7 +232,7 @@ function posFromRegion(region, pos) {
         el: pos.el + region.sl,
         ec: pos.ec,
         path: pos.path
-    }
+    };
 }
 
 exports.getContextSyntax = getContextSyntax;
