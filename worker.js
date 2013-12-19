@@ -20,7 +20,7 @@ var linereport = require("plugins/c9.ide.language.generic.linereport/linereport_
 var syntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
 var base_handler = require("./base_handler");
-var assert = require("plugins/c9.util/assert");
+var assert = require("c9/assert");
 
 require("plugins/c9.ide.browsersupport/browsersupport");
 

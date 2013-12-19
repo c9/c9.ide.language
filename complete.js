@@ -29,7 +29,7 @@ define(function(require, exports, module) {
         var completeUtil   = require("plugins/c9.ide.language/complete_util");
         var Popup          = require("ace/autocomplete/popup").AcePopup;
         var completedp     = require("./completedp");
-        var assert         = require("plugins/c9.util/assert");
+        var assert         = require("c9/assert");
         
         /***** Initialization *****/
         

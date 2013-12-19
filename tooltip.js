@@ -19,7 +19,7 @@ define(function(require, exports, module) {
         var ui        = imports.ui;
         var aceHandle = imports.ace;
         var tree      = require("treehugger/tree");
-        var assert    = require("plugins/c9.util/assert");
+        var assert    = require("c9/assert");
         
         var plugin = new Plugin("Ajax.org", main.consumes);
         
