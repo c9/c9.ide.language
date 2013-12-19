@@ -66,7 +66,7 @@ define(function(require, exports, module) {
                 return plugin.once("initWorker", notifyWorker.bind(null, type, e));
             
             var tab = e.tab;
-            var path = tab && (tab.path || tab.name);
+            var path = getTabPath(tab);
             var session = tab && tab.editor.ace && tab.editor.ace.session;
             if (!session)
                 return;
@@ -118,7 +118,7 @@ define(function(require, exports, module) {
         }
         
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
-            if (!tabs.focussedTab || tabs.focussedTab.path !== path)
+            if (getTabPath(tabs.focussedTab) !== path)
                 return;
             console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
@@ -129,6 +129,10 @@ define(function(require, exports, module) {
                 path, immediateWindow, syntax, value, null, 
                 options.workspaceDir
             ]);
+        }
+        
+        function getTabPath(tab) {
+            return tab && (tab.path || tab.name);
         }
         
         var loaded = false;
