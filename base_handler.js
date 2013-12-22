@@ -673,7 +673,6 @@ module.exports = {
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
-     * @return true iff the resolver for this marker could generate
      * @param {Function} callback            The callback; must be called
      * @param {Boolean} callback.result      There is at least one resolution
      */
