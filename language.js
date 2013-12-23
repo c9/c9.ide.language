@@ -29,7 +29,7 @@ define(function(require, exports, module) {
         
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
-        var useUIWorker  = window.location && /[?&]noworker=1/.test(window.location.search)
+        var useUIWorker  = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
             || (browsers.getIEVersion() && browsers.getIEVersion() < 10) || options.useUIWorker;
 
         var isContinuousCompletionEnabledSetting;
@@ -55,8 +55,10 @@ define(function(require, exports, module) {
             worker._signal("change", e);
         }
         function onChangeMode() {
-            if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab)
+            if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab) {
                 notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
+                worker._signal("changeMode");
+            }
         }
         
         /**
