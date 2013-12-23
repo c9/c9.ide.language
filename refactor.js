@@ -36,6 +36,7 @@ define(function(require, exports, module) {
         var oldIdentifier;
         var lastAce;
         var isGenericRefactor;
+        var oldContinuousCompletion;
         
         var loaded;
         function load() {
@@ -167,8 +168,8 @@ define(function(require, exports, module) {
                 ace.moveCursorTo(mainPos.row, mainPos.column);
             }
             placeHolder.showOtherMarkers();
-            if (language.isContinuousCompletionEnabled())
-                language.setContinuousCompletionEnabled(false);
+            oldContinuousCompletion = language.isContinuousCompletionEnabled();
+            language.setContinuousCompletionEnabled(false);
             
             // Monkey patch
             if (!oldCommandKey) {
@@ -176,8 +177,6 @@ define(function(require, exports, module) {
                 ace.keyBinding.onCommandKey = onKeyPress;
             }
     
-            if (language.isContinuousCompletionEnabled())
-                language.setContinuousCompletionEnabled(false);
             placeHolder.on("cursorLeave", function() {
                 commitRename();
             });
@@ -202,8 +201,7 @@ define(function(require, exports, module) {
         }
     
         function cleanup() {
-            if (language.isContinuousCompletionEnabled())
-                language.setContinuousCompletionEnabled(true);
+            language.setContinuousCompletionEnabled(oldContinuousCompletion);
             marker.enableMarkerType('occurrence_main');
             marker.enableMarkerType('occurrence_other');
             placeHolder = null;
