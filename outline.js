@@ -494,6 +494,8 @@ define(function(require, exports, module) {
                         : displayPos.ec || displayPos.sc
                   )
                 : new Range(pos.sl, pos.sc, pos.sl, pos.sc);
+            // todo fold back
+            ace.session.unfold(range);
             ace.selection.setSelectionRange(range);
         }
         
