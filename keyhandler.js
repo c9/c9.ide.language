@@ -36,12 +36,12 @@ define(function(require, exports, module) {
             aceHandle.on("create", function(e) {
                 var editor = e.editor;
                 
-                editor.on("draw", function() {
-                    var kb = editor.ace.keyBinding;
+                editor.on("createAce", function(ace) {
+                    var kb = ace.keyBinding;
                     var defaultHandler          = kb.onTextInput.bind(kb);
                     var defaultCommandHandler   = kb.onCommandKey.bind(kb);
-                    kb.onTextInput  = composeHandlers(onTextInput, defaultHandler, editor.ace);
-                    kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, editor.ace);
+                    kb.onTextInput  = composeHandlers(onTextInput, defaultHandler, ace);
+                    kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
                 });
             });
         }
