@@ -109,10 +109,10 @@ define(function(require, exports, module) {
             
             var cursorTimeout;
             language.on("cursormove", function() {
-                if (cursorTimeout)
+                if (cursorTimeout || !isActive)
                     return;
                 cursorTimeout = setTimeout(function moveSelection() {
-                    if (dirty)
+                    if (dirty && isActive)
                         return setTimeout(moveSelection, 50);
                     try {
                         cursorHandler();
@@ -358,6 +358,8 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function updateOutline(now) {
+            if (!isActive)
+                return;
             if (now && tabs.focussedTab && !scheduled) {
                 if (!worker) {
                     return language.getWorker(function(err, _worker) {
