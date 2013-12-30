@@ -115,7 +115,7 @@ define(function(require, exports, module) {
                     if (dirty && isActive)
                         return setTimeout(moveSelection, 50);
                     try {
-                        cursorHandler();
+                        handleCursor();
                     }
                     finally {
                         cursorTimeout = null;
@@ -161,8 +161,8 @@ define(function(require, exports, module) {
             // Remove change listener
             if (originalTab) {
                 session = originalTab.document.getSession().session;
-                session && session.removeListener("changeMode", changeHandler);
-                originalTab.document.undoManager.off("change", changeHandler);
+                session && session.removeListener("changeMode", onChange);
+                originalTab.document.undoManager.off("change", onChange);
             }
             
             if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
@@ -175,8 +175,8 @@ define(function(require, exports, module) {
                 
             // Add change listener
             session = tab.document.getSession().session;
-            session && session.on("changeMode", changeHandler);
-            tab.document.undoManager.on("change", changeHandler);
+            session && session.on("changeMode", onChange);
+            tab.document.undoManager.on("change", onChange);
             
             originalTab = tab;
             
@@ -184,12 +184,12 @@ define(function(require, exports, module) {
                 updateOutline(true);
         }
         
-        function changeHandler() {
+        function onChange() {
             if (isActive && originalTab == tabs.focussedTab)
                 updateOutline();
         }
         
-        function cursorHandler(ignoreFocus) {
+        function handleCursor(ignoreFocus) {
             if (isActive && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
                 if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
@@ -210,7 +210,7 @@ define(function(require, exports, module) {
             }
         }
         
-        function offlineHandler(e) {
+        function onOffline(e) {
             // Online
             if (e.state & c9.STORAGE) {
                 textbox.enable();
@@ -343,8 +343,8 @@ define(function(require, exports, module) {
             textbox.ace.on("focus", onFocus);
             
             // Offline
-            c9.on("stateChange", offlineHandler, plugin);
-            offlineHandler({ state: c9.status });
+            c9.on("stateChange", onOffline, plugin);
+            onOffline({ state: c9.status });
             
             language.getWorker(function(err, _worker) {
                 worker = _worker;
@@ -462,7 +462,7 @@ define(function(require, exports, module) {
             }
             
             tree.resize();
-            cursorHandler(ignoreFocusOnce);
+            handleCursor(ignoreFocusOnce);
             ignoreFocusOnce = false;
             
             return selected;
@@ -536,7 +536,7 @@ define(function(require, exports, module) {
             tree.resize();
             
             updateOutline(true);
-            cursorHandler(true);
+            handleCursor(true);
             ignoreFocusOnce = true;
         });
         plugin.on("hide", function(e) {
