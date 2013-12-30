@@ -34,17 +34,16 @@ define(function(require, exports, module) {
             loaded = true;
             
             aceHandle.on("create", function(e) {
-                if (!e.editor.ace)
-                    return e.editor.on("createAce", addBinding);
+                e.editor.on("createAce", addBinding);
                 
-                addBinding();
+                addBinding(e.editor.ace);
                 
-                function addBinding() {
+                function addBinding(ace) {
                     var kb = ace.keyBinding;
                     var defaultHandler          = kb.onTextInput.bind(kb);
                     var defaultCommandHandler   = kb.onCommandKey.bind(kb);
-                    kb.onTextInput  = composeHandlers(onTextInput, defaultHandler, e.editor.ace);
-                    kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, e.editor.ace);
+                    kb.onTextInput  = composeHandlers(onTextInput, defaultHandler, ace);
+                    kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
                 }
             });
         }
