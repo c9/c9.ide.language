@@ -632,6 +632,13 @@ function asyncParForEach(array, fn, callback) {
                                 next();
                             }
                         }, function () {
+                            // if we have real pos, just get the value from document
+                            var pos = lastResult.pos;
+                            var text = _self.doc.getTextRange({start: {column: pos.sc, row: pos.sl}, end: {column: pos.ec, row: pos.el}});
+                            if (text != lastResult.value) {
+                                console.warn("inspect expected ", text, " got ", lastResult.value);
+                                lastResult.value = text;
+                            }
                             _self.scheduleEmit("inspect", lastResult);
                         });
                     });
