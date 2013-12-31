@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
-        "language", "util", "language.jumptodef"
+        "language", "util", "language.jumptodef", "navigate"
     ];
     main.provides = ["outline"];
     return main;
@@ -14,6 +14,7 @@ define(function(require, exports, module) {
         var util      = imports.util;
         var menus     = imports.menus;
         var panels    = imports.panels;
+        var navigate  = imports.navigate;
         var tabs      = imports.tabManager;
         var language  = imports.language;
         var jumptodef = imports["language.jumptodef"];
@@ -46,7 +47,7 @@ define(function(require, exports, module) {
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
         var focussed, isActive, outline, timer, dirty, scheduled, scheduleWatcher;
-        var isUnordered;
+        var isUnordered, lastFilter, hasNavigateOutline;
         var worker;
         
         var COLLAPSE_AREA = 14;
@@ -135,7 +136,42 @@ define(function(require, exports, module) {
                 updateOutline();
                 onTabFocus({ tab: tabs.focussedTab });
             }
+            
             updateInitialOutline();
+            
+            // Extends navigate with outline support
+            
+            var wasActive, onsel = function(){ 
+                if (hasNavigateOutline)
+                    onSelect(navigate.tree.selection.getCursor()); 
+            };
+            navigate.on("outline", function(e){
+                var value = e.value;
+                
+                if (!tdOutline) createProvider();
+                
+                tabs.focusTab(e.tab, true);
+                
+                hasNavigateOutline = true;
+                wasActive          = isActive
+                isActive           = true;
+                onTabFocus(e, true);
+                
+                navigate.tree.setDataProvider(tdOutline);
+                navigate.tree.off("changeSelection", onsel);
+                navigate.tree.on("changeSelection", onsel);
+                
+                renderOutline(!value, value);
+                
+                ui.setStyleClass(navigate.tree.container, "outline");
+            });
+            navigate.on("outline.stop", function(e){
+                hasNavigateOutline = false;
+                renderOutline(true);
+                navigate.tree.off("changeSelection", onsel);
+                ui.setStyleClass(navigate.tree.container, "", ["outline"]);
+                isActive = wasActive;
+            });
         }
         
         /**
@@ -192,7 +228,7 @@ define(function(require, exports, module) {
         function handleCursor(ignoreFocus) {
             if (isActive && originalTab && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
-                if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
+                if (!outline || !ace.selection.isEmpty() || (!tree || tree.isFocused() && !ignoreFocus))
                     return;
                     
                 var selected = findCursorInOutline(outline, ace.getCursorPosition());
@@ -225,6 +261,17 @@ define(function(require, exports, module) {
             }
         }
         
+        function createProvider(){
+            // Import CSS
+            ui.insertCss(require("text!./outline.css"), staticPrefix, plugin);
+            
+            // Define data provider
+            tdOutline = new TreeData();
+            
+            // Some global render metadata
+            tdOutline.staticPrefix = staticPrefix;
+        }
+        
         var drawn = false;
         function draw(options) {
             if (drawn) return;
@@ -233,25 +280,20 @@ define(function(require, exports, module) {
             // Create UI elements
             ui.insertMarkup(options.aml, markup, plugin);
             
-            // Import CSS
-            ui.insertCss(require("text!./outline.css"), staticPrefix, plugin);
-            
-            treeParent     = plugin.getElement("outlineTree");
-            textbox        = plugin.getElement("textbox");
-            winOutline     = plugin.getElement("winOutline");
-            textbox        = plugin.getElement("textbox");
+            treeParent = plugin.getElement("outlineTree");
+            textbox    = plugin.getElement("textbox");
+            winOutline = plugin.getElement("winOutline");
+            textbox    = plugin.getElement("textbox");
         
             // Create the Ace Tree
-            tree      = new Tree(treeParent.$int);
-            tdOutline = new TreeData();
-            
+            tree = new Tree(treeParent.$int);
             tree.renderer.setScrollMargin(0, 10);
+            
+            if (!tdOutline)
+                createProvider();
             
             // Assign the dataprovider
             tree.setDataProvider(tdOutline);
-            
-            // Some global render metadata
-            tdOutline.staticPrefix = staticPrefix;
 
             // @TODO this is probably not sufficient
             window.addEventListener("resize", function() { tree.resize() });
@@ -417,7 +459,7 @@ define(function(require, exports, module) {
                 return;
             }
             
-            var tab   = tabs.focussedTab;
+            var tab    = tabs.focussedTab;
             var editor = tab && tab.editor;
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
@@ -432,19 +474,21 @@ define(function(require, exports, module) {
             renderOutline(event.data.showNow);
         }
         
-        function renderOutline(ignoreFilter) {
-            var tab   = tabs.focussedTab;
+        function renderOutline(ignoreFilter, filter) {
+            var tab    = tabs.focussedTab;
             var editor = tab && tab.editor;
-            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace || !drawn)
+            if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
                 
             originalTab = tab;
             
-            var filter = ignoreFilter ? "" : textbox.getValue();
+            if (!filter)
+                filter = ignoreFilter ? "" : (textbox ? textbox.getValue() : lastFilter);
             isKeyDownAfterDirty = false;
             
             outline = search.treeSearch(fullOutline, filter, true);
             filteredOutline = outline;
+            lastFilter = filter;
     
             var ace = editor.ace;
             var selected = findCursorInOutline(outline, ace.getCursorPosition());
@@ -454,16 +498,21 @@ define(function(require, exports, module) {
             tdOutline.filter   = filter;
             tdOutline.reFilter = util.escapeRegExp(filter);
             
-            if (filter)
-                tree.select(tree.provider.getNodeAtIndex(0));
+            if (filter) {
+                tree && tree.select(tree.provider.getNodeAtIndex(0));
+                if (hasNavigateOutline)
+                    navigate.tree.select(navigate.tree.provider.getNodeAtIndex(0));
+            }
             else if (selected) {
                 ignoreSelectOnce = true;
                 tdOutline.selection.selectNode(selected);
             }
             
-            tree.resize();
-            handleCursor(ignoreFocusOnce);
-            ignoreFocusOnce = false;
+            if (drawn) {
+                tree.resize();
+                handleCursor(ignoreFocusOnce);
+                ignoreFocusOnce = false;
+            }
             
             return selected;
         }
