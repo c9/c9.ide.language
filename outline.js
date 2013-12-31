@@ -142,8 +142,8 @@ define(function(require, exports, module) {
             // Extends navigate with outline support
             
             var wasActive, onsel = function(){ 
-                if (hasNavigateOutline)
-                    onSelect(navigate.tree.selection.getCursor()); 
+                var node = navigate.tree.selection.getCursor();
+                if (node) onSelect(node);
             };
             navigate.on("outline", function(e){
                 var value = e.value;
