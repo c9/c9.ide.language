@@ -7,21 +7,21 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var c9 = imports.c9;
-        var Panel = imports.Panel;
-        var settings = imports.settings;
-        var ui = imports.ui;
-        var util = imports.util;
-        var menus = imports.menus;
-        var panels = imports.panels;
-        var tabs = imports.tabManager;
-        var language = imports.language;
+        var c9        = imports.c9;
+        var Panel     = imports.Panel;
+        var settings  = imports.settings;
+        var ui        = imports.ui;
+        var util      = imports.util;
+        var menus     = imports.menus;
+        var panels    = imports.panels;
+        var tabs      = imports.tabManager;
+        var language  = imports.language;
         var jumptodef = imports["language.jumptodef"];
         
-        var Range = require("ace/range").Range;
-        var search = require("../c9.ide.navigate/search");
-        var markup = require("text!./outline.xml");
-        var Tree = require("ace_tree/tree");
+        var Range    = require("ace/range").Range;
+        var search   = require("../c9.ide.navigate/search");
+        var markup   = require("text!./outline.xml");
+        var Tree     = require("ace_tree/tree");
         var TreeData = require("./outlinedp");
         
         /***** Initialization *****/
@@ -190,7 +190,7 @@ define(function(require, exports, module) {
         }
         
         function handleCursor(ignoreFocus) {
-            if (isActive && originalTab == tabs.focussedTab) {
+            if (isActive && originalTab && originalTab == tabs.focussedTab) {
                 var ace = originalTab.editor.ace;
                 if (!outline || !ace.selection.isEmpty() || (tree.isFocused() && !ignoreFocus))
                     return;
