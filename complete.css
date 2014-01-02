@@ -143,7 +143,7 @@
     color : @complete-dark-color;
 }
 
-.code_complete_text .ace_line .img {
+.code_complete_text .ace_line .completer-img {
     width: 8px;
     height: 8px;
     margin : 0 7px 0 5px;

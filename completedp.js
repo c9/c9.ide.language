@@ -42,7 +42,7 @@ define(function(require, exports, module) {
     function renderLineInner(builder, row) {
         var match = this.data[row];
         
-        var html = "<span class='img " + (match.icon 
+        var html = "<span class='completer-img " + (match.icon 
             ? iconClass[match.icon] || this.$defineIcon(match.icon)
             : "" ) + "'></span>";
         
