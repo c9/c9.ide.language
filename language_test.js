@@ -74,7 +74,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
             provides : [
                 "commands", "menus", "layout", "watcher", 
                 "save", "preferences", "anims", "clipboard", "auth.bootstrap",
-                "info"
+                "info", "dialog.error"
             ],
             setup    : expect.html.mocked
         },
