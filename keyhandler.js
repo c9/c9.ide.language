@@ -40,15 +40,27 @@ define(function(require, exports, module) {
                 
                 function addBinding(ace) {
                     var kb = ace.keyBinding;
-                    var defaultHandler          = kb.onTextInput.bind(kb);
                     var defaultCommandHandler   = kb.onCommandKey.bind(kb);
-                    kb.onTextInput  = composeHandlers(onTextInput, defaultHandler, ace);
                     kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
+                    ace.commands.on("afterExec", onAfterExec);
                 }
             });
         }
         
         /***** Methods *****/
+        
+        function onAfterExec(e) {
+            if (language.disabled)
+                return false;
+            if (e.command.name === "insertstring") {
+                ace = e.editor;
+                onTextInput(e.args);
+            } else if (e.command.name === "backspace") {
+                ace = e.editor;
+                if (language.isContinuousCompletionEnabled())
+                    onBackspace(e);
+            }
+        }
         
         function composeHandlers(mainHandler, fallbackHandler, myAce) {
             return function onKeyPress() {
@@ -71,28 +83,17 @@ define(function(require, exports, module) {
         }
         
         function onCommandKey(e) {
-            if (language.disabled)
-                return false;
-            if (language.isContinuousCompletionEnabled())
-                typeAlongComplete(e);
-        
             if (e.keyCode == 27) // Esc
                 tooltip.hide();
-                
-            return false;
         }
         
-        function typeAlongComplete(e) {
-            if (e.metaKey || e.altKey || e.ctrlKey)
+        function onBackspace(e) {
+            var pos = ace.getCursorPosition();
+            var line = ace.session.doc.getLine(pos.row);
+            if (!complete_util.precededByIdentifier(line, pos.column, null, ace))
                 return false;
-            if (e.keyCode === 8) { // Backspace
-                var pos = ace.getCursorPosition();
-                var line = ace.getSession().getDocument().getLine(pos.row);
-                if (!complete_util.precededByIdentifier(line, pos.column, null, ace))
-                    return false;
-                if (complete.getContinousCompletionRegex(null, ace))
-                    complete.deferredInvoke(false, ace);
-            }
+            if (complete.getContinousCompletionRegex(null, ace))
+                complete.deferredInvoke(false, ace);
         }
         
         function inputTriggerComplete(text, pasted) {
