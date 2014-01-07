@@ -123,7 +123,7 @@ define(function(require, exports, module) {
                     if (language.disabled || plugin.disabled) return;
                     
                     var tab = tabs.focussedTab;
-                    if (!tab || tab.path !== event.data.path)
+                    if (!tab || (tab.path || tab.name) !== event.data.path)
                         return;
                     
                     assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
