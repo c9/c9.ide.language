@@ -90,7 +90,9 @@ define(function(require, exports, module) {
         function onBackspace(e) {
             var pos = ace.getCursorPosition();
             var line = ace.session.doc.getLine(pos.row);
-            if (!complete_util.precededByIdentifier(line, pos.column, null, ace))
+            if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
+                return false;
+            if (inCommentToken(pos))
                 return false;
             if (complete.getContinousCompletionRegex(null, ace))
                 complete.deferredInvoke(false, ace);
@@ -116,12 +118,12 @@ define(function(require, exports, module) {
         }
         
         function inTextToken(pos) {
-            var token = new TokenIterator(ace.getSession(), pos.row, pos.column).getCurrentToken();
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type === "text";
         }
         
         function inCommentToken(pos) {
-            var token = new TokenIterator(ace.getSession(), pos.row, pos.column).getCurrentToken();
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type.match(/^comment/);
         } 
         
@@ -129,7 +131,9 @@ define(function(require, exports, module) {
             if (ch.match(idRegex || DEFAULT_ID_REGEX) || (completionRegex && ch.match(completionRegex))) { 
                 var pos = ace.getCursorPosition();
                 var line = ace.getSession().getDocument().getLine(pos.row);
-                if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(ace, pos))
+                if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(pos))
+                    return false;
+                if (inCommentToken(pos))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
             }
