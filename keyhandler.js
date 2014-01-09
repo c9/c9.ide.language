@@ -118,12 +118,12 @@ define(function(require, exports, module) {
         }
         
         function inTextToken(pos) {
-            var token = new TokenIterator(ace.getSession(), pos.row, pos.column - 1).getCurrentToken();
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type === "text";
         }
         
         function inCommentToken(pos) {
-            var token = new TokenIterator(ace.getSession(), pos.row, pos.column - 1).getCurrentToken();
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type.match(/^comment/);
         } 
         
