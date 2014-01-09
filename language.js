@@ -59,7 +59,7 @@ define(function(require, exports, module) {
          * Notify the worker that the document changed
          *
          * @param type  the event type, documentOpen or switchFile
-         * @param e     the originating event, should have an e.tab.path and e.tab.editor.ace
+         * @param e     the originating event, should have an e.tab.path and e.tab.document
          */
         function notifyWorker(type, e) {
             if (!worker)
@@ -67,7 +67,8 @@ define(function(require, exports, module) {
             
             var tab = e.tab;
             var path = getTabPath(tab);
-            var session = tab && tab.editor.ace && tab.editor.ace.session;
+            var c9session = tab.document.getSession();
+            var session = c9session.loaded && c9session.session;
             if (!session)
                 return;
             var immediateWindow = session.repl ? tab.name : null;
