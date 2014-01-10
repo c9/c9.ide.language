@@ -68,7 +68,7 @@ define(function(require, exports, module) {
             var tab = e.tab;
             var path = getTabPath(tab);
             var c9session = tab.document.getSession();
-            var session = c9session.loaded && c9session.session;
+            var session = c9session && c9session.loaded && c9session.session;
             if (!session)
                 return;
             var immediateWindow = session.repl ? tab.name : null;
