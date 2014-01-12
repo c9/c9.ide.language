@@ -100,9 +100,10 @@ define(function(require, exports, module) {
             };
                 
             var syntax = session.syntax;
-            if (session.$modeId)
+            if (syntax == null && session.$modeId) {
                 syntax = /[^\/]*$/.exec(session.$modeId)[0] || syntax;
-            session.syntax = syntax;
+                session.syntax = syntax;
+            }
             
             var value = e.value || session.doc.$lines || [];
 
