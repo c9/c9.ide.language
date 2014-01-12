@@ -50,8 +50,6 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function onAfterExec(e) {
-            if (language.disabled)
-                return false;
             if (e.command.name === "insertstring") {
                 ace = e.editor;
                 onTextInput(e.args);
@@ -73,8 +71,6 @@ define(function(require, exports, module) {
         }
         
         function onTextInput(text, pasted) {
-            if (language.disabled)
-                return false;
             if (language.isContinuousCompletionEnabled())
                 typeAlongCompleteTextInput(text, pasted);
             else

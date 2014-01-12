@@ -120,8 +120,6 @@ define(function(require, exports, module) {
                 }); 
                 
                 e.worker.on("complete", function(event) {
-                    if (language.disabled || plugin.disabled) return;
-                    
                     var tab = tabs.focussedTab;
                     if (!tab || (tab.path || tab.name) !== event.data.path)
                         return;
