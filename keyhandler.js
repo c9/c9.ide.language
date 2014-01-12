@@ -71,6 +71,8 @@ define(function(require, exports, module) {
         }
         
         function onTextInput(text, pasted) {
+            if (complete.isPopupVisible())
+                return false;
             if (language.isContinuousCompletionEnabled())
                 typeAlongCompleteTextInput(text, pasted);
             else
@@ -84,6 +86,8 @@ define(function(require, exports, module) {
         }
         
         function onBackspace(e) {
+            if (complete.isPopupVisible())
+                return false;
             var pos = ace.getCursorPosition();
             var line = ace.session.doc.getLine(pos.row);
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
