@@ -728,9 +728,11 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            var matches = filterMatches(eventMatches, line, pos);
+            matches = filterMatches(eventMatches, line, pos);
             if (matches.length)
                 showCompletionBox({ace: ace}, matches, prefix, line);
+            else
+                closeCompletionBox();
         }
         
         function filterMatches(matches, line, pos) {
