@@ -50,8 +50,6 @@ define(function(require, exports, module) {
         /***** Methods *****/
         
         function onAfterExec(e) {
-            if (language.disabled)
-                return false;
             if (e.command.name === "insertstring") {
                 ace = e.editor;
                 onTextInput(e.args);
@@ -73,7 +71,7 @@ define(function(require, exports, module) {
         }
         
         function onTextInput(text, pasted) {
-            if (language.disabled)
+            if (complete.isPopupVisible())
                 return false;
             if (language.isContinuousCompletionEnabled())
                 typeAlongCompleteTextInput(text, pasted);
@@ -88,6 +86,8 @@ define(function(require, exports, module) {
         }
         
         function onBackspace(e) {
+            if (complete.isPopupVisible())
+                return false;
             var pos = ace.getCursorPosition();
             var line = ace.session.doc.getLine(pos.row);
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))

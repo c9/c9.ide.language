@@ -43,7 +43,8 @@ define(function(require, exports, module) {
         var enterCompletion = true;
         var tooltipHeightAdjust = 0;
         
-        var oldCommandKey, oldOnTextInput, isDocShown;
+        var commandKeyBeforePatch, textInputBeforePatch, aceBeforePatch;
+        var isDocShown;
         var txtCompleterDoc; // ui elements
         var matches;
         var docElement, lastAce, worker; 
@@ -120,8 +121,6 @@ define(function(require, exports, module) {
                 }); 
                 
                 e.worker.on("complete", function(event) {
-                    if (language.disabled || plugin.disabled) return;
-                    
                     var tab = tabs.focussedTab;
                     if (!tab || (tab.path || tab.name) !== event.data.path)
                         return;
@@ -351,13 +350,13 @@ define(function(require, exports, module) {
 
             matches = m;
             docElement = txtCompleterDoc;
-                       
            
             // Monkey patch
-            if (!oldCommandKey) {
-                oldCommandKey = ace.keyBinding.onCommandKey;
+            if (!commandKeyBeforePatch) {
+                aceBeforePatch = ace;
+                commandKeyBeforePatch = ace.keyBinding.onCommandKey;
                 ace.keyBinding.onCommandKey = onKeyPress.bind(this);
-                oldOnTextInput = ace.keyBinding.onTextInput;
+                textInputBeforePatch = ace.keyBinding.onTextInput;
                 ace.keyBinding.onTextInput = onTextInput.bind(this);
             }
             
@@ -437,11 +436,11 @@ define(function(require, exports, module) {
             window.document.removeEventListener("mousedown", closeCompletionBox);
             ace.off("mousewheel", closeCompletionBox);
             
-            if (oldCommandKey) {
-                ace.keyBinding.onCommandKey = oldCommandKey;
-                ace.keyBinding.onTextInput = oldOnTextInput;
+            if (commandKeyBeforePatch) {
+                aceBeforePatch.keyBinding.onCommandKey = commandKeyBeforePatch;
+                aceBeforePatch.keyBinding.onTextInput = textInputBeforePatch;
             }
-            oldCommandKey = oldOnTextInput = null;
+            commandKeyBeforePatch = textInputBeforePatch = null;
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
         }
             
@@ -554,7 +553,7 @@ define(function(require, exports, module) {
     
         function onTextInput(text, pasted) {
             var keyBinding = lastAce.keyBinding;
-            oldOnTextInput.apply(keyBinding, arguments);
+            textInputBeforePatch.apply(keyBinding, arguments);
             if (!pasted) {
                 var matched = false;
                 for (var i = 0; i < matches.length && !matched; i++) {
@@ -589,13 +588,13 @@ define(function(require, exports, module) {
                     e.preventDefault();
                     break;
                 case 8: // Backspace
-                    oldCommandKey.apply(keyBinding, arguments);
+                    commandKeyBeforePatch.apply(keyBinding, arguments);
                     deferredInvoke();
                     e.preventDefault();
                     break;
                 case 37:
                 case 39:
-                    oldCommandKey.apply(keyBinding, arguments);
+                    commandKeyBeforePatch.apply(keyBinding, arguments);
                     closeCompletionBox();
                     e.preventDefault();
                     break;
@@ -603,7 +602,7 @@ define(function(require, exports, module) {
                 case 9: // Tab
                     var ace = lastAce;
                     if (!enterCompletion && keyCode === 13) {
-                        oldCommandKey(e, hashKey, keyCode);
+                        commandKeyBeforePatch(e, hashKey, keyCode);
                         closeCompletionBox();
                         break;
                     }
@@ -729,9 +728,11 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            var matches = filterMatches(eventMatches, line, pos);
+            matches = filterMatches(eventMatches, line, pos);
             if (matches.length)
                 showCompletionBox({ace: ace}, matches, prefix, line);
+            else
+                closeCompletionBox();
         }
         
         function filterMatches(matches, line, pos) {
