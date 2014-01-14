@@ -141,13 +141,17 @@ define(function(require, exports, module) {
         function load() {
             if (loaded) return false;
             loaded = true;
+            var id = "plugins/c9.ide.language/worker";
+            if (options.workerPrefix)
+                var path = options.workerPrefix + "/" + id + ".js";
+            
             // Create main worker for language processing
             if (useUIWorker) {
-                worker = new UIWorkerClient(["treehugger", "ace", "c9", "plugins"], "plugins/c9.ide.language/worker", "LanguageWorker");
+                worker = new UIWorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
             }
             else  {
                 try {
-                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins"], "plugins/c9.ide.language/worker", "LanguageWorker");
+                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
                 } catch (e) {
                     if (e.code === 18 && window.location && window.location.origin === "file://")
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
