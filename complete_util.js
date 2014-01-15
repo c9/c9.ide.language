@@ -67,6 +67,10 @@ function findCompletions(prefix, allIdentifiers) {
 }
 
 function fetchText(staticPrefix, path) {
+    if (path === undefined) {
+        path = staticPrefix;
+        staticPrefix = exports.staticPrefix;
+    }
     var xhr = new XMLHttpRequest();
     xhr.open('GET', staticPrefix + "/" + path, false);
     try {

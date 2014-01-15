@@ -270,6 +270,10 @@ function asyncParForEach(array, fn, callback) {
     this.setWarningLevel = function(level) {
         this.$warningLevel = level;
     };
+    
+    this.setStaticPrefix = function(url) {
+        completeUtil.staticPrefix = url || "/static";
+    };
 
     /**
      * Registers a handler by loading its code and adding it the handler array
@@ -1181,7 +1185,6 @@ function asyncParForEach(array, fn, callback) {
     
                     asyncForEach(_self.handlers, function(handler, next) {
                         if (_self.isHandlerMatch(handler, part)) {
-                            handler.staticPrefix = data.staticPrefix;
                             handler.language = language;
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
@@ -1281,11 +1284,11 @@ function asyncParForEach(array, fn, callback) {
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {
-                _self.complete({data: {pos: pos, line: line, staticPrefix: _self.staticPrefix, isUpdate: true}});
+                _self.complete({data: {pos: pos, line: line, isUpdate: true}});
             }, 0);
         }
         else {
-            this.complete({data: {pos: pos, line: line, staticPrefix: this.staticPrefix, isUpdate: true}});
+            this.complete({data: {pos: pos, line: line, isUpdate: true}});
         }
     };
 

@@ -158,6 +158,7 @@ define(function(require, exports, module) {
                     throw e;
                 }
             }
+            worker.call("setStaticPrefix", [c9.staticUrl || "/static"]);
 
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
