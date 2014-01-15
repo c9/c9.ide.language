@@ -66,13 +66,9 @@ function findCompletions(prefix, allIdentifiers) {
     return matches;
 }
 
-function fetchText(staticPrefix, path) {
-    if (path === undefined) {
-        path = staticPrefix;
-        staticPrefix = exports.staticPrefix;
-    }
+function fetchText(path) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', staticPrefix + "/" + path, false);
+    xhr.open('GET', exports.staticPrefix + "/" + path, false);
     try {
         xhr.send();
     }
