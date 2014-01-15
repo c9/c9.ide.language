@@ -271,9 +271,7 @@ function asyncParForEach(array, fn, callback) {
         this.$warningLevel = level;
     };
     
-    this.setStaticPrefix = function(url) {
-        completeUtil.staticPrefix = url || "/static";
-    };
+    this.setStaticPrefix = completeUtil.setStaticPrefix;
 
     /**
      * Registers a handler by loading its code and adding it the handler array

@@ -11,6 +11,7 @@ define(function(require, exports, module) {
 
 var ID_REGEX = /[a-zA-Z_0-9\$]/;
 var REQUIRE_ID_REGEX = /(?!["'])./;
+var staticPrefix = "";
 
 function retrievePrecedingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
@@ -68,7 +69,7 @@ function findCompletions(prefix, allIdentifiers) {
 
 function fetchText(path) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', exports.staticPrefix + "/" + path, false);
+    xhr.open('GET', staticPrefix + "/" + path, false);
     try {
         xhr.send();
     }
@@ -80,6 +81,10 @@ function fetchText(path) {
         return xhr.responseText;
     else
         return false;
+}
+
+function setStaticPrefix(url) {
+    setStaticPrefix = url;
 }
 
 /**
@@ -190,6 +195,11 @@ exports.findCompletions = findCompletions;
  * @ignore
  */
 exports.fetchText = fetchText;
+
+/**
+ * @ignore
+ */
+exports.setStaticPrefix  = setStaticPrefix;
 
 /**
  * @ignore
