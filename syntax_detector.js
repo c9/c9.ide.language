@@ -157,6 +157,8 @@ function getContextSyntax(doc, pos, originalSyntax) {
 
 function regionToCodePart(doc, region, index) {
     var lines = doc.getLines(region.sl, region.el);
+    if (!lines.length)
+        lines = [""];
     var allLines;
     var value;
     var result = {
