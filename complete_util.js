@@ -84,7 +84,7 @@ function fetchText(path) {
 }
 
 function setStaticPrefix(url) {
-    setStaticPrefix = url;
+    staticPrefix = url;
 }
 
 /**
