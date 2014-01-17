@@ -157,6 +157,10 @@ function getContextSyntax(doc, pos, originalSyntax) {
 
 function regionToCodePart(doc, region, index) {
     var lines = doc.getLines(region.sl, region.el);
+    if (!lines.length) {
+        console.error("region and document state are not consistent!!!");
+        lines = [""];
+    }
     var allLines;
     var value;
     var result = {
