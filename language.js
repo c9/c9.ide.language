@@ -44,7 +44,11 @@ define(function(require, exports, module) {
         var worker;
         
         function onCursorChange() {
-            emit("cursormove", { doc: worker.$doc, pos: worker.$doc.selection.getCursor() });
+            emit("cursormove", {
+                doc: worker.$doc,
+                pos: worker.$doc.selection.getCursor(),
+                selection: worker.$doc.selection
+            });
         }
         function onChange(e) {
             worker.changeListener(e);
