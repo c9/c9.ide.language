@@ -27,6 +27,7 @@
     .box-shadow(~"@{complete-box-shadow}, inset 1px 1px 0 @{complete-inner-border-color}, inset -1px -1px 0 @{complete-inner-border-color}");
     width: 270px;
     line-height: 20px;
+    position: absolute;
 }
 .code_complete_text.dark.ace_autocomplete {
     background: @complete-dark-background;
