@@ -110,8 +110,8 @@ define(function(require, exports, module) {
                 menu.on("prop.visible", function(e) {
                     // only fire when visibility is set to true
                     if (e.value) {
-                        // because of delays we'll enable by default
-                        mnuRename2.enable();
+                        // because of delays we'll disable by default
+                        mnuRename2.disable();
                         var ace = tabs.focussedTab.editor.ace;
                         if (ace)
                             worker.emit("refactorings", { data: ace.getSelection().getCursor() });
