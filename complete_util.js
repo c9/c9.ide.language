@@ -77,7 +77,7 @@ function fetchText(path) {
     catch(e) {
         return false;
     }
-    if (xhr.status === 200)
+    if (xhr.status === 200 || xhr.responseText) // when loading from file:// status is always 0
         return xhr.responseText;
     else
         return false;

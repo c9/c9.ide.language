@@ -30,7 +30,7 @@ define(function(require, exports, module) {
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
         var useUIWorker  = window.location && /[?&]noworker=1/.test(window.location.search)
-            || (browsers.getIEVersion() && browsers.getIEVersion() < 10);
+            || (browsers.getIEVersion() && browsers.getIEVersion() < 10) || options.useUIWorker;
 
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
@@ -162,7 +162,7 @@ define(function(require, exports, module) {
                     throw e;
                 }
             }
-            worker.call("setStaticPrefix", [c9.staticUrl || "/static"]);
+            worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
 
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
