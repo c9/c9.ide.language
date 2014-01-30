@@ -113,6 +113,15 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             }, 50);
         }
         
+        function afterCompleteDocPopup(callback) {
+            setTimeout(function() {
+                var el = document.getElementsByClassName("code_complete_doc_text")[0];
+                if (!el || el.style.display === "none")
+                    return afterCompleteDocPopup(callback);
+                callback(el);
+            }, 50);
+        }
+        
         expect.html.setConstructor(function(tab) {
             if (typeof tab == "object")
                 return getTabHtml(tab);
@@ -217,6 +226,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     afterCompletePopup(function(el) {
                         expect.html(el).text(/log\(/);
                         language.setContinuousCompletionEnabled(false);
+                        done();
+                    });
+                });
+                
+                it('shows a documentation popup in completion', function(done) {
+                    jsSession.setValue("console.");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("l");
+                    afterCompleteDocPopup(function(el) {
+                        expect.html(el).text(/stdout/);
                         done();
                     });
                 });
