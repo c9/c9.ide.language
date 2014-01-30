@@ -71,13 +71,9 @@ define(function(require, exports, module) {
             }, plugin);
         }
         
-        // @todo @lennartcl. This plugin is very messy. I added the things below
-        // but I see that the plugin is never returned. Nor is its interface
-        // set. Could you fix?
         plugin.on("load", function() {
             load();
         });
-        plugin.load("This is not how it is supposed to be");
 
         plugin.on("unload", function() {
             if (tooltipEl && tooltipEl.parentNode)
@@ -194,20 +190,22 @@ define(function(require, exports, module) {
             }
         }
         
+        plugin.freezePublicAPI({
+            hide: hide,
+            show: show,
+            getHeight: getHeight,
+            getRight: getRight,
+            isTopdown: isTopdown,
+            set adjustCompleterTop(f) {
+                adjustCompleterTop = f;
+            }
+        });
+        
         /**
          * @internal
          */
         register(null, {
-            "language.tooltip": {
-                hide: hide,
-                show: show,
-                getHeight: getHeight,
-                getRight: getRight,
-                isTopdown: isTopdown,
-                set adjustCompleterTop(f) {
-                    adjustCompleterTop = f;
-                }
-            }
+            "language.tooltip": plugin
         });
     }
     
