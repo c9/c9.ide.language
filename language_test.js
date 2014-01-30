@@ -184,7 +184,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                                     });
                                 });
                             }
-                            done();
+                            setTimeout(done);
                         });
                     }, 50);
                 });
@@ -281,10 +281,10 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         function(err, tab) {
                             // We get a tab, but it's not done yet, so we wait
                             setTimeout(function() {
-                                tab.editor.ace.onTextInput("window.bt");
-                                tab.editor.ace.onTextInput("o");
+                                tab.editor.ace.onTextInput("window.a");
+                                tab.editor.ace.onTextInput("p");
                                 afterCompletePopup(function(el) {
-                                    expect.html(el).text(/btoa/);
+                                    expect.html(el).text(/applicationCache/);
                                     done();
                                 });
                             });
