@@ -66,6 +66,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.fs/fs",
         "plugins/c9.ide.browsersupport/browsersupport",
         "plugins/c9.ide.ui/menus",
+        {
+            packagePath: "plugins/c9.ide.immediate/immediate",
+            staticPrefix : "plugins/c9.ide.layout.classic"
+        },
+        "plugins/c9.ide.language.javascript.immediate/immediate",
+        "plugins/c9.ide.immediate/evaluator",
+        "plugins/c9.ide.immediate/evaluators/browserjs",
+        "plugins/c9.ide.console/console",
+        "plugins/c9.ide.ace.statusbar/statusbar",
+        "plugins/c9.ide.ace.gotoline/gotoline",
         
         // Mock plugins
         {
@@ -238,6 +248,46 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         expect.html(el).text(/stdout/);
                         done();
                     });
+                });
+                
+                it('shows a word completer in an immediate tab', function(done) {
+                    tabs.open(
+                        {
+                            active     : true,
+                            editorType : "immediate"
+                        },
+                        function(err, tab) {
+                            // We get a tab, but it's not done yet, so we wait
+                            setTimeout(function() {
+                                tab.editor.ace.onTextInput("conny con");
+                                tab.editor.ace.onTextInput("n");
+                                afterCompletePopup(function(el) {
+                                    expect.html(el).text(/conny/);
+                                    done();
+                                });
+                            });
+                        }
+                    );
+                });
+                
+                it('shows an immediate completer in an immediate tab', function(done) {
+                    tabs.open(
+                        {
+                            active     : true,
+                            editorType : "immediate"
+                        },
+                        function(err, tab) {
+                            // We get a tab, but it's not done yet, so we wait
+                            setTimeout(function() {
+                                tab.editor.ace.onTextInput("window.bt");
+                                tab.editor.ace.onTextInput("o");
+                                afterCompletePopup(function(el) {
+                                    expect.html(el).text(/btoa/);
+                                    done();
+                                });
+                            });
+                        }
+                    );
                 });
             });
         });
