@@ -103,12 +103,14 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
     ], architect);
     
     function main(options, imports, register) {
-        require("plugins/c9.ide.language/complete_util").setStaticPrefix("/static");
         var tabs = imports.tabManager;
         var ace = imports.ace;
         var Document = imports.Document;
         var language = imports.language;
         var complete = imports["language.complete"];
+        
+        util.setStaticPrefix("/static");
+        complete.$setShowDocDelay(50);
         
         function getTabHtml(tab) {
             return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;

@@ -822,7 +822,14 @@ define(function(require, exports, module) {
             /**
              * @internal
              */
-            setEnterCompletion : setEnterCompletion
+            setEnterCompletion : setEnterCompletion,
+            
+            /**
+             * @internal
+             */
+            $setShowDocDelay : function(value) {
+                SHOW_DOC_DELAY = value;
+            }
         });
         
         register(null, {
