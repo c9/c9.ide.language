@@ -2,8 +2,10 @@
 
 "use client";
 
-require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai, baseProc) {
+require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/complete_util"], function (architect, chai, util, complete) {
     var expect = chai.expect;
+    
+    util.setStaticPrefix("/static");
     
     expect.setupArchitectTest([
         {
@@ -47,7 +49,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
         },
         {
             packagePath: "plugins/c9.ide.language/language",
-            workspaceDir : baseProc
+            workspaceDir : "/"
         },
         "plugins/c9.ide.language/keyhandler",
         "plugins/c9.ide.language/complete",
@@ -55,6 +57,7 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
         "plugins/c9.ide.language/marker",
         "plugins/c9.ide.language.generic/generic",
         "plugins/c9.ide.language.javascript/javascript",
+        "plugins/c9.ide.language.javascript.infer/jsinfer",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.fs/proc",
         "plugins/c9.vfs.client/vfs_client",
@@ -64,36 +67,53 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
         "plugins/c9.ide.browsersupport/browsersupport",
         "plugins/c9.ide.ui/menus",
         
-        // todo move to mock?
-        "plugins/c9.ide.dialog/dialog",
-        "plugins/c9.ide.dialog.common/alert",
-        
         // Mock plugins
         {
             consumes : ["apf", "ui", "Plugin"],
             provides : [
                 "commands", "menus", "layout", "watcher", 
                 "save", "preferences", "anims", "clipboard", "auth.bootstrap",
-                "info", "dialog.error"
+                "info", "dialog.error", "panels", "tree", "dialog.question",
+                "dialog.alert"
             ],
             setup    : expect.html.mocked
         },
         {
-            consumes : ["tabManager", "ace"],
+            consumes : [
+                "tabManager",
+                "ace",
+                "Document",
+                "language.keyhandler",
+                "language.complete",
+                "language"
+            ],
             provides : [],
             setup    : main
         }
     ], architect);
     
     function main(options, imports, register) {
-        var tabs    = imports.tabManager;
-        var ace     = imports.ace;
+        require("plugins/c9.ide.language/complete_util").setStaticPrefix("/static");
+        var tabs = imports.tabManager;
+        var ace = imports.ace;
+        var Document = imports.Document;
+        var language = imports.language;
+        var complete = imports["language.complete"];
         
-        function getTabHtml(tab){
-            return tab.pane.aml.getPage("editor::" + tab.editorType).$ext
+        function getTabHtml(tab) {
+            return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
         }
         
-        expect.html.setConstructor(function(tab){
+        function afterCompletePopup(callback) {
+            setTimeout(function() {
+                var el = document.getElementsByClassName("ace_autocomplete")[0];
+                if (!el || el.style.display === "none")
+                    return afterCompletePopup(callback);
+                callback(el);
+            }, 50);
+        }
+        
+        expect.html.setConstructor(function(tab) {
             if (typeof tab == "object")
                 return getTabHtml(tab);
         });
@@ -118,109 +138,89 @@ require(["lib/architect/architect", "lib/chai/chai"], function (architect, chai,
                 });
             });
             
-            describe("open", function(){
-                this.timeout(10000);
+            describe("analysis", function(){
+                this.timeout(5000);
+                var jsTab;
+                var jsSession;
                 
-                var sessId;
-                it('should should be properly architect configured and not fail', function(done) {
-                    done();
+                // Setup
+                beforeEach(function(done) {
+                    tabs.getTabs().forEach(function(tab) {
+                        tab.close(true);
+                    });
+                    // tab.close() isn't quite synchronous, wait for it :(
+                    setTimeout(function() {
+                        complete.closeCompletionBox();
+                        tabs.openFile("language.js", function(err, tab) {
+                            jsTab = tab;
+                            jsSession = jsTab.document.getSession().session;
+                            expect(jsSession).to.not.equal(null);
+                            if (!complete.getContinousCompletionRegex("javascript")) {
+                                return language.getWorker(function(err, worker) {
+                                    worker.on("setCompletionRegex", function(e) {
+                                        if (e.data.language === "javascript")
+                                            setTimeout(done);
+                                    });
+                                });
+                            }
+                            done();
+                        });
+                    }, 50);
                 });
-//                it('should open a pane with just an editor', function(done) {
-//                    tabs.openFile("file.js", function(err, tab){
-//                        expect(tabs.getTabs()).length(1);
-//                        
-//                        expect(tab.document.title).equals("file.js");
-//                        done();
-//                    });
-//                });
-//                it('should handle multiple documents in the same pane', function(done) {
-//                    tabs.openFile("listing.json", function(err, tab){
-//                        expect(tabs.getTabs()).length(2);
-//                        
-//                        tab.activate();
-//                        
-//                        var doc = tab.document;
-//                        expect(doc.title).match(new RegExp("listing.json"));
-//                        done();
-//                    });
-//                });
+                
+                it("has three markers initially", function(done) {
+                    jsSession.on("changeAnnotation", function onAnnos() {
+                        if (!jsSession.getAnnotations().length)
+                            return;
+                        jsSession.off("changeAnnotation", onAnnos);
+                        expect(jsSession.getAnnotations()).to.have.length(3);
+                        done();
+                    });
+                });
+                
+                it('can be changed to have only one marker', function(done) {
+                    jsSession.setValue("foo;");
+                    jsSession.on("changeAnnotation", function onAnnos() {
+                        if (!jsSession.getAnnotations().length)
+                            return;
+                        jsSession.off("changeAnnotation", onAnnos);
+                        expect(jsSession.getAnnotations()).to.have.length(1);
+                        done();
+                    });
+                });
+                
+                it('shows a word completer popup on keypress', function(done) {
+                    jsSession.setValue("conny con");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("n");
+                    afterCompletePopup(function(el) {
+                        expect.html(el).text(/conny/);
+                        done();
+                    });
+                });
+                
+                it('shows an inference completer popup on keypress', function(done) {
+                    jsSession.setValue("console.");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("l");
+                    afterCompletePopup(function(el) {
+                        expect.html(el).text(/log\(/);
+                        done();
+                    });
+                });
+                
+                it('always does dot completion', function(done) {
+                    language.setContinuousCompletionEnabled(false);
+                    jsSession.setValue("console");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput(".");
+                    afterCompletePopup(function(el) {
+                        expect.html(el).text(/log\(/);
+                        language.setContinuousCompletionEnabled(false);
+                        done();
+                    });
+                });
             });
-//            describe("clear(), getState() and setState()", function(){
-//                var state, info = {};
-//                
-//                it('should retrieve the state', function(done) {
-//                    state = tabs.getState();
-//                    info.pages = tabs.getTabs().map(function(tab){
-//                        return tab.path || tab.id;
-//                    });
-//                    done();
-//                });
-//                it('should clear all tabs and pages', function(done) {
-//                    tabs.getPanes()[0];
-//                    var pages = tabs.getTabs();
-//                    tabs.clear(true, true); //Soft clear, not unloading the pages
-//                    expect(tabs.getTabs(), "pages").length(0);
-//                    expect(tabs.getPanes(), "tabManager").length(0);
-//                    //expect(pane.getTabs(), "aml").length(0);
-//                    done();
-//                });
-//                it('should restore the state', function(done) {
-//                    tabs.setState(state, false, function(err){
-//                        if (err) throw err.message;
-//                    });
-//                    var l = info.pages.length;
-//                    expect(tabs.getTabs()).length(l);
-//                    expect(tabs.getPanes()[0].getTabs()).length(l);
-//                    expect(tabs.focussedTab.pane.getTabs()).length(l);
-//                    
-//                    expect(tabs.getTabs().map(function(tab){
-//                        return tab.path || tab.id;
-//                    })).to.deep.equal(info.pages);
-//                    done();
-//                });
-//            });
-//            describe("split(), pane.unload()", function(){
-//                it('should split a pane horizontally, making the existing pane the left one', function(done) {
-//                    var pane = tabs.focussedTab.pane;
-//                    var righttab = pane.hsplit(true);
-//                    tabs.focussedTab.attachTo(righttab);
-//                    done();
-//                });
-//                it('should remove the left pane from a horizontal split', function(done) {
-//                    var pane  = tabs.getPanes()[0];
-//                    var tab = tabs.getPanes()[1].getTab();
-//                    pane.unload();
-//                    expect(tabs.getPanes()).length(1);
-//                    expect(tabs.getTabs()).length(2);
-//                    tabs.focusTab(tab);
-//                    done();
-//                });
-//            });
-//            describe("setOption()", function(){
-//                this.timeout(10000);
-//                
-//                it('should change a theme', function(done) {
-//                    var editor = tabs.focussedTab.editor;
-//                    ace.on("themeInit", function setTheme(){
-//                        ace.off("theme.init", setTheme);
-//                        expect.html(getTabHtml(tabs.focussedTab).childNodes[1]).className("ace-monokai");
-//                        editor.setOption("theme", "ace/theme/textmate");
-//                        done();
-//                    });
-//                    editor.setOption("theme", "ace/theme/monokai");
-//                });
-//            });
-            
-            // @todo test split api and menu
-            
-           if (!onload.remain){
-               after(function(done){
-                   tabs.unload();
-                   
-                   document.body.style.marginBottom = "";
-                   done();
-               });
-           }
         });
         
         onload && onload();
