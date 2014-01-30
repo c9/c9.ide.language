@@ -104,7 +104,7 @@ define(function(require, exports, module) {
             };
                 
             var syntax = session.syntax;
-            if (syntax == null && session.$modeId) {
+            if (!syntax && session.$modeId) {
                 syntax = /[^\/]*$/.exec(session.$modeId)[0] || syntax;
                 session.syntax = syntax;
             }
