@@ -120,7 +120,9 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             setTimeout(function() {
                 var el = document.getElementsByClassName("ace_autocomplete")[0];
                 if (!el || el.style.display === "none")
-                    return afterCompletePopup(callback);
+                    return setTimeout(function() {
+                         afterCompletePopup(callback);
+                    }, 1000);
                 callback(el);
             }, 50);
         }
@@ -160,7 +162,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             });
             
             describe("analysis", function(){
-                this.timeout(5000);
+                this.timeout(10000);
                 var jsTab;
                 var jsSession;
                 
