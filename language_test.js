@@ -116,24 +116,28 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
         }
         
-        function afterCompletePopup(callback) {
+        function afterCompleteOpen(callback) {
             setTimeout(function() {
                 var el = document.getElementsByClassName("ace_autocomplete")[0];
                 if (!el || el.style.display === "none")
                     return setTimeout(function() {
-                         afterCompletePopup(callback);
+                         afterCompleteOpen(callback);
                     }, 1000);
                 callback(el);
             }, 50);
         }
         
-        function afterCompleteDocPopup(callback) {
+        function afterCompleteDocOpen(callback) {
             setTimeout(function() {
                 var el = document.getElementsByClassName("code_complete_doc_text")[0];
                 if (!el || el.style.display === "none")
-                    return afterCompleteDocPopup(callback);
+                    return afterCompleteDocOpen(callback);
                 callback(el);
             }, 50);
+        }
+        
+        function isCompleterOpen() {
+            return document.getElementsByClassName("ace_autocomplete")[0].style.display === "none";
         }
         
         expect.html.setConstructor(function(tab) {
@@ -188,13 +192,15 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             }
                             setTimeout(done);
                         });
-                    }, 50);
+                    }, 500);
                 });
                 
                 it("has three markers initially", function(done) {
                     jsSession.on("changeAnnotation", function onAnnos() {
                         if (!jsSession.getAnnotations().length)
                             return;
+                        if (jsSession.getAnnotations().length !== 3)
+                            return; // for this test, it's fine as long as it's eventually 3
                         jsSession.off("changeAnnotation", onAnnos);
                         expect(jsSession.getAnnotations()).to.have.length(3);
                         done();
@@ -206,6 +212,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.on("changeAnnotation", function onAnnos() {
                         if (!jsSession.getAnnotations().length)
                             return;
+                        if (jsSession.getAnnotations().length !== 1)
+                            return; // for this test, it's fine as long as it's eventually 1
                         jsSession.off("changeAnnotation", onAnnos);
                         expect(jsSession.getAnnotations()).to.have.length(1);
                         done();
@@ -216,7 +224,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("conny con");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("n");
-                    afterCompletePopup(function(el) {
+                    afterCompleteOpen(function(el) {
                         expect.html(el).text(/conny/);
                         done();
                     });
@@ -226,7 +234,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("console.");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
-                    afterCompletePopup(function(el) {
+                    afterCompleteOpen(function(el) {
                         expect.html(el).text(/log\(/);
                         done();
                     });
@@ -237,7 +245,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("console");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput(".");
-                    afterCompletePopup(function(el) {
+                    afterCompleteOpen(function(el) {
                         expect.html(el).text(/log\(/);
                         language.setContinuousCompletionEnabled(false);
                         done();
@@ -248,7 +256,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("console.");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
-                    afterCompleteDocPopup(function(el) {
+                    afterCompleteDocOpen(function(el) {
                         expect.html(el).text(/stdout/);
                         done();
                     });
@@ -263,9 +271,11 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         function(err, tab) {
                             // We get a tab, but it's not done yet, so we wait
                             setTimeout(function() {
+                                expect(!isCompleterOpen());
                                 tab.editor.ace.onTextInput("conny con");
+                                expect(!isCompleterOpen());
                                 tab.editor.ace.onTextInput("n");
-                                afterCompletePopup(function(el) {
+                                afterCompleteOpen(function(el) {
                                     expect.html(el).text(/conny/);
                                     done();
                                 });
@@ -285,7 +295,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             setTimeout(function() {
                                 tab.editor.ace.onTextInput("window.a");
                                 tab.editor.ace.onTextInput("p");
-                                afterCompletePopup(function(el) {
+                                afterCompleteOpen(function(el) {
                                     expect.html(el).text(/applicationCache/);
                                     done();
                                 });
