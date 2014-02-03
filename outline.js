@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
-        "language", "util", "language.jumptodef", "navigate"
+        "language", "util", "language.jumptodef", "navigate", "layout"
     ];
     main.provides = ["outline"];
     return main;
@@ -14,6 +14,7 @@ define(function(require, exports, module) {
         var util      = imports.util;
         var menus     = imports.menus;
         var panels    = imports.panels;
+        var layout    = imports.layout;
         var navigate  = imports.navigate;
         var tabs      = imports.tabManager;
         var language  = imports.language;
@@ -296,7 +297,7 @@ define(function(require, exports, module) {
             tree.setDataProvider(tdOutline);
 
             // @TODO this is probably not sufficient
-            window.addEventListener("resize", function() { tree.resize() });
+            layout.on("resize", function() { tree.resize() }, plugin);
             
             tree.textInput = textbox.ace.textInput;
             
