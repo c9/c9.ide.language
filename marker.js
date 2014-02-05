@@ -70,8 +70,8 @@ define(function(require, exports, module) {
             mySession.languageAnnos = [];
             
             var sel = editor.getSelectionRange();
-            var showOccurenceMarkers = sel.isEmpty() ? true
-                : sel.isMultiLine() ? false : null;
+            var showOccurenceMarkers = !editor.inMultiSelectMode
+                 && (sel.isEmpty() ? true : sel.isMultiLine() ? false : null);
             var occurrenceMarkers = [];
             annos.forEach(function(anno) {
                 // Certain annotations can temporarily be disabled

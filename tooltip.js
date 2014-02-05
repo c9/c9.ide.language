@@ -88,7 +88,7 @@ define(function(require, exports, module) {
             
             clearTimeout(onMouseDownTimeout);
             
-            if (ace.inMultiSelectMode)
+            if (ace.selection.rangeCount || !ace.selection.isEmpty())
                 return hide();
             
             if (line !== event.data.line) {
