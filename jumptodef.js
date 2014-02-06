@@ -22,6 +22,7 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var ui = imports.ui;
         var util = require("plugins/c9.ide.language/complete_util");
+        var HoverLink = require("./hover_link").HoverLink;
         var menus = imports.menus;
         
         var CRASHED_JOB_TIMEOUT = 30000;
@@ -85,6 +86,8 @@ define(function(require, exports, module) {
                 // when the analyzer tells us if the jumptodef result is available
                 // we'll disable/enable the jump to definition item in the ctx menu
                 worker.on("isJumpToDefinitionAvailableResult", function(ev) {
+                    if (mnuJumpToDef2.disabled === ev.data.value)
+                        return;
                     if (ev.data.value) {
                         mnuJumpToDef2.enable();
                     }
@@ -92,6 +95,14 @@ define(function(require, exports, module) {
                         mnuJumpToDef2.disable();
                     }
                 });
+            });
+            
+            language.on("attachToEditor", function addBinding(ace) {
+                ace.$mouseHandler.$enableJumpToDef = true;
+                var hoverLink = new HoverLink(ace);
+                hoverLink.findLink = function (row, column) {
+                    worker.emit("isJumpToDefinitionAvailable", { data: {row: row, column: column} });
+                };
             });
         }
         
