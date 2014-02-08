@@ -302,17 +302,23 @@ module.exports = {
     /**
      * Invoked when the cursor has been moved.
      * 
-     * Should be overridden by inheritors that implement tooltips.
+     * May be overridden by inheritors that immediately act upon cursor moves.
+     * 
+     * See {@link #tooltip} and {@link #highlightOccurrences}
+     * for handler functions that are invoked after the cursor has been moved,
+     * the document has been analyzed, and feedback is requested.
      * 
      * @param {Document} doc                      Document object representing the source
-     * @param {Object} fullAst                    The entire AST of the current file (if any)
+     * @param {Object} fullAst                    The entire AST of the current file (if parsed already, otherwise null)
      * @param {Object} cursorPos                  The current cursor position
      * @param {Number} cursorPos.row              The current cursor's row
      * @param {Number} cursorPos.column           The current cursor's column
-     * @param {Object} currentNode                The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode                The AST node the cursor is currently at (if parsed alreadty, and if any)
      * @param {Function} callback                 The callback; must be called
+     * @paran {Object} callback.result            An optional result. Supports the same result objects as
+     *                                            {@link #tooltip} and {@link #highlightOccurrences}
      */
-    onCursorMovedNode: function(doc, fullAst, cursorPos, currentNode, callback) {
+    onCursorMove: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
     

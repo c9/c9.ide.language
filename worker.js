@@ -126,8 +126,8 @@ exports.createUIWorkerClient = function() {
 var LanguageWorker = exports.LanguageWorker = function(sender) {
     var _self = this;
     this.handlers = [];
-    this.currentMarkers = [];
-    this.$lastAggregateActions = {};
+    this.$staticMarkers = [];
+    this.$cursorMarkers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
     sender.once = EventEmitter.once;
@@ -248,17 +248,7 @@ function asyncParForEach(array, fn, callback) {
 }
 
 (function() {
-
-    this.getLastAggregateActions = function() {
-        if(!this.$lastAggregateActions[this.$path])
-            this.$lastAggregateActions[this.$path] = {markers: [], hint: null};
-        return this.$lastAggregateActions[this.$path];
-    };
-
-    this.setLastAggregateActions = function(actions) {
-        this.$lastAggregateActions[this.$path] = actions;
-    };
-
+    
     this.enableFeature = function(name) {
         disabledFeatures[name] = false;
     };
@@ -353,7 +343,7 @@ function asyncParForEach(array, fn, callback) {
             && (ignoreSize || docLength < handler.getMaxFileSizeSupported());
     };
 
-    this.parse = function(part, callback, allowCached) {
+    this.parse = function(part, callback, allowCached, forceCached) {
         var _self = this;
         var value = (part || this.doc).getValue();
         var language = part ? part.language : this.$language;
@@ -363,6 +353,8 @@ function asyncParForEach(array, fn, callback) {
             if (cached && cached.ast && cached.part.language === language)
                 return callback(cached.ast);
         }
+        if (forceCached)
+            return callback(null);
 
         var resultAst = null;
         asyncForEach(this.handlers, function parseNext(handler, next) {
@@ -560,24 +552,12 @@ function asyncParForEach(array, fn, callback) {
                 });
             });
         }, function() {
-            var extendedMakers = markers;
-            if (_self.getLastAggregateActions().markers.length > 0)
-                extendedMakers = markers.concat(_self.getLastAggregateActions().markers);
+            var extendedMakers = markers.concat(_self.$cursorMarkers);
             _self.cachedAsts = cachedAsts;
             _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
-            _self.currentMarkers = markers;
+            _self.$staticMarkers = markers;
             callback();
         });
-    };
-    
-    this.checkForMarker = function(pos) {
-        var astPos = {line: pos.row, col: pos.column};
-        for (var i = 0; i < this.currentMarkers.length; i++) {
-            var currentMarker = this.currentMarkers[i];
-            if (currentMarker.message && tree.inRange(currentMarker.pos, astPos)) {
-                return currentMarker.message;
-            }
-        }
     };
 
     this.filterMarkersBasedOnLevel = function(markers) {
@@ -700,9 +680,10 @@ function asyncParForEach(array, fn, callback) {
     };
 
     /**
-     * Process a cursor move. We do way too much here.
+     * Process a cursor move.
      */
     this.onCursorMove = function(event) {
+        var _self = this;
         var pos = event.data.pos;
         var part = this.getPart(pos);
         var line = this.doc.getLine(pos.row);
@@ -712,45 +693,96 @@ function asyncParForEach(array, fn, callback) {
             return this.scheduleEmit("hint", { line: null });
         }
 
-        var _self = this;
-        var hintMessage = ""; // this.checkForMarker(pos) || "";
-
-        var aggregateActions = {markers: [], hint: null, displayPos: null, enableRefactorings: []};
-                    
-        function processResponse(response) {
-            if (response.markers && (!aggregateActions.markers.found || !response.isGeneric)) {
-                if (aggregateActions.markers.isGeneric)
-                    aggregateActions.markers = [];
-                aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
-                    var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
-                    var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
-                    m.pos = {
-                        sl: start.row,
-                        sc: start.column,
-                        el: end.row,
-                        ec: end.column
-                    };
-                    return m;
-                }));
-                aggregateActions.markers.found = true;
-                aggregateActions.markers.isGeneric = response.isGeneric;
-            }
-            if (response.enableRefactorings && response.enableRefactorings.length > 0) {
-                aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
-            }
-            if (response.hint) {
-                if (aggregateActions.hint)
-                    aggregateActions.hint += "\n" + response.hint;
-                else
-                    aggregateActions.hint = response.hint;
-            }
-            if (response.pos)
-                aggregateActions.pos = response.pos;
-            if (response.displayPos)
-                aggregateActions.displayPos = response.displayPos;
-        }
+        var result = {
+            markers: [],
+            hint: null,
+            displayPos: null
+        };
         
-        function cursorMoved(ast, currentNode, posInPart) {
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
+        this.parse(part, function(ast) {
+            if (!ast)
+                return callHandlers(ast, null, posInPart);
+            _self.findNode(ast, pos, function(currentNode) {
+                callHandlers(ast, currentNode, posInPart);
+            });
+        }, true, true);
+        
+        function callHandlers(ast, currentNode) {
+            asyncForEach(_self.handlers,
+                function(handler, next) {
+                    if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part)) {
+                        handler.onCursorMove(part, ast, posInPart, currentNode, function(response) {
+                            processCursorMoveResponse(response, part, result);
+                            next();
+                        });
+                    }
+                    else {
+                        next();
+                    }
+                },
+                function() {
+                    // Send any results so far
+                    _self.lastCurrentPosUnparsed = pos;
+                    if (result.markers.length) {
+                        _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
+                            ? []
+                            : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
+                        _self.$cursorMarkers = result.markers;
+                        event.data.addedMarkers = result.markers;
+                    }
+                    if (result.hint !== null) {
+                        _self.scheduleEmit("hint", {
+                            pos: result.pos,
+                            displayPos: result.displayPos,
+                            message: result.hint,
+                            line: line
+                        });
+                    }
+                    
+                    // Parse, analyze, and get more results
+                    _self.onCursorMoveAnalyzed(event);
+                }
+            );
+        }
+    };
+    
+    /**
+     * Perform tooltips/marker analysis after a cursor moved,
+     * once the document has been parsed & analyzed.
+     */
+    this.onCursorMoveAnalyzed = function(event) {
+        var _self = this;
+        var pos = event.data.pos;
+        var part = this.getPart(pos);
+        var line = this.doc.getLine(pos.row);
+        
+        if (line != event.data.line) {
+            // Our intelligence is outdated, tell the client
+            return this.scheduleEmit("hint", { line: null });
+        }
+        if (this.scheduledUpdate) {
+            // Postpone the cursor move until the update propagates
+            this.postponedCursorMove = event;
+            return;
+        }
+
+        var result = {
+            markers: event.data.addedMarkers || [],
+            hint: null,
+            displayPos: null
+        };
+
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
+        this.parse(part, function(ast) {
+            _self.findNode(ast, pos, function(currentNode) {
+                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
+                    callHandlers(ast, currentNode);
+                }
+            });
+        }, true);
+        
+        function callHandlers(ast, currentNode) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.scheduledUpdate) {
                     // Postpone the cursor move until the update propagates
@@ -760,10 +792,10 @@ function asyncParForEach(array, fn, callback) {
                 if (_self.isHandlerMatch(handler, part)) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
-                    asyncForEach(["tooltip", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                    assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
+                    asyncForEach(["tooltip", "highlightOccurrences"], function(method, nextMethod) {
                         handler[method](part, ast, posInPart, currentNode, function(response) {
-                            if (response)
-                                processResponse(response);
+                            result = processCursorMoveResponse(response, part, result);
                             nextMethod();
                         });
                     }, next);
@@ -772,36 +804,55 @@ function asyncParForEach(array, fn, callback) {
                     next();
                 }
             }, function() {
-                if (aggregateActions.hint && !hintMessage) {
-                    hintMessage = aggregateActions.hint;
-                }
-                // TODO use separate events for static and cursor markers
                 _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
                     ? []
-                    : _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
-                _self.scheduleEmit("enableRefactorings", aggregateActions.enableRefactorings);
+                    : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
                 _self.lastCurrentNode = currentNode;
-                _self.lastCurrentPos = posInPart;
-                _self.setLastAggregateActions(aggregateActions);
+                _self.lastCurrentPos = pos;
+                _self.$cursorMarkers = result.markers;
                 _self.scheduleEmit("hint", {
-                    pos: aggregateActions.pos,
-                    displayPos: aggregateActions.displayPos,
-                    message: hintMessage,
+                    pos: result.pos,
+                    displayPos: result.displayPos,
+                    message: result.hint,
                     line: line
                 });
             });
-
         }
-
-        var posInPart = syntaxDetector.posToRegion(part.region, pos);
-        this.parse(part, function(ast) {
-            _self.findNode(ast, pos, function(currentNode) {
-                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
-                    cursorMoved(ast, currentNode, posInPart);
-                }
-            });
-        }, true);
-    };
+    }
+        
+    function processCursorMoveResponse(response, part, result) {
+        if (!response)
+            return result;
+        if (response.markers && (!result.markers.found || !response.isGeneric)) {
+            if (result.markers.isGeneric)
+                result.markers = [];
+            result.markers = result.markers.concat(response.markers.map(function (m) {
+                var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
+                var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
+                m.pos = {
+                    sl: start.row,
+                    sc: start.column,
+                    el: end.row,
+                    ec: end.column
+                };
+                return m;
+            }));
+            result.markers.found = true;
+            result.markers.isGeneric = response.isGeneric;
+        }
+        if (response.hint) {
+            if (result.hint)
+                result.hint += "\n" + response.hint;
+            else
+                result.hint = response.hint;
+        }
+        if (response.pos)
+            result.pos = response.pos;
+        if (response.displayPos)
+            result.displayPos = response.displayPos;
+        
+        return result;
+    }
 
     this.$getDefinitionDeclarations = function (row, col, callback) {
         var pos = { row: row, column: col };
@@ -1009,7 +1060,7 @@ function asyncParForEach(array, fn, callback) {
                 _self.analyze(function() {
                     _self.scheduledUpdate = null;
                     if (_self.postponedCursorMove) {
-                        _self.onCursorMove(_self.postponedCursorMove);
+                        _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
                         _self.postponedCursorMove = null;
                     }
                     _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
@@ -1054,9 +1105,11 @@ function asyncParForEach(array, fn, callback) {
         this.immediateWindow = immediateWindow;
         this.lastCurrentNode = null;
         this.lastCurrentPos = null;
+        this.lastCurrentPosUnparsed = null;
         this.cachedAsts = null;
         this.setValue(code);
         this.lastUpdateTime = 0;
+        this.$cursorMarkers = [];
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
         }, function() {

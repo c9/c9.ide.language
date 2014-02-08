@@ -26,7 +26,7 @@ define(function(require, exports, module) {
         var INITIAL_DELAY = 2000;
         var delayedTransfer;
         var lastWorkerMessage = {};
-        
+
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
         var useUIWorker  = window.location && /[?&]noworker=1/.test(window.location.search)
