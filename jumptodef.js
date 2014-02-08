@@ -9,7 +9,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager",
-        "ui"
+        "ui", "settings", "preferences"
     ];
     main.provides = ["language.jumptodef"];
     return main;
@@ -18,11 +18,15 @@ define(function(require, exports, module) {
         var Plugin = imports.Plugin;
         var language = imports.language;
         var commands = imports.commands;
+        var settings = imports.settings;
         var aceHandle = imports.ace;
+        var prefs = imports.preferences;
         var tabs = imports.tabManager;
         var ui = imports.ui;
         var util = require("plugins/c9.ide.language/complete_util");
         var HoverLink = require("./hover_link").HoverLink;
+        var MouseHandler = require("ace/mouse/mouse_handler").MouseHandler;
+        var useragent = require("ace/lib/useragent");
         var menus = imports.menus;
         
         var CRASHED_JOB_TIMEOUT = 30000;
@@ -86,24 +90,71 @@ define(function(require, exports, module) {
                 // when the analyzer tells us if the jumptodef result is available
                 // we'll disable/enable the jump to definition item in the ctx menu
                 worker.on("isJumpToDefinitionAvailableResult", function(ev) {
-                    if (mnuJumpToDef2.disabled === ev.data.value)
-                        return;
-                    if (ev.data.value) {
-                        mnuJumpToDef2.enable();
+                    if (mnuJumpToDef2.disabled !== ev.data.value) {
+                        if (ev.data.value) {
+                            mnuJumpToDef2.enable();
+                        }
+                        else {
+                            mnuJumpToDef2.disable();
+                        }
                     }
-                    else {
-                        mnuJumpToDef2.disable();
+                    var ace = tabs.focussedTab && tabs.focussedTab.editor && tabs.focussedTab.editor.ace;
+                    if (ace.hoverLink && ace.hoverLink.isOpen) {
+                        var pos = ev.data.pos;
+                        if (!ev.data.value) {
+                            ace.hoverLink.range.contains(pos.row, pos.column);
+                            ace.hoverLink.removeMarker();
+                        }
                     }
                 });
             });
             
             language.on("attachToEditor", function addBinding(ace) {
-                ace.$mouseHandler.$enableJumpToDef = true;
+                // ace.$mouseHandler.$enableJumpToDef = true;
                 var hoverLink = new HoverLink(ace);
-                hoverLink.findLink = function (row, column) {
-                    worker.emit("isJumpToDefinitionAvailable", { data: {row: row, column: column} });
-                };
+                hoverLink.on("addMarker", function (e) {
+                    worker.emit("isJumpToDefinitionAvailable", { data: e.range.start });
+                });
+                hoverLink.on("open", function(e, hoverLink) {
+                    if (hoverLink.isOpen) {
+                        var cursor = hoverLink.editor.getCursorPosition();
+                        if (!hoverLink.range.contains(cursor.row, cursor.column))
+                            hoverLink.editor.selection.setRange(hoverLink.range);
+                        jumptodef();
+                    }
+                });
             });
+            
+            settings.on("read", function () {
+                settings.setDefaults("user/language", [
+                    ["overrideMultiselectShortcuts", "false"]
+                ]);
+                updateSettings();
+            });
+            prefs.add({
+                "Language" : {
+                    "Jump To Definition" : {
+                        "Use cmd-click for jump to definition" : {
+                            type     : "checkbox",
+                            path     : "user/language/@overrideMultiselectShortcuts",
+                            position : 4000
+                        }
+                    }
+                }
+            }, plugin);
+            
+            settings.on("user/language", updateSettings);
+        }
+        
+        function updateSettings() {
+            var key = useragent.isMac ? "cmd-" : "ctrl-";
+            if (settings.getBool("user/language/@overrideMultiselectShortcuts")) {
+                MouseHandler.prototype.$enableJumpToDef = true;
+                HoverLink.prototype.$keyModifier = key;
+            } else {
+                MouseHandler.prototype.$enableJumpToDef = false;
+                HoverLink.prototype.$keyModifier = key + "shift-";
+            }
         }
         
         function addUnknownColumn(ace, pos, name) {
