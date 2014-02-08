@@ -1,4 +1,4 @@
-/*global describe it before after  =*/
+/*global describe it before after beforeEach*/
 
 "use client";
 
@@ -203,19 +203,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             return; // for this test, it's fine as long as it's eventually 3
                         jsSession.off("changeAnnotation", onAnnos);
                         expect(jsSession.getAnnotations()).to.have.length(3);
-                        done();
-                    });
-                });
-                
-                it('can be changed to have only one marker', function(done) {
-                    jsSession.setValue("foo;");
-                    jsSession.on("changeAnnotation", function onAnnos() {
-                        if (!jsSession.getAnnotations().length)
-                            return;
-                        if (jsSession.getAnnotations().length !== 1)
-                            return; // for this test, it's fine as long as it's eventually 1
-                        jsSession.off("changeAnnotation", onAnnos);
-                        expect(jsSession.getAnnotations()).to.have.length(1);
                         done();
                     });
                 });
