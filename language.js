@@ -185,7 +185,7 @@ define(function(require, exports, module) {
                     notifyWorker("switchFile", e);
             });
             
-            emit("initWorker", { worker: worker }, true);
+            emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
                 settings.setDefaults("user/language", [
