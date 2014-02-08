@@ -90,14 +90,13 @@ define(function(require, exports, module) {
                 // when the analyzer tells us if the jumptodef result is available
                 // we'll disable/enable the jump to definition item in the ctx menu
                 worker.on("isJumpToDefinitionAvailableResult", function(ev) {
-                    if (mnuJumpToDef2.disabled !== ev.data.value) {
-                        if (ev.data.value) {
-                            mnuJumpToDef2.enable();
-                        }
-                        else {
-                            mnuJumpToDef2.disable();
-                        }
+                    if (ev.data.value) {
+                        mnuJumpToDef2.enable();
                     }
+                    else {
+                        mnuJumpToDef2.disable();
+                    }
+                    
                     var ace = tabs.focussedTab && tabs.focussedTab.editor && tabs.focussedTab.editor.ace;
                     if (ace.hoverLink && ace.hoverLink.isOpen) {
                         var pos = ev.data.pos;
