@@ -865,7 +865,7 @@ function asyncParForEach(array, fn, callback) {
         _self.$getDefinitionDeclarations(pos.row, pos.column, function(results) {
             _self.sender.emit(
                 "isJumpToDefinitionAvailableResult",
-                { value: !!(results && results.length), path: _self.$path }
+                { value: !!(results && results.length), path: _self.$path, pos: pos }
             );
         });
     };
