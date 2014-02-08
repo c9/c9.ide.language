@@ -8,7 +8,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "ui", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager", "browsersupport",
-        "language.tooltip"
+        "language.tooltip", "settings"
     ];
     main.provides = ["language.complete"];
     return main;
@@ -23,6 +23,7 @@ define(function(require, exports, module) {
         var commands   = imports.commands;
         var language   = imports.language;
         var tooltip    = imports["language.tooltip"];
+        var settings   = imports.settings;
         
         var lang           = require("ace/lib/lang");
         var SyntaxDetector = require("./syntax_detector");
@@ -175,6 +176,9 @@ define(function(require, exports, module) {
                 });
                 popup.renderer.setStyle("dark", theme.isDark);
             }, plugin);
+            
+            settings.on("user/language", updateSettings);
+            settings.on("project/language", updateSettings);
         }
         
         var drawn;
@@ -227,6 +231,10 @@ define(function(require, exports, module) {
             });
             
             emit("draw");
+        }
+        
+        function updateSettings() {
+            setEnterCompletion(settings.get("user/language/@enterCompletion"));
         }
         
         /***** Helper Functions *****/

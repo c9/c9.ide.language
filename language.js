@@ -193,7 +193,8 @@ define(function(require, exports, module) {
                     ["instanceHighlight", "true"],
                     ["undeclaredVars", "true"],
                     ["unusedFunctionArgs", "false"],
-                    ["continuousCompletion", "true"]
+                    ["continuousCompletion", "true"],
+                    ["enterCompletion", "true"]
                 ]);
                 settings.setDefaults("project/language", [
                     ["warnLevel", "info"]
@@ -232,7 +233,12 @@ define(function(require, exports, module) {
                             type     : "checkbox",
                             path     : "user/language/@continuousCompletion",
                             position : 4000
-                        }
+                        },
+                        "Complete On Enter" : {
+                            type     : "checkbox",
+                            path     : "user/language/@enterCompletion",
+                            position : 5000
+                        },
                     },
                     "Markers" : {
                         position : 200,
@@ -336,7 +342,8 @@ define(function(require, exports, module) {
             // worker.emit("cursormove", {data: cursorPos});
             
             isContinuousCompletionEnabledSetting = 
-                settings.get("user/language/@continuousCompletion") != "false";
+                settings.get("user/language/@continuousCompletion");
+                
             if (tabs.focussedTab)
                 notifyWorker("switchFile", { tab: tabs.focussedTab });
         }
