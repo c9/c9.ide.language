@@ -187,7 +187,7 @@ module.exports = {
      * If a non-null value is returned, it is assumed continous completion
      * is supported for this language.
      * 
-     * As an example, Java-like languages might want to use: /\./
+     * As an example, Java-like languages might want to use: /^\.$/
      * 
      * Should be overridden by inheritors that implement code completion.
      * Default implementation returns null.
@@ -195,6 +195,21 @@ module.exports = {
      * @return RegExp
      */
     getCompletionRegex: function() {
+        return null;
+    },
+
+    /**
+     * Returns a regular expression used to trigger a tooltip.
+     * Normally, tooltips after a scheduled analysis has been completed.
+     * To avoid delays, this function can be used to trigger
+     * analysis & tooltip fetching early.
+     * 
+     * Should be overridden by inheritors that implement tooltips.
+     * Default implementation returns null.
+     * 
+     * @return RegExp
+     */
+    getTooltipRegex: function() {
         return null;
     },
 
@@ -524,8 +539,10 @@ module.exports = {
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of error and warning markers
+     * @param {Boolean} [minimalAnalysis]    Fast, minimal analysis is requested, e.g.
+     *                                       for code completion or tooltips.
      */
-    analyze: function(value, fullAst, callback) {
+    analyze: function(value, fullAst, callback, minimalAnalysis) {
         callback();
     },
 

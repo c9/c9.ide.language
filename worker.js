@@ -155,7 +155,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
         _self.documentClose(event);
     });
     sender.on("analyze", applyEventOnce(function(event) {
-        _self.analyze(function() {});
+        _self.analyze(false, function() {});
     }));
     sender.on("cursormove", function(event) {
         _self.onCursorMove(event);
@@ -502,7 +502,7 @@ function asyncParForEach(array, fn, callback) {
         }
     }
 
-    this.analyze = function(callback) {
+    this.analyze = function(minimalAnalysis, callback) {
         var _self = this;
         var parts = syntaxDetector.getCodeParts(this.doc, this.$language);
         var markers = [];
@@ -529,7 +529,7 @@ function asyncParForEach(array, fn, callback) {
                             else {
                                 next();
                             }
-                        });
+                        }, minimalAnalysis);
                     }
                     else {
                         next();
@@ -554,7 +554,8 @@ function asyncParForEach(array, fn, callback) {
         }, function() {
             var extendedMakers = markers.concat(_self.$cursorMarkers);
             _self.cachedAsts = cachedAsts;
-            _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
+            if (!minimalAnalysis)
+                _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
             _self.$staticMarkers = markers;
             callback();
         });
@@ -764,6 +765,8 @@ function asyncParForEach(array, fn, callback) {
         if (this.scheduledUpdate) {
             // Postpone the cursor move until the update propagates
             this.postponedCursorMove = event;
+            if (event.data.now)
+                this.onUpdate(true);
             return;
         }
 
@@ -1047,9 +1050,35 @@ function asyncParForEach(array, fn, callback) {
 
     this.onUpdate = function(now) {
         var _self = this;
+        
         if (this.scheduledUpdate && !now)
             return;
+        
+        if (!DEBUG) {
+            clearTimeout(this.scheduledUpdateFail);
+            this.scheduledUpdateFail = setTimeout(function() {
+                _self.scheduledUpdate = null;
+                console.log("Warning: worker analysis taking too long or failed to call back, rescheduling");
+            }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
+        }
+        
+        if (now) {
+            if (this.scheduledUpdate === "now")
+                return;
+            clearTimeout(this.scheduledUpdate);
+            this.scheduledUpdate = "now";
+            doUpdate(function() {
+                // Schedule another analysis without the
+                // now & minimalAnalysis options.
+                _self.onUpdate();
+            });
+            return;
+        }
         this.scheduledUpdate = setTimeout(function() {
+           doUpdate();
+        }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
+        
+        function doUpdate(done) {
             var startTime = new Date().getTime();
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler))
@@ -1057,7 +1086,7 @@ function asyncParForEach(array, fn, callback) {
                 else
                     next();
             }, function() {
-                _self.analyze(function() {
+                _self.analyze(now, function() {
                     _self.scheduledUpdate = null;
                     if (_self.postponedCursorMove) {
                         _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
@@ -1065,15 +1094,9 @@ function asyncParForEach(array, fn, callback) {
                     }
                     _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
                     clearTimeout(_self.scheduledUpdateFail);
+                    done && done();
                 });
             });
-        }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
-        if (!DEBUG) {
-            clearTimeout(this.scheduledUpdateFail);
-            this.scheduledUpdateFail = setTimeout(function() {
-                _self.scheduledUpdate = null;
-                console.log("Warning: worker analysis taking too long, rescheduling");
-            }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
     };
     
@@ -1149,6 +1172,8 @@ function asyncParForEach(array, fn, callback) {
                 _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });
             if (handler.handlesLanguage(_self.$language) && handler.getCompletionRegex())
                 _self.sender.emit("setCompletionRegex", { language: _self.$language, completionRegex: handler.getCompletionRegex() });
+            if (handler.handlesLanguage(_self.$language) && handler.getTooltipRegex())
+                _self.sender.emit("setTooltipRegex", { language: _self.$language, tooltipRegex: handler.getTooltipRegex() });
         }
         if (!handler.$isInited) {
             handler.$isInited = true;

@@ -350,6 +350,7 @@ define(function(require, exports, module) {
             var cursorPos = { row: pos.row + rowOffset, column: cursorCol };
             var cursorPos2 = { row: pos.row + rowOffset2, column: cursorCol2 };
             ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
+            emit("replaceText", { pos: pos, prefix: prefix, newText: paddedLines });
         }
         
         function showCompletionBox(editor, m, prefix, line) {
@@ -837,7 +838,18 @@ define(function(require, exports, module) {
              */
             $setShowDocDelay : function(value) {
                 SHOW_DOC_DELAY = value;
-            }
+            },
+            
+            events: [
+                /**
+                 * Fires when a code completion option is picked.
+                 *
+                 * @param {Object} pos
+                 * @param {String} newText
+                 * @event replaceText
+                 */
+                "replaceText"
+            ]
         });
         
         register(null, {

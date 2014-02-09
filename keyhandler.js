@@ -45,6 +45,9 @@ define(function(require, exports, module) {
                     ace.commands.on("afterExec", onAfterExec);
                 }
             });
+            complete.on("replaceText", function(e) {
+                onTextInput(e.newText, false);
+            })
         }
         
         /***** Methods *****/
@@ -71,6 +74,7 @@ define(function(require, exports, module) {
         }
         
         function onTextInput(text, pasted) {
+            inputTriggerTooltip(text, pasted);
             if (complete.isPopupVisible())
                 return false;
             if (language.isContinuousCompletionEnabled())
@@ -103,6 +107,12 @@ define(function(require, exports, module) {
             var idRegex = complete.getIdentifierRegex(null, ace);
             if (!pasted && completionRegex && text.match(completionRegex))
                 handleChar(text, idRegex, completionRegex); 
+        }
+        
+        function inputTriggerTooltip(text, pasted) {
+            var tooltipRegex = tooltip.getTooltipRegex(null, ace);
+            if (!pasted && text.match(tooltipRegex))
+                language.onCursorChange(null, null, true);
         }
         
         function typeAlongCompleteTextInput(text, pasted) {

@@ -43,11 +43,15 @@ define(function(require, exports, module) {
         
         var worker;
         
-        function onCursorChange() {
+        function onCursorChange(e, sender, now) {
+            var cursorPos = worker.$doc.selection.getCursor();
+            var line = worker.$doc.getDocument().getLine(cursorPos.row);
             emit("cursormove", {
                 doc: worker.$doc,
-                pos: worker.$doc.selection.getCursor(),
-                selection: worker.$doc.selection
+                pos: cursorPos,
+                line: line,
+                selection: worker.$doc.selection,
+                now: now
             });
         }
         function onChange(e) {
@@ -412,7 +416,7 @@ define(function(require, exports, module) {
          * Language handlers are executed inside a web worker.
          * They can be registered using the {@link #registerLanguageHandler}
          * function, and should be based on the {@link language.base_handler}
-         * base class.
+         * base class. For examples, see {@link language.base_handler}.
          * 
          * @singleton
          **/
@@ -472,7 +476,10 @@ define(function(require, exports, module) {
              * @param {String} callback.result.on.event        Event name
              * @param {Object} callback.result.on.data         Event data
              */
-            getWorker : getWorker
+            getWorker : getWorker,
+            
+            /** @ignore */
+            onCursorChange : onCursorChange
         });
         
         register(null, {
