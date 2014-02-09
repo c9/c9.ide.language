@@ -326,7 +326,9 @@ function asyncParForEach(array, fn, callback) {
         onRegistered(handler);
     };
     
-    this.isHandlerMatch = function(handler, part, ignoreSize) {
+    this.isHandlerMatch = function(handler, part, method, ignoreSize) {
+        if (handler[method].base_handler)
+            return;
         switch (handler.handlesEditor()) {
             case base_handler.HANDLES_EDITOR: 
                 if (this.immediateWindow)
@@ -336,11 +338,12 @@ function asyncParForEach(array, fn, callback) {
                 if (!this.immediateWindow)
                     return;
         }
+        if (!handler.handlesLanguage(part ? part.language : this.$language))
+            return;
         var docLength = ignoreSize ? null : part
             ? part.getValue().length
             : this.doc.$lines.reduce(function(t,l) { return t + l.length; }, 0);
-         return handler.handlesLanguage(part ? part.language : this.$language)
-            && (ignoreSize || docLength < handler.getMaxFileSizeSupported());
+         return ignoreSize || docLength < handler.getMaxFileSizeSupported();
     };
 
     this.parse = function(part, callback, allowCached, forceCached) {
@@ -358,7 +361,7 @@ function asyncParForEach(array, fn, callback) {
 
         var resultAst = null;
         asyncForEach(this.handlers, function parseNext(handler, next) {
-            if (_self.isHandlerMatch(handler, part)) {
+            if (_self.isHandlerMatch(handler, part, "parse")) {
                 handler.parse(value, function onParse(ast) {
                     if (ast)
                         resultAst = ast;
@@ -393,7 +396,7 @@ function asyncParForEach(array, fn, callback) {
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
         var result;
         asyncForEach(_self.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler, part)) {
+            if (_self.isHandlerMatch(handler, part, "findNode")) {
                 handler.findNode(ast, posInPart, function(node) {
                     if (node)
                         result = node;
@@ -426,7 +429,7 @@ function asyncParForEach(array, fn, callback) {
         var isUnordered = false;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler)) {
+                if (_self.isHandlerMatch(handler, null, "outline")) {
                     handler.outline(_self.doc, ast, function(outline) {
                         if (outline && (!result || result.isGeneric))
                             result = outline;
@@ -446,7 +449,7 @@ function asyncParForEach(array, fn, callback) {
         var data = event.data;
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "hierarchy")) {
                 handler.hierarchy(_self.doc, data.pos, function(hierarchy) {
                     if(hierarchy)
                         return _self.sender.emit("hierarchy", hierarchy);
@@ -462,7 +465,7 @@ function asyncParForEach(array, fn, callback) {
     this.codeFormat = function() {
         var _self = this;
         asyncForEach(_self.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler, null, true)) {
+            if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
                 handler.codeFormat(_self.doc, function(newSource) {
                     if (newSource)
                         return _self.sender.emit("code_format", newSource);
@@ -513,7 +516,7 @@ function asyncParForEach(array, fn, callback) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "analyze")) {
                         handler.language = part.language;
                         handler.analyze(part.getValue(), ast, function(result) {
                             if (result) {
@@ -601,7 +604,7 @@ function asyncParForEach(array, fn, callback) {
                         
                         // Try and find a better match using getInspectExpression()
                         asyncForEach(_self.handlers, function(handler, next) {
-                            if (_self.isHandlerMatch(handler, part)) {
+                            if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
                                 handler.getInspectExpression(part, ast, partPos, node, function(result) {
                                     if (result) {
@@ -656,7 +659,7 @@ function asyncParForEach(array, fn, callback) {
         var done = false;
         var _self = this;
         this.handlers.forEach(function (h) {
-            if (!done && _self.isHandlerMatch(h, null, true)) {
+            if (!done && _self.isHandlerMatch(h, null, "getPos", true)) {
                 h.getPos(node, function(result) {
                     if (!result)
                         return;
@@ -674,7 +677,7 @@ function asyncParForEach(array, fn, callback) {
         var result;
         var _self = this;
         this.handlers.forEach(function (h) {
-            if (_self.isHandlerMatch(h, part, true))
+            if (_self.isHandlerMatch(h, part, "getIdentifierRegex", true))
                 result = h.getIdentifierRegex() || result;
         });
         return result || completeUtil.DEFAULT_ID_REGEX;
@@ -712,7 +715,7 @@ function asyncParForEach(array, fn, callback) {
         function callHandlers(ast, currentNode) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
-                    if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part)) {
+                    if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
                         handler.onCursorMove(part, ast, posInPart, currentNode, function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
@@ -792,7 +795,7 @@ function asyncParForEach(array, fn, callback) {
                     _self.postponedCursorMove = event;
                     return;
                 }
-                if (_self.isHandlerMatch(handler, part)) {
+                if (_self.isHandlerMatch(handler, part, "tooltip") || _self.isHandlerMatch(handler, part, "highlightOccurrences")) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
                     assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
@@ -868,7 +871,7 @@ function asyncParForEach(array, fn, callback) {
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
                         handler.jumpToDefinition(part, ast, posInPart, currentNode, function(results) {
                             handler.path = _self.$path;
                             if (results)
@@ -934,7 +937,7 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
                         handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
@@ -968,7 +971,7 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "getVariablePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
                         handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
                             if (response) {
@@ -997,7 +1000,7 @@ function asyncParForEach(array, fn, callback) {
     this.onRenameBegin = function(event) {
         var _self = this;
         this.handlers.forEach(function(handler) {
-            if (_self.isHandlerMatch(handler))
+            if (_self.isHandlerMatch(handler, null, "onRenameBegin"))
                 handler.onRenameBegin(_self.doc, function() {});
         });
     };
@@ -1013,7 +1016,7 @@ function asyncParForEach(array, fn, callback) {
           return this.sender.emit("commitRenameResult", {});
 
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "commitRename")) {
                 handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
                     if (response) {
                         commited = true;
@@ -1037,7 +1040,7 @@ function asyncParForEach(array, fn, callback) {
     this.onRenameCancel = function(event) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "onRenameCancel")) {
                 handler.onRenameCancel(function() {
                     next();
                 });
@@ -1081,7 +1084,7 @@ function asyncParForEach(array, fn, callback) {
         function doUpdate(done) {
             var startTime = new Date().getTime();
             asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler))
+                if (_self.isHandlerMatch(handler, null, "onUpdate"))
                     handler.onUpdate(_self.doc, next);
                 else
                     next();
@@ -1260,7 +1263,7 @@ function asyncParForEach(array, fn, callback) {
                     var matches = [];
     
                     asyncForEach(_self.handlers, function(handler, next) {
-                        if (_self.isHandlerMatch(handler, part)) {
+                        if (_self.isHandlerMatch(handler, part, "complete")) {
                             handler.language = language;
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
