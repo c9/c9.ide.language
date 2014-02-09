@@ -466,15 +466,34 @@ define(function(require, exports, module) {
             popup.prefix = prefix;
             
             popup.ignoreGenericMatches = isIgnoreGenericEnabled(matches);
-            if (popup.ignoreGenericMatches) {
-                // Experiment: disable generic matches when possible
-                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
-            }
+            
             popup.calcPrefix = function(regex) {
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             popup.setData(matches);
             popup.setRow(0);
+        }
+        
+        function cleanupMatches(matches, ace, pos) {
+            if (isIgnoreGenericEnabled(matches)) {
+                // Disable generic matches when possible
+                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
+            
+            // Experiment: show completion box with simpler look & feel
+            // in comments and strings
+            if (inCommentOrString(ace, pos)) {
+                for (var i = 0; i < matches.length; i++) {
+                    var m = matches[i];
+                    if (m.meta === "snippet") {
+                        matches.splice(i--, 1);
+                        continue;
+                    }
+                    m.icon = m.icon ? "unknown2" : null;
+                    delete m.isContextual;
+                    delete m.meta;
+                };
+            }
         }
         
         function isIgnoreGenericEnabled(matches) {
@@ -704,6 +723,8 @@ define(function(require, exports, module) {
             var matches = eventMatches = event.data.matches;
             if (event.data.line !== line)
                 matches = filterMatches(matches, line, pos);
+                
+            cleanupMatches(matches, editor.ace, pos);
             
             if (matches.length === 1 && !event.data.forceBox) {
                 replaceText(editor.ace, matches[0], event.data.deleteSuffix);
@@ -750,8 +771,6 @@ define(function(require, exports, module) {
                 return match.name.indexOf(prefix) === 0;
             });
         }
-    
-        /***** Methods *****/
         
         function deferredInvoke(now, ace) {
             ace = ace || lastAce;
@@ -775,6 +794,11 @@ define(function(require, exports, module) {
         function getIdentifierRegex(language, ace) {
             return idRegexes[language || getSyntax(ace || lastAce)];
         }
+        
+        function inCommentOrString(ace, pos) {
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
+            return token && token.type && token.type.match(/^comment|^string/);
+        } 
         
         /***** Lifecycle *****/
         

@@ -132,8 +132,6 @@ function isRequireJSCall(line, column, identifier, ace, noQuote) {
  */
 function inCompletableCodeContext(line, column, id, ace) {
     var inMode = null;
-    if (line.match(/^\s*\*.+/))
-        return false;
     for (var i = 0; i < column; i++) {
         if(line[i] === '"' && !inMode)
             inMode = '"';
@@ -162,7 +160,7 @@ function inCompletableCodeContext(line, column, id, ace) {
         else if(line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
             inMode = null;
     }
-    return !inMode;
+    return inMode != "/";
 }
 
 /**
