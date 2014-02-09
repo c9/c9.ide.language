@@ -14,12 +14,10 @@ define(function(require, exports, module) {
 
     function main(options, imports, register) {
         var Plugin = imports.Plugin;
-        var aceHandle = imports.ace;
         var language = imports.language;
         var complete = imports["language.complete"];
         var tooltip = imports["language.tooltip"];
         var complete_util = require("./complete_util");
-        var TokenIterator = require("ace/token_iterator").TokenIterator;
         var DEFAULT_ID_REGEX = complete_util.DEFAULT_ID_REGEX;
         var ace;
         
@@ -33,17 +31,11 @@ define(function(require, exports, module) {
             if (loaded) return false;
             loaded = true;
             
-            aceHandle.on("create", function(e) {
-                e.editor.on("createAce", addBinding);
-                
-                addBinding(e.editor.ace);
-                
-                function addBinding(ace) {
-                    var kb = ace.keyBinding;
-                    var defaultCommandHandler   = kb.onCommandKey.bind(kb);
-                    kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
-                    ace.commands.on("afterExec", onAfterExec);
-                }
+            language.on("attachToEditor", function addBinding(ace) {
+                var kb = ace.keyBinding;
+                var defaultCommandHandler = kb.onCommandKey.bind(kb);
+                kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
+                ace.commands.on("afterExec", onAfterExec);
             });
             complete.on("replaceText", function(e) {
                 onTextInput(e.newText, false);

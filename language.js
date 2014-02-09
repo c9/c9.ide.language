@@ -168,6 +168,13 @@ define(function(require, exports, module) {
             }
             worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
 
+            
+            aceHandle.on("create", function(e) {
+                e.editor.on("createAce", function (ace) {
+                    emit("attachToEditor", ace);
+                });
+            });
+            
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
                 if (path)
@@ -189,7 +196,7 @@ define(function(require, exports, module) {
                     notifyWorker("switchFile", e);
             });
             
-            emit("initWorker", { worker: worker }, true);
+            emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
                 settings.setDefaults("user/language", [
@@ -296,10 +303,6 @@ define(function(require, exports, module) {
                 initedTabs = true;
             }
             
-            // TODO investigate if this was really needed, editor.ace is already destroyed when this is called
-            // editor.on("unload", function h2() {
-            //     editor.ace.selection.off("changeCursor", onCursorChangeDefer);
-            // }, editor);
             editor.on("documentLoad", function(e) {
                 var session = e.doc.getSession().session;
                 
