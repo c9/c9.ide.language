@@ -123,7 +123,9 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     return setTimeout(function() {
                          afterCompleteOpen(callback);
                     }, 1000);
-                callback(el);
+                setTimeout(function() {
+                    callback(el);
+                }, 50);
             }, 50);
         }
         
@@ -132,7 +134,9 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 var el = document.getElementsByClassName("code_complete_doc_text")[0];
                 if (!el || el.style.display === "none")
                     return afterCompleteDocOpen(callback);
-                callback(el);
+                setTimeout(function() {
+                    callback(el);
+                }, 50);
             }, 50);
         }
         
