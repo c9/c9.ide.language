@@ -38,7 +38,7 @@ define(function(require, exports, module) {
                 ace.commands.on("afterExec", onAfterExec);
             });
             complete.on("replaceText", function(e) {
-                onTextInput(e.newText, false);
+                onTextInput(e.newText, false, true);
             })
         }
         
@@ -65,8 +65,10 @@ define(function(require, exports, module) {
             };
         }
         
-        function onTextInput(text, pasted) {
+        function onTextInput(text, pasted, completed) {
             inputTriggerTooltip(text, pasted);
+            if (completed)
+                return false;
             if (complete.isPopupVisible())
                 return false;
             if (language.isContinuousCompletionEnabled())
