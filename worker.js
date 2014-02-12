@@ -40,15 +40,6 @@ var DEBUG = !isInWebWorker;
 /*global disabledFeatures: true*/
 disabledFeatures = {};
 
-EventEmitter.once = function(event, fun) {
-  var _self = this;
-  var newCallback = function() {
-    fun && fun.apply(null, arguments);
-    _self.removeEventListener(event, newCallback);
-  };
-  this.addEventListener(event, newCallback);
-};
-
 var ServerProxy = function(sender) {
 
   this.emitter = Object.create(EventEmitter);
