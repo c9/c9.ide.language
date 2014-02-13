@@ -93,6 +93,12 @@ define(function(require, exports, module) {
                 session.on("change", onChange);
             }
             
+            var syntax = session.syntax;
+            if (!syntax && session.$modeId) {
+                syntax = /[^\/]*$/.exec(session.$modeId)[0] || syntax;
+                session.syntax = syntax;
+            }
+            
             // Avoid sending duplicate messages
             var last = lastWorkerMessage;
             if (last.type === type && last.path === path && last.immediateWindow === immediateWindow
@@ -104,12 +110,6 @@ define(function(require, exports, module) {
                 immediateWindow: immediateWindow,
                 syntax: syntax
             };
-                
-            var syntax = session.syntax;
-            if (!syntax && session.$modeId) {
-                syntax = /[^\/]*$/.exec(session.$modeId)[0] || syntax;
-                session.syntax = syntax;
-            }
             
             var value = e.value || session.doc.$lines || [];
 

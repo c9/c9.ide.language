@@ -114,7 +114,7 @@ define(function(require, exports, module) {
                 if (cursorTimeout || !isActive)
                     return;
                 cursorTimeout = setTimeout(function moveSelection() {
-                    if (dirty && isActive)
+                    if ((dirty || scheduled) && isActive)
                         return setTimeout(moveSelection, 50);
                     try {
                         handleCursor();
@@ -154,7 +154,7 @@ define(function(require, exports, module) {
                 tabs.focusTab(e.tab, true);
                 
                 hasNavigateOutline = true;
-                wasActive          = isActive
+                wasActive          = isActive;
                 isActive           = true;
                 onTabFocus(e, true);
                 
@@ -188,18 +188,18 @@ define(function(require, exports, module) {
             setTimeout(updateOutline.bind(null, true), 20000);
         }
         
-        function onTabFocus(event) {
+        function onTabFocus(event, force) {
             var tab = event.tab;
             var session;
             
-            if (originalTab == tab)
+            if (originalTab == tab && force !== true)
                 return;
             
             // Remove change listener
             if (originalTab) {
                 session = originalTab.document.getSession().session;
-                session && session.removeListener("changeMode", onChange);
-                originalTab.document.undoManager.off("change", onChange);
+                session && session.off("changeMode", onChange);
+                session && session.off("change", onChange);
             }
             
             if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
@@ -213,7 +213,7 @@ define(function(require, exports, module) {
             // Add change listener
             session = tab.document.getSession().session;
             session && session.on("changeMode", onChange);
-            tab.document.undoManager.on("change", onChange);
+            session && session.on("change", onChange);
             
             originalTab = tab;
             
@@ -403,6 +403,7 @@ define(function(require, exports, module) {
         function updateOutline(now) {
             if (!isActive)
                 return;
+            dirty = true;
             if (now && tabs.focussedTab && !scheduled) {
                 if (!worker) {
                     return language.getWorker(function(err, _worker) {
@@ -410,10 +411,15 @@ define(function(require, exports, module) {
                         updateOutline(true);
                     });
                 }
-                worker.emit("outline", { data: {
-                    ignoreFilter: false,
-                    path: tabs.focussedTab.path
-                }});
+                
+                // have to use timeout since worker uses timeout as well
+                setTimeout(function () {
+                    dirty = false;
+                    worker.emit("outline", { data: {
+                        ignoreFilter: false,
+                        path: tabs.focussedTab.path
+                    }});
+                });
                 
                 // Don't schedule new job until data received or timeout
                 scheduled = true;
@@ -422,7 +428,6 @@ define(function(require, exports, module) {
                     scheduled = false;
                 }, 10000);
             }
-            dirty = true;
         }
     
         function findCursorInOutline(json, cursor) {
@@ -464,11 +469,12 @@ define(function(require, exports, module) {
             var editor = tab && tab.editor;
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
-            if (tab.path !== data.path)
-                return updateOutline(true);
                 
-            scheduled = dirty = false;
-            clearTimeout(scheduleWatcher);
+            scheduled = false;
+            if (dirty || tab.path !== data.path)
+                updateOutline(true);
+            else
+                clearTimeout(scheduleWatcher);
             
             fullOutline = event.data.body;
             isUnordered = event.data.isUnordered;
