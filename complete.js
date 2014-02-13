@@ -466,6 +466,7 @@ define(function(require, exports, module) {
             popup.prefix = prefix;
             
             popup.ignoreGenericMatches = isIgnoreGenericEnabled(matches);
+            popup.matches = matches;
             
             popup.calcPrefix = function(regex) {
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
@@ -477,7 +478,7 @@ define(function(require, exports, module) {
         function cleanupMatches(matches, ace, pos) {
             if (isIgnoreGenericEnabled(matches)) {
                 // Disable generic matches when possible
-                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
+                matches = matches.filter(function(m) { return !m.isGeneric; });
             }
             
             // Experiment: show completion box with simpler look & feel
@@ -588,8 +589,9 @@ define(function(require, exports, module) {
                     var idRegex = matches[i].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
                     matched = idRegex.test(text);
                 }
-                if (matched)
-                    deferredInvoke();
+                var completionMatch = text.match(getCompletionRegex());
+                if (matched || completionMatch)
+                    deferredInvoke(completionMatch);
                 else
                     closeCompletionBox();
             }
@@ -787,7 +789,7 @@ define(function(require, exports, module) {
             deferredInvoker.schedule(delay);
         }
         
-        function getContinousCompletionRegex(language, ace) {
+        function getCompletionRegex(language, ace) {
             return completionRegexes[language || getSyntax(ace || lastAce)];
         }
         
@@ -835,7 +837,7 @@ define(function(require, exports, module) {
             /**
              * @ignore
              */
-            getContinousCompletionRegex: getContinousCompletionRegex,
+            getCompletionRegex: getCompletionRegex,
             
             /**
              * @ignore

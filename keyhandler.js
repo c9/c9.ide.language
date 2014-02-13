@@ -90,12 +90,12 @@ define(function(require, exports, module) {
             var line = ace.session.doc.getLine(pos.row);
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
                 return false;
-            if (complete.getContinousCompletionRegex(null, ace))
+            if (complete.getCompletionRegex(null, ace))
                 complete.deferredInvoke(false, ace);
         }
         
         function inputTriggerComplete(text, pasted) {
-            var completionRegex = complete.getContinousCompletionRegex(null, ace);
+            var completionRegex = complete.getCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
             if (!pasted && completionRegex && text.match(completionRegex))
                 handleChar(text, idRegex, completionRegex); 
@@ -108,7 +108,7 @@ define(function(require, exports, module) {
         }
         
         function typeAlongCompleteTextInput(text, pasted) {
-            var completionRegex = complete.getContinousCompletionRegex(null, ace);
+            var completionRegex = complete.getCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
             if (pasted)
                 return false;
