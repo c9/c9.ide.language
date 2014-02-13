@@ -586,10 +586,13 @@ define(function(require, exports, module) {
         });
         plugin.on("show", function(e) {
             isActive = true;
+            tree.resize();
+            plugin.autohide = !e.button;
             
+            if (e.button === "restoreSettings")
+                return;
             textbox.focus();
             textbox.select();
-            tree.resize();
             
             updateOutline(true);
             handleCursor(true);
