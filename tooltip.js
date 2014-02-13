@@ -142,6 +142,7 @@ define(function(require, exports, module) {
                 
                 window.document.body.appendChild(tooltipEl);
                 ace.on("mousewheel", hide);
+                tabs.on("focus", hide);
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
