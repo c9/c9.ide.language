@@ -458,6 +458,7 @@ define(function(require, exports, module) {
         }   
     
         function onOutlineData(event) {
+            scheduled = false;
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
@@ -470,7 +471,6 @@ define(function(require, exports, module) {
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
                 
-            scheduled = false;
             if (dirty || tab.path !== data.path)
                 updateOutline(true);
             else
