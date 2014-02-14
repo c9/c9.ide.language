@@ -591,8 +591,9 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(node) {
                 _self.getPos(node, function(fullPos) {
                     if (!fullPos) {
-                        var identifier = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
-                        fullPos = { sl: partPos.row, sc: partPos.column, el: partPos.row, ec: partPos.column + identifier.length };
+                        var postfix = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
+                        var prefix = completeUtil.retrievePrecedingIdentifier(_self.doc.getLine(pos.row), pos.column);
+                        fullPos = { sl: partPos.row, sc: partPos.column - prefix.length, el: partPos.row, ec: partPos.column + postfix.length };
                     }
                     _self.nodeToString(node, function(result) {
                         // Begin with a simple string representation
