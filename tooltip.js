@@ -56,7 +56,9 @@ define(function(require, exports, module) {
                             hide();
                         if (allowImmediateEmit) {
                             allowImmediateEmit = false;
-                            return worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                            return setTimeout(function() { // send after any change event
+                                worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                            }, 0);
                         }
                     }
                     cursormoveTimeout = setTimeout(function() {
