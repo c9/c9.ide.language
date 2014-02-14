@@ -733,7 +733,7 @@ module.exports = {
 // Mark all abstract/builtin methods for later optimization
 for (f in module.exports) {
     if (typeof module.exports[f] === "function")
-        f.base_handler = true;
+        module.exports[f].base_handler = true;
 }
 
 });
