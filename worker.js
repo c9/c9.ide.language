@@ -1253,6 +1253,7 @@ function asyncParForEach(array, fn, callback) {
         var _self = this;
         var data = event.data;
         var pos = data.pos;
+        var line = _self.doc.getLine(pos.row);
         
         _self.waitForCompletionSync(event, function() {
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
@@ -1306,7 +1307,7 @@ function asyncParForEach(array, fn, callback) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
-                            line: _self.doc.getLine(pos.row),
+                            line: line,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
