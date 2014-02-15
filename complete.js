@@ -130,8 +130,8 @@ define(function(require, exports, module) {
                 });
             });
             
-            menus.addItemByPath("Edit/~", new ui.divider(), 2000, plugin);
-            menus.addItemByPath("Edit/Show Autocomplete", new ui.item({
+            menus.addItemByPath("Tools/~", new ui.divider(), 2000, plugin);
+            menus.addItemByPath("Tools/Show Autocomplete", new ui.item({
                 command : "complete"
             }), 2100, plugin);
             
