@@ -102,7 +102,7 @@ define(function(require, exports, module) {
                 command: "renameVar"
             });
             menus.addItemByPath("Tools/~", new ui.divider(), 10000, plugin);
-            menus.addItemByPath("Tools/Rename Variable", mnuRename, 20000, plugin);
+            menus.addItemByPath("Tools/Rename Variable", mnuRename, 2100, plugin);
     
             // right click context item in ace
             aceHandle.getElement("menu", function(menu) {

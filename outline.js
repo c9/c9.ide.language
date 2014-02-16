@@ -1,7 +1,8 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
-        "language", "util", "language.jumptodef", "navigate", "layout"
+        "language", "util", "language.jumptodef", "navigate", "layout",
+        "commands"
     ];
     main.provides = ["outline"];
     return main;
@@ -18,6 +19,7 @@ define(function(require, exports, module) {
         var navigate  = imports.navigate;
         var tabs      = imports.tabManager;
         var language  = imports.language;
+        var commands  = imports.commands;
         var jumptodef = imports["language.jumptodef"];
         
         var Range    = require("ace/range").Range;
@@ -284,7 +286,11 @@ define(function(require, exports, module) {
             treeParent = plugin.getElement("outlineTree");
             textbox    = plugin.getElement("textbox");
             winOutline = plugin.getElement("winOutline");
-            textbox    = plugin.getElement("textbox");
+            
+            var key = commands.getHotkey("outline");
+            if (commands.platform == "mac")
+                key = apf.hotkeys.toMacNotation(key);
+            textbox.setAttribute("initial-message", "Filter (" + key + ")");
         
             // Create the Ace Tree
             tree = new Tree(treeParent.$int);
@@ -582,6 +588,7 @@ define(function(require, exports, module) {
             load();
         });
         plugin.on("draw", function(e) {
+            load();
             draw(e);
         });
         plugin.on("show", function(e) {
