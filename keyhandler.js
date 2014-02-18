@@ -125,10 +125,14 @@ define(function(require, exports, module) {
         }
         
         function handleChar(ch, idRegex, completionRegex) {
-            if (ch.match(idRegex || DEFAULT_ID_REGEX) || (completionRegex && ch.match(completionRegex))) { 
+            var matchIdRegex = ch.match(idRegex || DEFAULT_ID_REGEX);
+            if (matchIdRegex || (completionRegex && ch.match(completionRegex))) { 
                 var pos = ace.getCursorPosition();
                 var line = ace.getSession().getDocument().getLine(pos.row);
-                if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(pos))
+                var inText = inTextToken(pos);
+                if (!inText && !matchIdRegex) // don't complete on dot and such in comments 
+                    return false;
+                if (!inText && !complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
             }
