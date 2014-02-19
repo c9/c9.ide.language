@@ -95,9 +95,10 @@ define(function(require, exports, module) {
         }
         
         function inputTriggerComplete(text, pasted) {
+            var pos = ace.getCursorPosition();
             var completionRegex = complete.getCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
-            if (!pasted && completionRegex && text.match(completionRegex))
+            if (!pasted && completionRegex && text.match(completionRegex) && !inCommentToken(pos))
                 handleChar(text, idRegex, completionRegex); 
         }
         
