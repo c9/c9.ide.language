@@ -124,15 +124,20 @@ define(function(require, exports, module) {
             return token && token.type && token.type === "text";
         }
         
+        function inCommentToken(pos) {
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
+            return token && token.type && token.type === "comment";
+        }
+        
         function handleChar(ch, idRegex, completionRegex) {
             var matchIdRegex = ch.match(idRegex || DEFAULT_ID_REGEX);
             if (matchIdRegex || (completionRegex && ch.match(completionRegex))) { 
                 var pos = ace.getCursorPosition();
                 var line = ace.getSession().getDocument().getLine(pos.row);
-                var inText = inTextToken(pos);
-                if (!inText && !matchIdRegex) // don't complete on dot and such in comments 
+                var inComment = inCommentToken(pos);
+                if (inComment && !matchIdRegex) // don't complete on dot and such in comments 
                     return false;
-                if (!inText && !complete_util.precededByIdentifier(line, pos.column, ch, ace))
+                if (!inComment && !complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
             }
