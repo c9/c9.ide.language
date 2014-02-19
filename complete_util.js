@@ -128,12 +128,13 @@ function isRequireJSCall(line, column, identifier, ace, noQuote) {
 }
 
 /**
- * Ensure that code completion is not triggered.
+ * Ensure that code completion is not triggered in comments and such.
+ * Right now this only returns false when in a JavaScript regular expression.
  */
 function inCompletableCodeContext(line, column, id, ace) {
-    var inMode = null;
-    if (line.match(/^\s*\*.+/))
+    if (ace.getSession().syntax !== "javascript")
         return false;
+    var inMode = null;
     for (var i = 0; i < column; i++) {
         if(line[i] === '"' && !inMode)
             inMode = '"';
@@ -162,7 +163,7 @@ function inCompletableCodeContext(line, column, id, ace) {
         else if(line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
             inMode = null;
     }
-    return !inMode;
+    return inMode != "/";
 }
 
 /**

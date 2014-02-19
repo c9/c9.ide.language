@@ -186,7 +186,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             jsTab = tab;
                             jsSession = jsTab.document.getSession().session;
                             expect(jsSession).to.not.equal(null);
-                            if (!complete.getContinousCompletionRegex("javascript")) {
+                            if (!complete.getCompletionRegex("javascript")) {
                                 return language.getWorker(function(err, worker) {
                                     worker.on("setCompletionRegex", function(e) {
                                         if (e.data.language === "javascript")

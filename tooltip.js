@@ -12,20 +12,22 @@ define(function(require, exports, module) {
     return main;
     
     function main(options, imports, register) {
-        var language  = imports.language;
-        var tabs      = imports.tabManager;
-        var dom       = require("ace/lib/dom");
-        var Plugin    = imports.Plugin;
-        var ui        = imports.ui;
+        var language = imports.language;
+        var tabs = imports.tabManager;
+        var dom = require("ace/lib/dom");
+        var Plugin = imports.Plugin;
+        var ui = imports.ui;
         var aceHandle = imports.ace;
-        var tree      = require("treehugger/tree");
-        var assert    = require("c9/assert");
+        var tree = require("treehugger/tree");
+        var assert = require("c9/assert");
+        var SyntaxDetector = require("./syntax_detector");
         
         var plugin = new Plugin("Ajax.org", main.consumes);
         
         var ace, languageWorker, isVisible, labelHeight, adjustCompleterTop;
         var isTopdown, tooltipEl, allowImmediateEmit, lastPos;
         var cursormoveTimeout, onMouseDownTimeout;
+        var tooltipRegexes = {};
         
         function load() {
             tooltipEl = dom.createElement("div");
@@ -41,6 +43,9 @@ define(function(require, exports, module) {
                     assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
                     onHint(event, tab.editor.ace);
                 });
+                worker.on("tooltipRegex", function(event) {
+                    tooltipRegexes[event.data.language] = event.data.tooltipRegex;
+                });
                 language.on("cursormove", function(e) {
                     clearTimeout(cursormoveTimeout);
                     if (e.selection.rangeCount || !e.selection.isEmpty())
@@ -51,14 +56,16 @@ define(function(require, exports, module) {
                             hide();
                         if (allowImmediateEmit) {
                             allowImmediateEmit = false;
-                            return worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                            return setTimeout(function() { // send after any change event
+                                worker.emit("cursormove", { data: { pos: e.pos, line: e.doc.getLine(e.pos.row) }});
+                            }, 0);
                         }
                     }
                     cursormoveTimeout = setTimeout(function() {
                         var latestPos = e.doc.selection.getCursor();
-                        worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row) }});
+                        worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row), now: e.now }});
                         cursormoveTimeout = null;
-                    }, 100);
+                    }, e.now ? 0 : 100);
                 });
             });
             
@@ -95,7 +102,7 @@ define(function(require, exports, module) {
                 // console.warn("Got outdated tooltip event from worker, retrying");
                 if (!cursormoveTimeout)
                     cursormoveTimeout = setTimeout(function() {
-                        languageWorker.emit("cursormove", { data: { pos: ace.getCursorPosition(), line: line }});
+                        language.onCursorChange();
                         cursormoveTimeout = null;
                     }, 50);
                 if (lastPos && lastPos.sl !== cursorPos.row)
@@ -137,6 +144,7 @@ define(function(require, exports, module) {
                 
                 window.document.body.appendChild(tooltipEl);
                 ace.on("mousewheel", hide);
+                tabs.on("focus", hide);
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
@@ -190,6 +198,17 @@ define(function(require, exports, module) {
             }
         }
         
+        function getTooltipRegex(language, ace) {
+            return tooltipRegexes[language || getSyntax(ace)];
+        }
+        
+        function getSyntax(ace) {
+            return SyntaxDetector.getContextSyntax(
+                ace.getSession().getDocument(),
+                ace.getCursorPosition(),
+                ace.getSession().syntax);
+        }
+        
         plugin.freezePublicAPI({
             hide: hide,
             show: show,
@@ -198,7 +217,8 @@ define(function(require, exports, module) {
             isTopdown: isTopdown,
             set adjustCompleterTop(f) {
                 adjustCompleterTop = f;
-            }
+            },
+            getTooltipRegex: getTooltipRegex
         });
         
         /**

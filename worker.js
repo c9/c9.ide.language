@@ -117,8 +117,8 @@ exports.createUIWorkerClient = function() {
 var LanguageWorker = exports.LanguageWorker = function(sender) {
     var _self = this;
     this.handlers = [];
-    this.currentMarkers = [];
-    this.$lastAggregateActions = {};
+    this.$staticMarkers = [];
+    this.$cursorMarkers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
     sender.once = EventEmitter.once;
@@ -146,7 +146,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
         _self.documentClose(event);
     });
     sender.on("analyze", applyEventOnce(function(event) {
-        _self.analyze(function() {});
+        _self.analyze(false, function() {});
     }));
     sender.on("cursormove", function(event) {
         _self.onCursorMove(event);
@@ -239,17 +239,7 @@ function asyncParForEach(array, fn, callback) {
 }
 
 (function() {
-
-    this.getLastAggregateActions = function() {
-        if(!this.$lastAggregateActions[this.$path])
-            this.$lastAggregateActions[this.$path] = {markers: [], hint: null};
-        return this.$lastAggregateActions[this.$path];
-    };
-
-    this.setLastAggregateActions = function(actions) {
-        this.$lastAggregateActions[this.$path] = actions;
-    };
-
+    
     this.enableFeature = function(name) {
         disabledFeatures[name] = false;
     };
@@ -327,7 +317,9 @@ function asyncParForEach(array, fn, callback) {
         onRegistered(handler);
     };
     
-    this.isHandlerMatch = function(handler, part, ignoreSize) {
+    this.isHandlerMatch = function(handler, part, method, ignoreSize) {
+        if (handler[method].base_handler)
+            return;
         switch (handler.handlesEditor()) {
             case base_handler.HANDLES_EDITOR: 
                 if (this.immediateWindow)
@@ -337,14 +329,15 @@ function asyncParForEach(array, fn, callback) {
                 if (!this.immediateWindow)
                     return;
         }
+        if (!handler.handlesLanguage(part ? part.language : this.$language))
+            return;
         var docLength = ignoreSize ? null : part
             ? part.getValue().length
             : this.doc.$lines.reduce(function(t,l) { return t + l.length; }, 0);
-         return handler.handlesLanguage(part ? part.language : this.$language)
-            && (ignoreSize || docLength < handler.getMaxFileSizeSupported());
+         return ignoreSize || docLength < handler.getMaxFileSizeSupported();
     };
 
-    this.parse = function(part, callback, allowCached) {
+    this.parse = function(part, callback, allowCached, forceCached) {
         var _self = this;
         var value = (part || this.doc).getValue();
         var language = part ? part.language : this.$language;
@@ -354,10 +347,12 @@ function asyncParForEach(array, fn, callback) {
             if (cached && cached.ast && cached.part.language === language)
                 return callback(cached.ast);
         }
+        if (forceCached)
+            return callback(null);
 
         var resultAst = null;
         asyncForEach(this.handlers, function parseNext(handler, next) {
-            if (_self.isHandlerMatch(handler, part)) {
+            if (_self.isHandlerMatch(handler, part, "parse")) {
                 handler.parse(value, function onParse(ast) {
                     if (ast)
                         resultAst = ast;
@@ -392,7 +387,7 @@ function asyncParForEach(array, fn, callback) {
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
         var result;
         asyncForEach(_self.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler, part)) {
+            if (_self.isHandlerMatch(handler, part, "findNode")) {
                 handler.findNode(ast, posInPart, function(node) {
                     if (node)
                         result = node;
@@ -425,7 +420,7 @@ function asyncParForEach(array, fn, callback) {
         var isUnordered = false;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler)) {
+                if (_self.isHandlerMatch(handler, null, "outline")) {
                     handler.outline(_self.doc, ast, function(outline) {
                         if (outline && (!result || result.isGeneric))
                             result = outline;
@@ -445,7 +440,7 @@ function asyncParForEach(array, fn, callback) {
         var data = event.data;
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "hierarchy")) {
                 handler.hierarchy(_self.doc, data.pos, function(hierarchy) {
                     if(hierarchy)
                         return _self.sender.emit("hierarchy", hierarchy);
@@ -461,7 +456,7 @@ function asyncParForEach(array, fn, callback) {
     this.codeFormat = function() {
         var _self = this;
         asyncForEach(_self.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler, null, true)) {
+            if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
                 handler.codeFormat(_self.doc, function(newSource) {
                     if (newSource)
                         return _self.sender.emit("code_format", newSource);
@@ -501,7 +496,7 @@ function asyncParForEach(array, fn, callback) {
         }
     }
 
-    this.analyze = function(callback) {
+    this.analyze = function(minimalAnalysis, callback) {
         var _self = this;
         var parts = syntaxDetector.getCodeParts(this.doc, this.$language);
         var markers = [];
@@ -512,7 +507,7 @@ function asyncParForEach(array, fn, callback) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "analyze")) {
                         handler.language = part.language;
                         handler.analyze(part.getValue(), ast, function(result) {
                             if (result) {
@@ -528,7 +523,7 @@ function asyncParForEach(array, fn, callback) {
                             else {
                                 next();
                             }
-                        });
+                        }, minimalAnalysis);
                     }
                     else {
                         next();
@@ -551,24 +546,13 @@ function asyncParForEach(array, fn, callback) {
                 });
             });
         }, function() {
-            var extendedMakers = markers;
-            if (_self.getLastAggregateActions().markers.length > 0)
-                extendedMakers = markers.concat(_self.getLastAggregateActions().markers);
+            var extendedMakers = markers.concat(_self.$cursorMarkers);
             _self.cachedAsts = cachedAsts;
-            _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
-            _self.currentMarkers = markers;
+            if (!minimalAnalysis)
+                _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
+            _self.$staticMarkers = markers;
             callback();
         });
-    };
-    
-    this.checkForMarker = function(pos) {
-        var astPos = {line: pos.row, col: pos.column};
-        for (var i = 0; i < this.currentMarkers.length; i++) {
-            var currentMarker = this.currentMarkers[i];
-            if (currentMarker.message && tree.inRange(currentMarker.pos, astPos)) {
-                return currentMarker.message;
-            }
-        }
     };
 
     this.filterMarkersBasedOnLevel = function(markers) {
@@ -598,8 +582,9 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(node) {
                 _self.getPos(node, function(fullPos) {
                     if (!fullPos) {
-                        var identifier = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
-                        fullPos = { sl: partPos.row, sc: partPos.column, el: partPos.row, ec: partPos.column + identifier.length };
+                        var postfix = completeUtil.retrieveFollowingIdentifier(_self.doc.getLine(pos.row), pos.column);
+                        var prefix = completeUtil.retrievePrecedingIdentifier(_self.doc.getLine(pos.row), pos.column);
+                        fullPos = { sl: partPos.row, sc: partPos.column - prefix.length, el: partPos.row, ec: partPos.column + postfix.length };
                     }
                     _self.nodeToString(node, function(result) {
                         // Begin with a simple string representation
@@ -611,7 +596,7 @@ function asyncParForEach(array, fn, callback) {
                         
                         // Try and find a better match using getInspectExpression()
                         asyncForEach(_self.handlers, function(handler, next) {
-                            if (_self.isHandlerMatch(handler, part)) {
+                            if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
                                 handler.getInspectExpression(part, ast, partPos, node, function(result) {
                                     if (result) {
@@ -666,7 +651,7 @@ function asyncParForEach(array, fn, callback) {
         var done = false;
         var _self = this;
         this.handlers.forEach(function (h) {
-            if (!done && _self.isHandlerMatch(h, null, true)) {
+            if (!done && _self.isHandlerMatch(h, null, "getPos", true)) {
                 h.getPos(node, function(result) {
                     if (!result)
                         return;
@@ -684,16 +669,17 @@ function asyncParForEach(array, fn, callback) {
         var result;
         var _self = this;
         this.handlers.forEach(function (h) {
-            if (_self.isHandlerMatch(h, part, true))
+            if (_self.isHandlerMatch(h, part, "getIdentifierRegex", true))
                 result = h.getIdentifierRegex() || result;
         });
         return result || completeUtil.DEFAULT_ID_REGEX;
     };
 
     /**
-     * Process a cursor move. We do way too much here.
+     * Process a cursor move.
      */
     this.onCursorMove = function(event) {
+        var _self = this;
         var pos = event.data.pos;
         var part = this.getPart(pos);
         var line = this.doc.getLine(pos.row);
@@ -703,58 +689,111 @@ function asyncParForEach(array, fn, callback) {
             return this.scheduleEmit("hint", { line: null });
         }
 
-        var _self = this;
-        var hintMessage = ""; // this.checkForMarker(pos) || "";
-
-        var aggregateActions = {markers: [], hint: null, displayPos: null, enableRefactorings: []};
-                    
-        function processResponse(response) {
-            if (response.markers && (!aggregateActions.markers.found || !response.isGeneric)) {
-                if (aggregateActions.markers.isGeneric)
-                    aggregateActions.markers = [];
-                aggregateActions.markers = aggregateActions.markers.concat(response.markers.map(function (m) {
-                    var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
-                    var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
-                    m.pos = {
-                        sl: start.row,
-                        sc: start.column,
-                        el: end.row,
-                        ec: end.column
-                    };
-                    return m;
-                }));
-                aggregateActions.markers.found = true;
-                aggregateActions.markers.isGeneric = response.isGeneric;
-            }
-            if (response.enableRefactorings && response.enableRefactorings.length > 0) {
-                aggregateActions.enableRefactorings = aggregateActions.enableRefactorings.concat(response.enableRefactorings);
-            }
-            if (response.hint) {
-                if (aggregateActions.hint)
-                    aggregateActions.hint += "\n" + response.hint;
-                else
-                    aggregateActions.hint = response.hint;
-            }
-            if (response.pos)
-                aggregateActions.pos = response.pos;
-            if (response.displayPos)
-                aggregateActions.displayPos = response.displayPos;
-        }
+        var result = {
+            markers: [],
+            hint: null,
+            displayPos: null
+        };
         
-        function cursorMoved(ast, currentNode, posInPart) {
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
+        this.parse(part, function(ast) {
+            if (!ast)
+                return callHandlers(ast, null, posInPart);
+            _self.findNode(ast, pos, function(currentNode) {
+                callHandlers(ast, currentNode, posInPart);
+            });
+        }, true, true);
+        
+        function callHandlers(ast, currentNode) {
+            asyncForEach(_self.handlers,
+                function(handler, next) {
+                    if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
+                        handler.onCursorMove(part, ast, posInPart, currentNode, function(response) {
+                            processCursorMoveResponse(response, part, result);
+                            next();
+                        });
+                    }
+                    else {
+                        next();
+                    }
+                },
+                function() {
+                    // Send any results so far
+                    _self.lastCurrentPosUnparsed = pos;
+                    if (result.markers.length) {
+                        _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
+                            ? []
+                            : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
+                        _self.$cursorMarkers = result.markers;
+                        event.data.addedMarkers = result.markers;
+                    }
+                    if (result.hint !== null) {
+                        _self.scheduleEmit("hint", {
+                            pos: result.pos,
+                            displayPos: result.displayPos,
+                            message: result.hint,
+                            line: line
+                        });
+                    }
+                    
+                    // Parse, analyze, and get more results
+                    _self.onCursorMoveAnalyzed(event);
+                }
+            );
+        }
+    };
+    
+    /**
+     * Perform tooltips/marker analysis after a cursor moved,
+     * once the document has been parsed & analyzed.
+     */
+    this.onCursorMoveAnalyzed = function(event) {
+        var _self = this;
+        var pos = event.data.pos;
+        var part = this.getPart(pos);
+        var line = this.doc.getLine(pos.row);
+        
+        if (line != event.data.line) {
+            // Our intelligence is outdated, tell the client
+            return this.scheduleEmit("hint", { line: null });
+        }
+        if (this.scheduledUpdate) {
+            // Postpone the cursor move until the update propagates
+            this.postponedCursorMove = event;
+            if (event.data.now)
+                this.onUpdate(true);
+            return;
+        }
+
+        var result = {
+            markers: event.data.addedMarkers || [],
+            hint: null,
+            displayPos: null
+        };
+
+        var posInPart = syntaxDetector.posToRegion(part.region, pos);
+        this.parse(part, function(ast) {
+            _self.findNode(ast, pos, function(currentNode) {
+                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
+                    callHandlers(ast, currentNode);
+                }
+            });
+        }, true);
+        
+        function callHandlers(ast, currentNode) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.scheduledUpdate) {
                     // Postpone the cursor move until the update propagates
                     _self.postponedCursorMove = event;
                     return;
                 }
-                if (_self.isHandlerMatch(handler, part)) {
+                if (_self.isHandlerMatch(handler, part, "tooltip") || _self.isHandlerMatch(handler, part, "highlightOccurrences")) {
                     // We send this to several handlers that each handle part of the language functionality,
                     // triggered by the cursor move event
-                    asyncForEach(["tooltip", "highlightOccurrences", "onCursorMovedNode"], function(method, nextMethod) {
+                    assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
+                    asyncForEach(["tooltip", "highlightOccurrences"], function(method, nextMethod) {
                         handler[method](part, ast, posInPart, currentNode, function(response) {
-                            if (response)
-                                processResponse(response);
+                            result = processCursorMoveResponse(response, part, result);
                             nextMethod();
                         });
                     }, next);
@@ -763,36 +802,55 @@ function asyncParForEach(array, fn, callback) {
                     next();
                 }
             }, function() {
-                if (aggregateActions.hint && !hintMessage) {
-                    hintMessage = aggregateActions.hint;
-                }
-                // TODO use separate events for static and cursor markers
                 _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
                     ? []
-                    : _self.filterMarkersBasedOnLevel(_self.currentMarkers.concat(aggregateActions.markers)));
-                _self.scheduleEmit("enableRefactorings", aggregateActions.enableRefactorings);
+                    : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
                 _self.lastCurrentNode = currentNode;
-                _self.lastCurrentPos = posInPart;
-                _self.setLastAggregateActions(aggregateActions);
+                _self.lastCurrentPos = pos;
+                _self.$cursorMarkers = result.markers;
                 _self.scheduleEmit("hint", {
-                    pos: aggregateActions.pos,
-                    displayPos: aggregateActions.displayPos,
-                    message: hintMessage,
+                    pos: result.pos,
+                    displayPos: result.displayPos,
+                    message: result.hint,
                     line: line
                 });
             });
-
         }
-
-        var posInPart = syntaxDetector.posToRegion(part.region, pos);
-        this.parse(part, function(ast) {
-            _self.findNode(ast, pos, function(currentNode) {
-                if (pos != _self.lastCurrentPos || currentNode !== _self.lastCurrentNode || pos.force) {
-                    cursorMoved(ast, currentNode, posInPart);
-                }
-            });
-        }, true);
-    };
+    }
+        
+    function processCursorMoveResponse(response, part, result) {
+        if (!response)
+            return result;
+        if (response.markers && (!result.markers.found || !response.isGeneric)) {
+            if (result.markers.isGeneric)
+                result.markers = [];
+            result.markers = result.markers.concat(response.markers.map(function (m) {
+                var start = syntaxDetector.posFromRegion(part.region, {row: m.pos.sl, column: m.pos.sc});
+                var end = syntaxDetector.posFromRegion(part.region, {row: m.pos.el, column: m.pos.ec});
+                m.pos = {
+                    sl: start.row,
+                    sc: start.column,
+                    el: end.row,
+                    ec: end.column
+                };
+                return m;
+            }));
+            result.markers.found = true;
+            result.markers.isGeneric = response.isGeneric;
+        }
+        if (response.hint) {
+            if (result.hint)
+                result.hint += "\n" + response.hint;
+            else
+                result.hint = response.hint;
+        }
+        if (response.pos)
+            result.pos = response.pos;
+        if (response.displayPos)
+            result.displayPos = response.displayPos;
+        
+        return result;
+    }
 
     this.$getDefinitionDeclarations = function (row, col, callback) {
         var pos = { row: row, column: col };
@@ -805,7 +863,7 @@ function asyncParForEach(array, fn, callback) {
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
                         handler.jumpToDefinition(part, ast, posInPart, currentNode, function(results) {
                             handler.path = _self.$path;
                             if (results)
@@ -871,7 +929,7 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
                         handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
@@ -905,7 +963,7 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part)) {
+                    if (_self.isHandlerMatch(handler, part, "getVariablePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
                         handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
                             if (response) {
@@ -934,7 +992,7 @@ function asyncParForEach(array, fn, callback) {
     this.onRenameBegin = function(event) {
         var _self = this;
         this.handlers.forEach(function(handler) {
-            if (_self.isHandlerMatch(handler))
+            if (_self.isHandlerMatch(handler, null, "onRenameBegin"))
                 handler.onRenameBegin(_self.doc, function() {});
         });
     };
@@ -950,7 +1008,7 @@ function asyncParForEach(array, fn, callback) {
           return this.sender.emit("commitRenameResult", {});
 
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "commitRename")) {
                 handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
                     if (response) {
                         commited = true;
@@ -974,7 +1032,7 @@ function asyncParForEach(array, fn, callback) {
     this.onRenameCancel = function(event) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler)) {
+            if (_self.isHandlerMatch(handler, null, "onRenameCancel")) {
                 handler.onRenameCancel(function() {
                     next();
                 });
@@ -987,33 +1045,53 @@ function asyncParForEach(array, fn, callback) {
 
     this.onUpdate = function(now) {
         var _self = this;
+        
         if (this.scheduledUpdate && !now)
             return;
-        this.scheduledUpdate = setTimeout(function() {
-            var startTime = new Date().getTime();
-            asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler))
-                    handler.onUpdate(_self.doc, next);
-                else
-                    next();
-            }, function() {
-                _self.analyze(function() {
-                    _self.scheduledUpdate = null;
-                    if (_self.postponedCursorMove) {
-                        _self.onCursorMove(_self.postponedCursorMove);
-                        _self.postponedCursorMove = null;
-                    }
-                    _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
-                    clearTimeout(_self.scheduledUpdateFail);
-                });
-            });
-        }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
+        
         if (!DEBUG) {
             clearTimeout(this.scheduledUpdateFail);
             this.scheduledUpdateFail = setTimeout(function() {
                 _self.scheduledUpdate = null;
-                console.log("Warning: worker analysis taking too long, rescheduling");
+                console.log("Warning: worker analysis taking too long or failed to call back, rescheduling");
             }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
+        }
+        
+        if (now) {
+            if (this.scheduledUpdate === "now")
+                return;
+            clearTimeout(this.scheduledUpdate);
+            this.scheduledUpdate = "now";
+            doUpdate(function() {
+                // Schedule another analysis without the
+                // now & minimalAnalysis options.
+                _self.onUpdate();
+            });
+            return;
+        }
+        this.scheduledUpdate = setTimeout(function() {
+           doUpdate();
+        }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
+        
+        function doUpdate(done) {
+            var startTime = new Date().getTime();
+            asyncForEach(_self.handlers, function(handler, next) {
+                if (_self.isHandlerMatch(handler, null, "onUpdate"))
+                    handler.onUpdate(_self.doc, next);
+                else
+                    next();
+            }, function() {
+                _self.analyze(now, function() {
+                    _self.scheduledUpdate = null;
+                    if (_self.postponedCursorMove) {
+                        _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
+                        _self.postponedCursorMove = null;
+                    }
+                    _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
+                    clearTimeout(_self.scheduledUpdateFail);
+                    done && done();
+                });
+            });
         }
     };
     
@@ -1045,9 +1123,11 @@ function asyncParForEach(array, fn, callback) {
         this.immediateWindow = immediateWindow;
         this.lastCurrentNode = null;
         this.lastCurrentPos = null;
+        this.lastCurrentPosUnparsed = null;
         this.cachedAsts = null;
         this.setValue(code);
         this.lastUpdateTime = 0;
+        this.$cursorMarkers = [];
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
         }, function() {
@@ -1087,6 +1167,8 @@ function asyncParForEach(array, fn, callback) {
                 _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });
             if (handler.handlesLanguage(_self.$language) && handler.getCompletionRegex())
                 _self.sender.emit("setCompletionRegex", { language: _self.$language, completionRegex: handler.getCompletionRegex() });
+            if (handler.handlesLanguage(_self.$language) && handler.getTooltipRegex())
+                _self.sender.emit("setTooltipRegex", { language: _self.$language, tooltipRegex: handler.getTooltipRegex() });
         }
         if (!handler.$isInited) {
             handler.$isInited = true;
@@ -1162,6 +1244,7 @@ function asyncParForEach(array, fn, callback) {
         var _self = this;
         var data = event.data;
         var pos = data.pos;
+        var line = _self.doc.getLine(pos.row);
         
         _self.waitForCompletionSync(event, function() {
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
@@ -1173,7 +1256,7 @@ function asyncParForEach(array, fn, callback) {
                     var matches = [];
     
                     asyncForEach(_self.handlers, function(handler, next) {
-                        if (_self.isHandlerMatch(handler, part)) {
+                        if (_self.isHandlerMatch(handler, part, "complete")) {
                             handler.language = language;
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
@@ -1215,7 +1298,7 @@ function asyncParForEach(array, fn, callback) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
-                            line: _self.doc.getLine(pos.row),
+                            line: line,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix

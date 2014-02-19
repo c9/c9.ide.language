@@ -11,7 +11,7 @@
  * can be overridden by language handlers to implement
  * language services such as code completion.
  * 
- * See {@link language}
+ * See {@link language} for an example plugin.
  * 
  * @class language.base_handler
  */
@@ -187,7 +187,7 @@ module.exports = {
      * If a non-null value is returned, it is assumed continous completion
      * is supported for this language.
      * 
-     * As an example, Java-like languages might want to use: /\./
+     * As an example, Java-like languages might want to use: /^\.$/
      * 
      * Should be overridden by inheritors that implement code completion.
      * Default implementation returns null.
@@ -195,6 +195,21 @@ module.exports = {
      * @return RegExp
      */
     getCompletionRegex: function() {
+        return null;
+    },
+
+    /**
+     * Returns a regular expression used to trigger a tooltip.
+     * Normally, tooltips after a scheduled analysis has been completed.
+     * To avoid delays, this function can be used to trigger
+     * analysis & tooltip fetching early.
+     * 
+     * Should be overridden by inheritors that implement tooltips.
+     * Default implementation returns null.
+     * 
+     * @return RegExp
+     */
+    getTooltipRegex: function() {
         return null;
     },
 
@@ -302,17 +317,23 @@ module.exports = {
     /**
      * Invoked when the cursor has been moved.
      * 
-     * Should be overridden by inheritors that implement tooltips.
+     * May be overridden by inheritors that immediately act upon cursor moves.
+     * 
+     * See {@link #tooltip} and {@link #highlightOccurrences}
+     * for handler functions that are invoked after the cursor has been moved,
+     * the document has been analyzed, and feedback is requested.
      * 
      * @param {Document} doc                      Document object representing the source
-     * @param {Object} fullAst                    The entire AST of the current file (if any)
+     * @param {Object} fullAst                    The entire AST of the current file (if parsed already, otherwise null)
      * @param {Object} cursorPos                  The current cursor position
      * @param {Number} cursorPos.row              The current cursor's row
      * @param {Number} cursorPos.column           The current cursor's column
-     * @param {Object} currentNode                The AST node the cursor is currently at (if any)
+     * @param {Object} currentNode                The AST node the cursor is currently at (if parsed alreadty, and if any)
      * @param {Function} callback                 The callback; must be called
+     * @paran {Object} callback.result            An optional result. Supports the same result objects as
+     *                                            {@link #tooltip} and {@link #highlightOccurrences}
      */
-    onCursorMovedNode: function(doc, fullAst, cursorPos, currentNode, callback) {
+    onCursorMove: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
     
@@ -518,8 +539,10 @@ module.exports = {
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of error and warning markers
+     * @param {Boolean} [minimalAnalysis]    Fast, minimal analysis is requested, e.g.
+     *                                       for code completion or tooltips.
      */
-    analyze: function(value, fullAst, callback) {
+    analyze: function(value, fullAst, callback, minimalAnalysis) {
         callback();
     },
 
@@ -706,5 +729,11 @@ module.exports = {
         callback();
     }
 };
+
+// Mark all abstract/builtin methods for later optimization
+for (f in module.exports) {
+    if (typeof module.exports[f] === "function")
+        module.exports[f].base_handler = true;
+}
 
 });

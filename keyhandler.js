@@ -37,6 +37,9 @@ define(function(require, exports, module) {
                 kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
                 ace.commands.on("afterExec", onAfterExec);
             });
+            complete.on("replaceText", function(e) {
+                onTextInput(e.newText, false, true);
+            })
         }
         
         /***** Methods *****/
@@ -62,7 +65,10 @@ define(function(require, exports, module) {
             };
         }
         
-        function onTextInput(text, pasted) {
+        function onTextInput(text, pasted, completed) {
+            inputTriggerTooltip(text, pasted);
+            if (completed)
+                return false;
             if (complete.isPopupVisible())
                 return false;
             if (language.isContinuousCompletionEnabled())
@@ -84,21 +90,26 @@ define(function(require, exports, module) {
             var line = ace.session.doc.getLine(pos.row);
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
                 return false;
-            if (inCommentToken(pos))
-                return false;
-            if (complete.getContinousCompletionRegex(null, ace))
+            if (complete.getCompletionRegex(null, ace))
                 complete.deferredInvoke(false, ace);
         }
         
         function inputTriggerComplete(text, pasted) {
-            var completionRegex = complete.getContinousCompletionRegex(null, ace);
+            var pos = ace.getCursorPosition();
+            var completionRegex = complete.getCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
-            if (!pasted && completionRegex && text.match(completionRegex))
+            if (!pasted && completionRegex && text.match(completionRegex) && !inCommentToken(pos))
                 handleChar(text, idRegex, completionRegex); 
         }
         
+        function inputTriggerTooltip(text, pasted) {
+            var tooltipRegex = tooltip.getTooltipRegex(null, ace);
+            if (!pasted && text.match(tooltipRegex))
+                language.onCursorChange(null, null, true);
+        }
+        
         function typeAlongCompleteTextInput(text, pasted) {
-            var completionRegex = complete.getContinousCompletionRegex(null, ace);
+            var completionRegex = complete.getCompletionRegex(null, ace);
             var idRegex = complete.getIdentifierRegex(null, ace);
             if (pasted)
                 return false;
@@ -116,16 +127,18 @@ define(function(require, exports, module) {
         
         function inCommentToken(pos) {
             var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
-            return token && token.type && token.type.match(/^comment/);
-        } 
+            return token && token.type && token.type === "comment";
+        }
         
         function handleChar(ch, idRegex, completionRegex) {
-            if (ch.match(idRegex || DEFAULT_ID_REGEX) || (completionRegex && ch.match(completionRegex))) { 
+            var matchIdRegex = ch.match(idRegex || DEFAULT_ID_REGEX);
+            if (matchIdRegex || (completionRegex && ch.match(completionRegex))) { 
                 var pos = ace.getCursorPosition();
                 var line = ace.getSession().getDocument().getLine(pos.row);
-                if (!complete_util.precededByIdentifier(line, pos.column, ch, ace) && !inTextToken(pos))
+                var inComment = inCommentToken(pos);
+                if (inComment && !matchIdRegex) // don't complete on dot and such in comments 
                     return false;
-                if (inCommentToken(pos))
+                if (!inComment && !complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
             }

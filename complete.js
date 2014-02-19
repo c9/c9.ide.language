@@ -8,7 +8,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "ui", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager", "browsersupport",
-        "language.tooltip"
+        "language.tooltip", "settings"
     ];
     main.provides = ["language.complete"];
     return main;
@@ -23,6 +23,7 @@ define(function(require, exports, module) {
         var commands   = imports.commands;
         var language   = imports.language;
         var tooltip    = imports["language.tooltip"];
+        var settings   = imports.settings;
         
         var lang           = require("ace/lib/lang");
         var SyntaxDetector = require("./syntax_detector");
@@ -175,6 +176,9 @@ define(function(require, exports, module) {
                 });
                 popup.renderer.setStyle("dark", theme.isDark);
             }, plugin);
+            
+            settings.on("user/language", updateSettings);
+            settings.on("project/language", updateSettings);
         }
         
         var drawn;
@@ -227,6 +231,10 @@ define(function(require, exports, module) {
             });
             
             emit("draw");
+        }
+        
+        function updateSettings() {
+            setEnterCompletion(settings.get("user/language/@enterCompletion"));
         }
         
         /***** Helper Functions *****/
@@ -342,6 +350,7 @@ define(function(require, exports, module) {
             var cursorPos = { row: pos.row + rowOffset, column: cursorCol };
             var cursorPos2 = { row: pos.row + rowOffset2, column: cursorCol2 };
             ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
+            emit("replaceText", { pos: pos, prefix: prefix, newText: paddedLines });
         }
         
         function showCompletionBox(editor, m, prefix, line) {
@@ -457,15 +466,35 @@ define(function(require, exports, module) {
             popup.prefix = prefix;
             
             popup.ignoreGenericMatches = isIgnoreGenericEnabled(matches);
-            if (popup.ignoreGenericMatches) {
-                // Experiment: disable generic matches when possible
-                matches = popup.matches = matches.filter(function(m) { return !m.isGeneric; });
-            }
+            popup.matches = matches;
+            
             popup.calcPrefix = function(regex) {
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
             popup.setData(matches);
             popup.setRow(0);
+        }
+        
+        function cleanupMatches(matches, ace, pos) {
+            if (isIgnoreGenericEnabled(matches)) {
+                // Disable generic matches when possible
+                matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
+            
+            // Experiment: show completion box with simpler look & feel
+            // in comments and strings
+            if (inCommentOrString(ace, pos)) {
+                for (var i = 0; i < matches.length; i++) {
+                    var m = matches[i];
+                    if (m.meta === "snippet") {
+                        matches.splice(i--, 1);
+                        continue;
+                    }
+                    m.icon = m.icon ? "unknown2" : null;
+                    delete m.isContextual;
+                    delete m.meta;
+                };
+            }
         }
         
         function isIgnoreGenericEnabled(matches) {
@@ -560,8 +589,9 @@ define(function(require, exports, module) {
                     var idRegex = matches[i].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
                     matched = idRegex.test(text);
                 }
-                if (matched)
-                    deferredInvoke();
+                var completionMatch = text.match(getCompletionRegex());
+                if (matched || completionMatch)
+                    deferredInvoke(completionMatch);
                 else
                     closeCompletionBox();
             }
@@ -695,6 +725,8 @@ define(function(require, exports, module) {
             var matches = eventMatches = event.data.matches;
             if (event.data.line !== line)
                 matches = filterMatches(matches, line, pos);
+                
+            cleanupMatches(matches, editor.ace, pos);
             
             if (matches.length === 1 && !event.data.forceBox) {
                 replaceText(editor.ace, matches[0], event.data.deleteSuffix);
@@ -741,8 +773,6 @@ define(function(require, exports, module) {
                 return match.name.indexOf(prefix) === 0;
             });
         }
-    
-        /***** Methods *****/
         
         function deferredInvoke(now, ace) {
             ace = ace || lastAce;
@@ -759,13 +789,18 @@ define(function(require, exports, module) {
             deferredInvoker.schedule(delay);
         }
         
-        function getContinousCompletionRegex(language, ace) {
+        function getCompletionRegex(language, ace) {
             return completionRegexes[language || getSyntax(ace || lastAce)];
         }
         
         function getIdentifierRegex(language, ace) {
             return idRegexes[language || getSyntax(ace || lastAce)];
         }
+        
+        function inCommentOrString(ace, pos) {
+            var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
+            return token && token.type && token.type.match(/^comment|^string/);
+        } 
         
         /***** Lifecycle *****/
         
@@ -802,7 +837,7 @@ define(function(require, exports, module) {
             /**
              * @ignore
              */
-            getContinousCompletionRegex: getContinousCompletionRegex,
+            getCompletionRegex: getCompletionRegex,
             
             /**
              * @ignore
@@ -829,7 +864,18 @@ define(function(require, exports, module) {
              */
             $setShowDocDelay : function(value) {
                 SHOW_DOC_DELAY = value;
-            }
+            },
+            
+            events: [
+                /**
+                 * Fires when a code completion option is picked.
+                 *
+                 * @param {Object} pos
+                 * @param {String} newText
+                 * @event replaceText
+                 */
+                "replaceText"
+            ]
         });
         
         register(null, {

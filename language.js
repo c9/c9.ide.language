@@ -26,7 +26,7 @@ define(function(require, exports, module) {
         var INITIAL_DELAY = 2000;
         var delayedTransfer;
         var lastWorkerMessage = {};
-        
+
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
         var useUIWorker  = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
@@ -43,11 +43,15 @@ define(function(require, exports, module) {
         
         var worker;
         
-        function onCursorChange() {
+        function onCursorChange(e, sender, now) {
+            var cursorPos = worker.$doc.selection.getCursor();
+            var line = worker.$doc.getDocument().getLine(cursorPos.row);
             emit("cursormove", {
                 doc: worker.$doc,
-                pos: worker.$doc.selection.getCursor(),
-                selection: worker.$doc.selection
+                pos: cursorPos,
+                line: line,
+                selection: worker.$doc.selection,
+                now: now
             });
         }
         function onChange(e) {
@@ -202,7 +206,8 @@ define(function(require, exports, module) {
                     ["instanceHighlight", "true"],
                     ["undeclaredVars", "true"],
                     ["unusedFunctionArgs", "false"],
-                    ["continuousCompletion", "true"]
+                    ["continuousCompletion", "true"],
+                    ["enterCompletion", "true"]
                 ]);
                 settings.setDefaults("project/language", [
                     ["warnLevel", "info"]
@@ -241,7 +246,12 @@ define(function(require, exports, module) {
                             type     : "checkbox",
                             path     : "user/language/@continuousCompletion",
                             position : 4000
-                        }
+                        },
+                        "Complete On Enter" : {
+                            type     : "checkbox",
+                            path     : "user/language/@enterCompletion",
+                            position : 5000
+                        },
                     },
                     "Markers" : {
                         position : 200,
@@ -341,7 +351,8 @@ define(function(require, exports, module) {
             // worker.emit("cursormove", {data: cursorPos});
             
             isContinuousCompletionEnabledSetting = 
-                settings.get("user/language/@continuousCompletion") != "false";
+                settings.get("user/language/@continuousCompletion");
+                
             if (tabs.focussedTab)
                 notifyWorker("switchFile", { tab: tabs.focussedTab });
         }
@@ -410,7 +421,57 @@ define(function(require, exports, module) {
          * Language handlers are executed inside a web worker.
          * They can be registered using the {@link #registerLanguageHandler}
          * function, and should be based on the {@link language.base_handler}
-         * base class.
+         * base class. For examples, see {@link language.base_handler}.
+         * 
+         * Here's an example of a language worker plugin that
+         * loads one language worker:
+         *
+         *     define(function(require, exports, module) {
+         *         main.consumes = ["language"];
+         *         main.provides = [];
+         *         return main;
+         *     
+         *         function main(options, imports, register) {
+         *             var language = imports.language;
+         *     
+         *             language.registerLanguageHandler('plugins/my.plugin/foo_handler');
+         *             
+         *             register(null, {});
+         *         }
+         *     });
+         *
+         * The plugin to load a langauge worker tends to be quite small, like
+         * the above. The actual work is done in the handler itself, here
+         * called plugins/my.plugin/foo_handler. This plugin lives inside
+         * the worker and must implement the {@link language.base_handler}
+         * interface.
+         * 
+         * Here's an example of a language handler implementing base_handler:
+         * 
+         *     define(function(require, exports, module) {
+         *         var baseHandler = require('plugins/c9.ide.language/base_handler');
+         *         var handler = module.exports = Object.create(baseHandler);
+         *      
+         *         handler.handlesLanguage = function(language) {
+         *             return language === "javascript";
+         *         };
+         *      
+         *         handler.analyze = function(value, ast, callback) {
+         *             if (!ast)
+         *                 return;
+         *             callback([{
+         *                  pos: { sl: 0, el: 0, sc: 0, ec: 0 },
+         *                  type: 'info',
+         *                  level: 'info',
+         *                  message: 'Hey there! I'm an info marker'
+         *            }]);
+         *         };
+         *     });
+         * 
+         * Note how the above handler doesn't use the Architect plugin
+         * infrastructure, and can only acesss other plugins that exist
+         * inside the web worker, such as {@link language.worker_util}
+         * or {@link language.complete_util}.
          * 
          * @singleton
          **/
@@ -470,7 +531,10 @@ define(function(require, exports, module) {
              * @param {String} callback.result.on.event        Event name
              * @param {Object} callback.result.on.data         Event data
              */
-            getWorker : getWorker
+            getWorker : getWorker,
+            
+            /** @ignore */
+            onCursorChange : onCursorChange
         });
         
         register(null, {
