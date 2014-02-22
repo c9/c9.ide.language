@@ -277,19 +277,22 @@ define(function(require, exports, module) {
         }
     
         function onJumpFailure(event, ace) {
-            var cursor = ace.getSelection().getCursor();
-            var oldPos = event.data.pos;
-            if (oldPos.row !== cursor.row || oldPos.column !== cursor.column)
-                return;
-            var line = ace.getSession().getLine(oldPos.row);
-            if (!line)
-                return;
-            var preceding = util.retrievePrecedingIdentifier(line, cursor.column);
-            var column = cursor.column - preceding.length;
-            if (column === oldPos.column)
-                column = line.match(/^(\s*)/).length;
-            var newPos = { row: cursor.row, column: column };
-            ace.getSelection().setSelectionRange({ start: newPos, end: newPos });
+            // Add a short delay as additional feedback
+            setTimeout(function() {
+                var cursor = ace.getSelection().getCursor();
+                var oldPos = event.data.pos;
+                if (oldPos.row !== cursor.row || oldPos.column !== cursor.column)
+                    return;
+                var line = ace.getSession().getLine(oldPos.row);
+                if (!line)
+                    return;
+                var preceding = util.retrievePrecedingIdentifier(line, cursor.column);
+                var column = cursor.column - preceding.length;
+                if (column === oldPos.column)
+                    column = line.match(/^(\s*)/).length;
+                var newPos = { row: cursor.row, column: column };
+                ace.getSelection().setSelectionRange({ start: newPos, end: newPos });
+            }, 300);
         }
     
         function onJumpStart(ace) {
