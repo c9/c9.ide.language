@@ -235,7 +235,7 @@ define(function(require, exports, module) {
             // We have no UI for multi jumptodef; we just take the last for now
             var lastResult;
             for (var i = results.length - 1; i >=0; i--) {
-                lastResult = results[results.length - 1];
+                lastResult = results[i];
                 if (!lastResult.isGeneric)
                     break;
             }
