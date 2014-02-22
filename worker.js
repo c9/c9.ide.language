@@ -963,7 +963,7 @@ function asyncParForEach(array, fn, callback) {
             _self.findNode(ast, pos, function(currentNode) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part, "getVariablePositions")) {
+                    if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
                         handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
                             if (response) {
