@@ -548,9 +548,10 @@ function asyncParForEach(array, fn, callback) {
         }, function() {
             var extendedMakers = markers.concat(_self.$cursorMarkers);
             _self.cachedAsts = cachedAsts;
-            if (!minimalAnalysis)
+            if (!minimalAnalysis) {
                 _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
-            _self.$staticMarkers = markers;
+                _self.$staticMarkers = markers;
+            }
             callback();
         });
     };
