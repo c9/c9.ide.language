@@ -552,7 +552,9 @@ define(function(require, exports, module) {
             getWorker: getWorker,
             
             /** @ignore */
-            onCursorChange: onCursorChange
+            onCursorChange: onCursorChange,
+
+            _events: []
         });
         
         register(null, {

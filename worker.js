@@ -212,7 +212,7 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                 processOne();
             }
             else if (callback) {
-                callback(result, err);
+                callback(err, result);
             }
         });
     }
@@ -835,7 +835,7 @@ function endTime(t, message, indent) {
                 });
             });
         }
-    }
+    };
         
     function processCursorMoveResponse(response, part, result) {
         if (!response)
