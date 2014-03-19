@@ -210,7 +210,7 @@ define(function(require, exports, module) {
                     ["undeclaredVars", "true"],
                     ["unusedFunctionArgs", "false"],
                     ["continuousCompletion", "true"],
-                    ["enterCompletion", "true"]
+                    ["enterCompletion", "false"]
                 ]);
                 settings.setDefaults("project/language", [
                     ["warnLevel", "info"]
