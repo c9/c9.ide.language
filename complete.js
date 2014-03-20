@@ -177,6 +177,7 @@ define(function(require, exports, module) {
                 popup.renderer.setStyle("dark", theme.isDark);
             }, plugin);
             
+            settings.on("read", updateSettings);
             settings.on("user/language", updateSettings);
             settings.on("project/language", updateSettings);
         }
