@@ -58,9 +58,20 @@ define(function(require, exports, module) {
         
         var trim = match.meta ? " maintrim" : "";
         if (!this.ignoreGenericMatches || !match.isGeneric) {
-            html += '<span class="main' + trim + '"><u>' 
-                + prefix + "</u>" + match.name.substring(prefix.length) 
-                + '</span>';
+            var simpleName = match.replaceText.replace("^^", "").replace(/\(\)$/, "");
+            if (match.name.indexOf(simpleName) === 0) {
+                html += '<span class="main' + trim + '"><u>' 
+                    + prefix + "</u>" + simpleName.substring(prefix.length) 
+                    + '</span>'
+                    + '<span class="deferred">'
+                    + match.name.substring(simpleName.length)
+                    + '</span>';
+            }
+            else {
+                html += '<span class="main' + trim + '"><u>' 
+                    + prefix + "</u>" + match.name.substring(prefix.length) 
+                    + '</span>';
+            }
         }
         else {
             html += '<span class="main' + trim 

@@ -88,6 +88,8 @@ define(function(require, exports, module) {
                 return false;
             var pos = ace.getCursorPosition();
             var line = ace.session.doc.getLine(pos.row);
+            if (inCommentToken(pos))
+                return false;
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
                 return false;
             if (complete.getCompletionRegex(null, ace))
@@ -131,20 +133,19 @@ define(function(require, exports, module) {
         }
         
         function handleChar(ch, idRegex, completionRegex) {
+            var pos = ace.getCursorPosition();
+            if (inCommentToken(pos))
+                return;
+                
+            var line = ace.getSession().getDocument().getLine(pos.row);
             var matchIdRegex = ch.match(idRegex || DEFAULT_ID_REGEX);
+            
             if (matchIdRegex || (completionRegex && ch.match(completionRegex))) { 
-                var pos = ace.getCursorPosition();
-                var line = ace.getSession().getDocument().getLine(pos.row);
-                var inComment = inCommentToken(pos);
-                if (inComment && !matchIdRegex) // don't complete on dot and such in comments 
-                    return false;
-                if (!inComment && !complete_util.precededByIdentifier(line, pos.column, ch, ace))
+                if (!complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
             }
             else if (ch === '"' || ch === "'") {
-                var pos = ace.getCursorPosition();
-                var line = ace.getSession().getDocument().getLine(pos.row);
                 if (complete_util.isRequireJSCall(line, pos.column, "", ace, true))
                     complete.deferredInvoke(true, ace);
             }

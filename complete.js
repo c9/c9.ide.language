@@ -482,8 +482,7 @@ define(function(require, exports, module) {
                 matches = matches.filter(function(m) { return !m.isGeneric; });
             }
             
-            // Experiment: show completion box with simpler look & feel
-            // in comments and strings
+            // Simpler look & feel in strings
             if (inCommentOrString(ace, pos)) {
                 for (var i = 0; i < matches.length; i++) {
                     var m = matches[i];
@@ -491,10 +490,13 @@ define(function(require, exports, module) {
                         matches.splice(i--, 1);
                         continue;
                     }
-                    m.icon = m.icon ? "unknown2" : null;
+                    m.icon = null;
+                    var simpleName = m.replaceText.replace("^^", "").replace(/\(\)$/, "");
+                    if (m.name.indexOf(simpleName) === 0)
+                        m.name = simpleName;
                     delete m.isContextual;
                     delete m.meta;
-                };
+                }
             }
         }
         
