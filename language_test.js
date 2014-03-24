@@ -239,7 +239,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.onTextInput(".");
                     afterCompleteOpen(function(el) {
                         expect.html(el).text(/log\(/);
-                        language.setContinuousCompletionEnabled(false);
+                        language.setContinuousCompletionEnabled(true);
                         done();
                     });
                 });
@@ -251,6 +251,20 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     afterCompleteDocOpen(function(el) {
                         expect.html(el).text(/stdout/);
                         done();
+                    });
+                });
+                
+                it('does continuous completion for CSS', function(done) {
+                    tabs.openFile("test.css", function(err, tab) {
+                        tabs.focusTab(tab);
+                        // We get a tab, but it's not done yet, so we wait
+                        setTimeout(function() {
+                            tab.editor.ace.onTextInput("font-f");
+                            afterCompleteOpen(function(el) {
+                                expect.html(el).text(/font-family/);
+                                done();
+                            });
+                        });
                     });
                 });
                 

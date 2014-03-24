@@ -130,7 +130,7 @@ function isRequireJSCall(line, column, identifier, ace, noQuote) {
  */
 function inCompletableCodeContext(line, column, id, ace) {
     if (ace.getSession().syntax !== "javascript")
-        return false;
+        return true;
     var inMode = null;
     for (var i = 0; i < column; i++) {
         if(line[i] === '"' && !inMode)
