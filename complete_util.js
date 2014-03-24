@@ -95,9 +95,6 @@ function setStaticPrefix(url) {
 function canCompleteForChangedLine(oldLine, newLine, oldPos, newPos, identifierRegex) {
     if (oldPos.row !== newPos.row)
         return false;
-    
-    if (oldLine === newLine)
-        return true;
         
     if (newLine.indexOf(oldLine) !== 0)
         return false;
