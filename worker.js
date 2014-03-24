@@ -121,6 +121,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     this.$cursorMarkers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
+    this.$initedRegexes = {};
     sender.once = EventEmitter.once;
     this.serverProxy = new ServerProxy(sender);
 
@@ -221,22 +222,6 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
         callback();
     }
 };
-
-function asyncParForEach(array, fn, callback) {
-    var completed = 0;
-    var arLength = array.length;
-    if (arLength === 0) {
-        callback();
-    }
-    for (var i = 0; i < arLength; i++) {
-        fn(array[i], function(result, err) {
-            completed++;
-            if (completed === arLength && callback) {
-                callback(result, err);
-            }
-        });
-    }
-}
 
 (function() {
     
@@ -695,6 +680,8 @@ function asyncParForEach(array, fn, callback) {
             hint: null,
             displayPos: null
         };
+        
+        this.initAllRegexes(part.language);
         
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
@@ -1163,14 +1150,7 @@ function asyncParForEach(array, fn, callback) {
         handler.completeUpdate = this.completeUpdate.bind(this);
         handler.immediateWindow = this.immediateWindow;
         handler.$getIdentifierRegex = this.getIdentifierRegex.bind(this);
-        if (_self.$language) {
-            if (handler.handlesLanguage(_self.$language) && handler.getIdentifierRegex())
-                _self.sender.emit("setIdentifierRegex", { language: _self.$language, identifierRegex: handler.getIdentifierRegex() });
-            if (handler.handlesLanguage(_self.$language) && handler.getCompletionRegex())
-                _self.sender.emit("setCompletionRegex", { language: _self.$language, completionRegex: handler.getCompletionRegex() });
-            if (handler.handlesLanguage(_self.$language) && handler.getTooltipRegex())
-                _self.sender.emit("setTooltipRegex", { language: _self.$language, tooltipRegex: handler.getTooltipRegex() });
-        }
+        this.initRegexes(handler, this.$language);
         if (!handler.$isInited) {
             handler.$isInited = true;
             handler.init(function() {
@@ -1190,6 +1170,25 @@ function asyncParForEach(array, fn, callback) {
         else {
             callback();
         }
+    };
+    
+    this.initAllRegexes = function(language) {
+        if (this.$initedRegexes[language])
+            return;
+        this.$initedRegexes[language] = true;
+        var that = this;
+        this.handlers.forEach(function(h) {
+            that.initRegexes(h, language);
+        });
+    };
+    
+    this.initRegexes = function(handler, language) {
+        if (handler.getIdentifierRegex())
+            this.sender.emit("setIdentifierRegex", { language: language, identifierRegex: handler.getIdentifierRegex() });
+        if (handler.getCompletionRegex())
+            this.sender.emit("setCompletionRegex", { language: language, completionRegex: handler.getCompletionRegex() });
+        if (handler.getTooltipRegex())
+            this.sender.emit("setTooltipRegex", { language: language, tooltipRegex: handler.getTooltipRegex() });
     };
 
     this.documentOpen = function(path, immediateWindow, language, document) {
