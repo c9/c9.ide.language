@@ -54,7 +54,7 @@ define(function(require, exports, module) {
         
         var prefix = match.identifierRegex
             ? this.calcPrefix(match.identifierRegex)
-            : match.replaceText.substr(0, this.prefix.length);
+            : match.name.substr(0, this.prefix.length);
         
         var trim = match.meta ? " maintrim" : "";
         if (!this.ignoreGenericMatches || !match.isGeneric) {
