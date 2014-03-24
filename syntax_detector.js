@@ -173,9 +173,9 @@ function regionToCodePart(doc, region, index) {
         getLine: function(l) {
             if (region.sl === region.el)
                 return lines[0].substring(region.sc, region.ec);
-            if (l === region.sl)
+            if (l === 0)
                 return lines[0].substring(region.sc);
-            if (l === region.el)
+            if (l === lines.length - 1)
                 return lines[lines.length-1].substring(0, region.ec);
             return lines[l];
         },
