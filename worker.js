@@ -1183,6 +1183,8 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
     };
     
     this.initRegexes = function(handler, language) {
+        if (!handler.handlesLanguage(language))
+            return;
         if (handler.getIdentifierRegex())
             this.sender.emit("setIdentifierRegex", { language: language, identifierRegex: handler.getIdentifierRegex() });
         if (handler.getCompletionRegex())
