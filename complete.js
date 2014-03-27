@@ -351,7 +351,13 @@ define(function(require, exports, module) {
             var cursorPos = { row: pos.row + rowOffset, column: cursorCol };
             var cursorPos2 = { row: pos.row + rowOffset2, column: cursorCol2 };
             ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
-            emit("replaceText", { pos: pos, prefix: prefix, newText: paddedLines });
+            tooltip.setLastCompletion(match, pos);
+            emit("replaceText", {
+                pos: pos,
+                prefix: prefix,
+                newText: paddedLines,
+                match: match
+            });
         }
         
         function showCompletionBox(editor, m, prefix, line) {
@@ -875,6 +881,7 @@ define(function(require, exports, module) {
                  *
                  * @param {Object} pos
                  * @param {String} newText
+                 * @param {Object} match
                  * @event replaceText
                  */
                 "replaceText"

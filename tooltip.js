@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui", "ace"
+        "Plugin", "tabManager", "language", "ui", "ace", "util"
     ];
     main.provides = ["language.tooltip"];
     return main;
@@ -21,6 +21,7 @@ define(function(require, exports, module) {
         var tree = require("treehugger/tree");
         var assert = require("c9/assert");
         var SyntaxDetector = require("./syntax_detector");
+        var util = imports.util;
         
         var plugin = new Plugin("Ajax.org", main.consumes);
         
@@ -28,6 +29,7 @@ define(function(require, exports, module) {
         var isTopdown, tooltipEl, allowImmediateEmit, lastPos;
         var cursormoveTimeout, onMouseDownTimeout;
         var tooltipRegexes = {};
+        var lastCompletionTooltip = {};
         
         function load() {
             tooltipEl = dom.createElement("div");
@@ -61,6 +63,7 @@ define(function(require, exports, module) {
                             }, 0);
                         }
                     }
+                    applyLastCompletionTooltip();
                     cursormoveTimeout = setTimeout(function() {
                         var latestPos = e.doc.selection.getCursor();
                         worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row), now: e.now }});
@@ -115,9 +118,11 @@ define(function(require, exports, module) {
                 show(displayPos.row, displayPos.column, message, ace);
                 lastPos = pos;
                 allowImmediateEmit = true;
+                lastCompletionTooltip.active = false;
             }
             else if (!(lastPos && inRange(lastPos, cursorPos))) {
-                hide();
+                if (!lastCompletionTooltip.active)
+                    hide();
             }
         }
         
@@ -209,6 +214,41 @@ define(function(require, exports, module) {
                 ace.getSession().syntax);
         }
         
+        function setLastCompletion(completion, pos) {
+            // Here we store information about generic completions
+            // that may be usable as tooltips
+            if (!completion.isGeneric)
+                return lastCompletionTooltip = null;
+            var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
+            if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)
+                return lastCompletionTooltip = null;
+            
+            lastCompletionTooltip = {
+                doc: completion.name,
+                row: pos.row,
+                matcher: new RegExp("(" + util.escapeRegExp(simpleName) + "(\\([^\\)]*)?)$"),
+                tab: tabs.focussedTab
+            }
+        }
+        
+        function applyLastCompletionTooltip() {
+            var tab = tabs.focussedTab;
+            var ace = tab.editor && tab.editor.ace;
+            if (!ace || lastCompletionTooltip.tab !== tab)
+                return;
+            var pos = ace.getCursorPosition();
+            var line = ace.getSession().getDocument().getLine(pos.row).substr(0, pos.column);
+            console.log(line, lastCompletionTooltip.matcher)
+            if (!line.match(lastCompletionTooltip.matcher)) {
+                console.log("NEIN")
+                return lastCompletionTooltip.active ? hide() : null;
+            }
+            var beforeMatch = line.substr(0, line.length - RegExp.$1.length);
+            show(pos.row, beforeMatch.length, lastCompletionTooltip.doc, ace);
+            lastPos = null;
+            lastCompletionTooltip.active = true;
+        }
+        
         plugin.freezePublicAPI({
             hide: hide,
             show: show,
@@ -218,7 +258,8 @@ define(function(require, exports, module) {
             set adjustCompleterTop(f) {
                 adjustCompleterTop = f;
             },
-            getTooltipRegex: getTooltipRegex
+            getTooltipRegex: getTooltipRegex,
+            setLastCompletion: setLastCompletion
         });
         
         /**
