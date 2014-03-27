@@ -218,10 +218,10 @@ define(function(require, exports, module) {
             // Here we store information about generic completions
             // that may be usable as tooltips
             if (!completion.isGeneric)
-                return lastCompletionTooltip = null;
+                return lastCompletionTooltip = {};
             var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
             if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)
-                return lastCompletionTooltip = null;
+                return lastCompletionTooltip = {};
             
             lastCompletionTooltip = {
                 doc: completion.name,
