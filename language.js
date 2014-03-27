@@ -130,7 +130,7 @@ define(function(require, exports, module) {
         }
         
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
-            if (getTabPath(tabs.focussedTab) !== path)
+            if (type === "switchFile" && getTabPath(tabs.focussedTab) !== path)
                 return;
             console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
