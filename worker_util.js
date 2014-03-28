@@ -128,13 +128,13 @@ module.exports = {
         }
         
         var id = msgId++;
-        worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
         worker.sender.on("readFileResult", function onReadFileResult(event) {
             if (event.data.id !== id)
                 return;
             worker.sender.off("readFileResult", onReadFileResult);
             callback && callback(event.data.err, event.data.data);
         });
+        worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
     },
     
     /**

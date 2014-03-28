@@ -238,9 +238,7 @@ define(function(require, exports, module) {
                 return;
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(pos.row).substr(0, pos.column);
-            console.log(line, lastCompletionTooltip.matcher)
             if (!line.match(lastCompletionTooltip.matcher)) {
-                console.log("NEIN")
                 return lastCompletionTooltip.active ? hide() : null;
             }
             var beforeMatch = line.substr(0, line.length - RegExp.$1.length);
