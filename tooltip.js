@@ -228,7 +228,7 @@ define(function(require, exports, module) {
                 row: pos.row,
                 matcher: new RegExp("(" + util.escapeRegExp(simpleName) + "(\\([^\\)]*)?)$"),
                 tab: tabs.focussedTab
-            }
+            };
         }
         
         function applyLastCompletionTooltip() {
