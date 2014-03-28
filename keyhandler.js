@@ -129,7 +129,7 @@ define(function(require, exports, module) {
         
         function inCommentToken(pos) {
             var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
-            return token && token.type && token.type === "comment";
+            return token && token.type && token.type.indexOf("comment") === 0;
         }
         
         function handleChar(ch, idRegex, completionRegex) {
