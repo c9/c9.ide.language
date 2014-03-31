@@ -574,11 +574,11 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                     }
                     _self.nodeToString(node, function(result) {
                         // Begin with a simple string representation
-                        // TODO: remove initial representation, in case handler doesn't want to handle this node?
                         var lastResult = {
                             pos: fullPos,
                             value: result
                         };
+                        var rejected;
                         
                         // Try and find a better match using getInspectExpression()
                         asyncForEach(_self.handlers, function(handler, next) {
@@ -589,6 +589,10 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
                                     }
+                                    else if (!rejected) {
+                                        lastResult = {};
+                                        rejected = true;
+                                    }
                                     next();
                                 });
                             }
@@ -596,6 +600,9 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                                 next();
                             }
                         }, function () {
+                            if (!lastResult.pos && !lastResult.value)
+                                return _self.scheduleEmit("inspect", lastResult);
+                            
                             // if we have real pos, just get the value from document
                             var pos = lastResult.pos;
                             var text = _self.doc.getTextRange({start: {column: pos.sc, row: pos.sl}, end: {column: pos.ec, row: pos.el}});
