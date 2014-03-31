@@ -254,11 +254,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it('does continuous completion for CSS', function(done) {
+                it.only('does continuous completion for CSS', function(done) {
                     tabs.openFile("test.css", function(err, tab) {
                         tabs.focusTab(tab);
                         // We get a tab, but it's not done yet, so we wait
                         setTimeout(function() {
+                            tab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 4 }, end: { row: 1, column: 4 } });
                             tab.editor.ace.onTextInput("font-f");
                             afterCompleteOpen(function(el) {
                                 expect.html(el).text(/font-family/);

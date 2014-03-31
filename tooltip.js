@@ -233,7 +233,7 @@ define(function(require, exports, module) {
         
         function applyLastCompletionTooltip() {
             var tab = tabs.focussedTab;
-            var ace = tab.editor && tab.editor.ace;
+            var ace = tab && tab.editor && tab.editor.ace;
             if (!ace || lastCompletionTooltip.tab !== tab)
                 return;
             var pos = ace.getCursorPosition();
