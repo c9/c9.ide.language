@@ -181,21 +181,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         tab.close(true);
                     });
                     // tab.close() isn't quite synchronous, wait for it :(
+                    complete.closeCompletionBox();
                     setTimeout(function() {
-                        complete.closeCompletionBox();
                         tabs.openFile("language.js", function(err, tab) {
                             jsTab = tab;
                             jsSession = jsTab.document.getSession().session;
                             expect(jsSession).to.not.equal(null);
-                            if (!complete.getCompletionRegex("javascript")) {
-                                return language.getWorker(function(err, worker) {
-                                    worker.on("setCompletionRegex", function(e) {
-                                        if (e.data.language === "javascript")
-                                            setTimeout(done);
-                                    });
-                                });
-                            }
-                            setTimeout(done);
+                            setTimeout(function() {
+                                complete.closeCompletionBox();
+                                done();
+                            });
                         });
                     }, 500);
                 });
