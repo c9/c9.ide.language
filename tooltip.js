@@ -50,7 +50,7 @@ define(function(require, exports, module) {
                 });
                 language.on("cursormove", function(e) {
                     clearTimeout(cursormoveTimeout);
-                    if (e.selection.rangeCount || !e.selection.isEmpty())
+                    if (e.selection.rangeCount || !e.selection.isEmpty() || !tabs.focussedTab)
                         return hide();
                     if (lastPos && !inRange(lastPos, e.pos)) {
                         // Just walked outside of tooltip range
