@@ -56,6 +56,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.language/tooltip",
         "plugins/c9.ide.language/marker",
         "plugins/c9.ide.language.generic/generic",
+        "plugins/c9.ide.language.css/css",
         "plugins/c9.ide.language.javascript/javascript",
         "plugins/c9.ide.language.javascript.infer/jsinfer",
         "plugins/c9.ide.keys/commands",
