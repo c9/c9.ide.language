@@ -126,7 +126,7 @@ define(function(require, exports, module) {
             
             settings.on("read", function () {
                 settings.setDefaults("user/language", [
-                    ["overrideMultiselectShortcuts", "false"]
+                    ["overrideMultiselectShortcuts", "true"]
                 ]);
                 updateSettings();
             });
