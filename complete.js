@@ -545,7 +545,7 @@ define(function(require, exports, module) {
                     + (selected.docHead || docHead || selected.name) + '</div>' 
                     + (selected.$doc || "");
             
-            if (selected && selected.doc) {
+            if (selected && selected.$doc) {
                 if (isDocShown) {
                     showDocPopup();
                 }
