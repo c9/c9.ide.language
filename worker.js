@@ -310,8 +310,6 @@ function endTime(t, message, indent) {
             }
             // In ?noworker=1 debugging mode, synchronous require doesn't work
             require([path], function(handler) {
-                if (!handler)
-                    throw new Error("Could not load language handler " + path, e);
                 if (!handler) {
                     _self.sender.emit("registered", { path: path, err: "Could not load" });
                     callback && callback("Could not load");
