@@ -1131,24 +1131,7 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
     };
 
     this.$initHandler = function(handler, oldPath, onDocumentOpen, callback) {
-        function waitForPath() {
-            if (!_self.$path)
-                return setTimeout(waitForPath, 500);
-            
-            if (handler.$isInited)
-                return callback();
-            
-            _self.$initHandler(handler, oldPath, onDocumentOpen, callback);
-        }
         var _self = this;
-        if (!this.$path) {
-            // If we don't have a path, we need to wait
-            // which is bad since we're already in the handlers list...
-            if (!this.$warnedForPath)
-                console.error("Warning: language handler registered without first calling switchFile");
-            this.$warnedForPath = true;
-            return waitForPath();
-        }
         handler.path = this.$path;
         handler.language = this.$language;
         handler.workspaceDir = this.$workspaceDir;
