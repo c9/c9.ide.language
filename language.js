@@ -20,18 +20,18 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var prefs = imports.preferences;
         var browsers = imports.browsersupport;
+        var WorkerClient = require("ace/worker/worker_client").WorkerClient;
+        var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
+
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
         var INITIAL_DELAY = 2000;
-        var delayedTransfer;
-        var lastWorkerMessage = {};
-
-        var WorkerClient = require("ace/worker/worker_client").WorkerClient;
-        var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
-        var useUIWorker  = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
+        var UI_WORKER  = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
             || (browsers.getIEVersion() && browsers.getIEVersion() < 10) || options.useUIWorker;
 
+        var delayedTransfer;
+        var lastWorkerMessage = {};
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
         
@@ -159,7 +159,7 @@ define(function(require, exports, module) {
                 var path = options.workerPrefix + "/" + id + ".js";
             
             // Create main worker for language processing
-            if (useUIWorker) {
+            if (UI_WORKER) {
                 worker = new UIWorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
             }
             else  {
@@ -299,7 +299,7 @@ define(function(require, exports, module) {
                             tab.document.once("valueSet", function(e) {
                                 notifyWorker("documentOpen", { tab: tab, value: e.value });
                             });
-                        }, useUIWorker ? UI_WORKER_DELAY : INITIAL_DELAY);
+                        }, UI_WORKER ? UI_WORKER_DELAY : INITIAL_DELAY);
                     }
                 });
                 if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
@@ -367,7 +367,7 @@ define(function(require, exports, module) {
         }
         
         function isWorkerEnabled() {
-            return !useUIWorker;
+            return !UI_WORKER;
         }
     
         function isInferAvailable() {
