@@ -171,9 +171,9 @@ define(function(require, exports, module) {
                     throw e;
                 }
             }
+            
             worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
 
-            
             aceHandle.on("create", function(e) {
                 e.editor.on("createAce", function (ace) {
                     emit("attachToEditor", ace);
