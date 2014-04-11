@@ -625,6 +625,7 @@ define(function(require, exports, module) {
                 case 27: // Esc
                     closeCompletionBox();
                     e.preventDefault();
+                    e.stopPropagation();
                     break;
                 case 8: // Backspace
                     commandKeyBeforePatch.apply(keyBinding, arguments);
