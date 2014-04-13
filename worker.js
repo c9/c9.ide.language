@@ -35,6 +35,7 @@ var WARNING_LEVELS = {
 var UPDATE_TIMEOUT_MIN = 500;
 var UPDATE_TIMEOUT_MAX = 10000;
 var DEBUG = !isInWebWorker;
+var STATS = false;
 
 // Leaking into global namespace of worker, to allow handlers to have access
 /*global disabledFeatures: true*/
@@ -222,6 +223,27 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
         callback();
     }
 };
+
+function startTime() {
+    if (!STATS)
+        return;
+    
+    return Date.now();
+}
+
+function endTime(t, message, indent) {
+    if (!STATS)
+        return;
+
+    var spaces = indent ? indent * 2 : 0;
+    var time = String(Date.now() - t);
+    spaces += Math.max(4 - time.length, 0);
+    var prefix = "";
+    for (var i = 0; i < spaces; i++)
+        prefix += " ";
+
+    console.log(prefix + time, message);
+}
 
 (function() {
     
@@ -494,7 +516,9 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "analyze")) {
                         handler.language = part.language;
+                        var t = startTime();
                         handler.analyze(part.getValue(), ast, function(result) {
+                            endTime(t, "Analyze: " + handler.$source);
                             if (result) {
                                 handler.getResolutions(part.getValue(), ast, result, function(result2) {
                                     if (result2) {
@@ -1071,8 +1095,13 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
         function doUpdate(done) {
             var startTime = new Date().getTime();
             asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler, null, "onUpdate"))
-                    handler.onUpdate(_self.doc, next);
+                if (_self.isHandlerMatch(handler, null, "onUpdate")) {
+                    var t = startTime();
+                    handler.onUpdate(_self.doc, function() {
+                        endTime(t, "Update: " + handler.$source);
+                        next();
+                    });
+                }
                 else
                     next();
             }, function() {
@@ -1242,7 +1271,9 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
             var partPos = syntaxDetector.posToRegion(part.region, pos);
             var language = part.language;
+            var tStart = startTime();
             _self.parse(part, function(ast) {
+                endTime(tStart, "Completion: parser");
                 _self.findNode(ast, pos, function(node) {
                     var currentNode = node;
                     var matches = [];
@@ -1252,7 +1283,9 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                             handler.language = language;
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
+                            var t = startTime();
                             handler.complete(part, ast, partPos, currentNode, function(completions) {
+                                endTime(t, "Completion: " + handler.$source, 1);
                                 if (completions && completions.length)
                                     matches = matches.concat(completions);
                                 next();
@@ -1295,6 +1328,7 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
                         });
+                        endTime(tStart, "COMPLETED!");
                     });
                 });
             });
