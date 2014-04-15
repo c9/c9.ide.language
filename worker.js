@@ -1386,7 +1386,7 @@ function endTime(t, message, indent) {
             }, 0);
         }
         else {
-            this.complete({data: {pos: pos, line: line, isUpdate: true}});
+            this.complete({data: {pos: pos, line: line, isUpdate: true, forceBox: true}});
         }
     };
 
