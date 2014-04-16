@@ -909,7 +909,7 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = event.data;
         var line = this.doc.getLine(pos.row);
-        var regex = this.getIdentifierRegex();
+        var regex = this.getIdentifierRegex(pos);
         var identifier = completeUtil.retrievePrecedingIdentifier(line, pos.column, regex)
             + completeUtil.retrieveFollowingIdentifier(line, pos.column, regex);
 
@@ -1267,7 +1267,7 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         var line = _self.doc.getLine(pos.row);
         
-        _self.waitForCompletionSync(event, function() {
+        _self.waitForCompletionSync(event, function(identifierRegex) {
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
             var partPos = syntaxDetector.posToRegion(part.region, pos);
             var language = part.language;
@@ -1296,6 +1296,17 @@ function endTime(t, message, indent) {
                         }
                     }, function() {
                         removeDuplicateMatches(matches);
+                        
+                        // Always prefer current identifier
+                        var prefixLine = line.substr(0, pos.column);
+                        matches.forEach(function(m) {
+                            var match = prefixLine.lastIndexOf(m.replaceText);
+                            if (match > -1
+                                && match === pos.column - m.replaceText.length
+                                && completeUtil.retrievePrecedingIdentifier(line, pos.column, m.identifierRegex || identifierRegex))
+                                m.priority = 99;
+                        });
+                        
                         // Sort by priority, score
                         matches.sort(function(a, b) {
                             if (a.priority < b.priority)
@@ -1363,14 +1374,14 @@ function endTime(t, message, indent) {
                             }
                             return; // ugh give up already
                         }
-                        runCompletion();
+                        runCompletion(regex);
                     }, 20);
                 }
-                runCompletion();
+                runCompletion(regex);
             }, 5);
             return;
         }
-        runCompletion();
+        runCompletion(regex);
     };
     
     /**
