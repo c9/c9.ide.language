@@ -32,6 +32,7 @@ define(function(require, exports, module) {
         var completedp     = require("./completedp");
         var assert         = require("c9/assert");
         
+        var snippetManager = require("ace/snippets").snippetManager;
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
@@ -47,9 +48,8 @@ define(function(require, exports, module) {
         var commandKeyBeforePatch, textInputBeforePatch, aceBeforePatch;
         var isDocShown;
         var txtCompleterDoc; // ui elements
-        var matches;
         var docElement, lastAce, worker; 
-        var eventMatches, popup;
+        var matches, eventMatches, popup;
         var lastUpDownEvent;
         
         var idRegexes         = {};
@@ -275,87 +275,59 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
-            if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
-                newText = "require(\"^^\")";
-                if (!isInvokeScheduled)
-                    setTimeout(deferredInvoke.bind(null, false, ace), 0);
-            }
-            
-            // Don't insert extra () in front of (
-            var endingParens = newText.substr(newText.length - 4) === "(^^)"
-                ? 4
-                : newText.substr(newText.length - 2) === "()" ? 2 : 0;
-            if (endingParens) {
-                if (line.substr(pos.column + (deleteSuffix ? postfix.length : 0), 1) === "(")
-                    newText = newText.substr(0, newText.length - endingParens);
-                if (postfix && line.substr(pos.column, postfix.length + 1) === postfix + "(") {
-                    newText = newText.substr(0, newText.length - endingParens);
-                    deleteSuffix = true;
+            var snippet = match.snippet;
+            if (!snippet) {
+                if (match.replaceText === "require(^^)" && isJavaScript(ace)) {
+                    newText = "require(\"^^\")";
+                    if (!isInvokeScheduled)
+                        setTimeout(deferredInvoke.bind(null, false, ace), 0);
                 }
+                
+                // Don't insert extra () in front of (
+                var endingParens = newText.substr(newText.length - 4) === "(^^)"
+                    ? 4
+                    : newText.substr(newText.length - 2) === "()" ? 2 : 0;
+                if (endingParens) {
+                    if (line.substr(pos.column + (deleteSuffix ? postfix.length : 0), 1) === "(")
+                        newText = newText.substr(0, newText.length - endingParens);
+                    if (postfix && line.substr(pos.column, postfix.length + 1) === postfix + "(") {
+                        newText = newText.substr(0, newText.length - endingParens);
+                        deleteSuffix = true;
+                    }
+                }
+
+                // Ensure cursor marker
+                if (newText.indexOf("^^") === -1)
+                    newText += "^^";
+                    
+                // Remove HTML duplicate '<' completions
+                var preId = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
+                if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
+                    newText = newText.substring(1);
+                
+                
+                // if (line.substring(0, pos.column).match(/require\("[^\"]+$/) && isJavaScript(ace)) {
+                //     if (line.substr(pos.column + postfix.length, 1).match(/['"]/) || newText.substr(0, 1) === '"')
+                //         cursorCol++;
+                //     if (line.substr(pos.column + postfix.length + 1, 1) === ')')
+                //         cursorCol++;
+                // }
+                snippet = newText.replace(/[$]/g, "\\$").replace(/\^\^(.*)\^\^|\^\^/g, "${0$1}");
             }
-        
-            newText = newText.replace(/\t/g, session.getTabString());
-            
-            // Ensure cursor marker
-            if (newText.indexOf("^^") === -1)
-                newText += "^^";
-        
-            // Find prefix whitespace of current line
-            for (var i = 0; i < line.length && (line[i] === ' ' || line[i] === "\t");)
-                i++;
-        
-            var prefixWhitespace = line.substring(0, i);
-            
-            // Remove HTML duplicate '<' completions
-            var preId = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
-                newText = newText.substring(1);
-            
-            // Pad the text to be inserted
-            var paddedLines = newText.split("\n").join("\n" + prefixWhitespace);
-            var splitPaddedLines = paddedLines.split("\n");
-            var colOffset = -1, colOffset2 = -1, rowOffset, rowOffset2;
-            for (i = 0; i < splitPaddedLines.length; i++) {
-                if (colOffset === -1)
-                    colOffset = splitPaddedLines[i].indexOf("^^");
-                if (colOffset !== -1)
-                    colOffset2 = splitPaddedLines[i].lastIndexOf("^^");
-                if (colOffset !== -1 && !rowOffset)
-                    rowOffset = i;
-                if (colOffset2 !== -1 && !rowOffset2)
-                    rowOffset2 = i;
-            }
-            if (rowOffset === rowOffset2 && colOffset !== colOffset2)
-                colOffset2 -= 2;
-            colOffset2 = colOffset2 || colOffset;
-            rowOffset2 = rowOffset2 || rowOffset;
-            
-            // Remove cursor marker
-            paddedLines = paddedLines.replace(/\^\^/g, "");
-        
-            if (deleteSuffix || paddedLines.slice(-postfix.length) === postfix)
+
+            if (deleteSuffix || newText.slice(-postfix.length) === postfix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
             else
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
-            doc.insert({row: pos.row, column: pos.column - prefix.length}, paddedLines);
-        
-            var cursorCol = rowOffset ? colOffset : pos.column + colOffset - prefix.length;
-            var cursorCol2 = rowOffset2 ? colOffset2 : pos.column + colOffset2 - prefix.length;
-        
-            if (line.substring(0, pos.column).match(/require\("[^\"]+$/) && isJavaScript(ace)) {
-                if (line.substr(pos.column + postfix.length, 1).match(/['"]/) || paddedLines.substr(0, 1) === '"')
-                    cursorCol++;
-                if (line.substr(pos.column + postfix.length + 1, 1) === ')')
-                    cursorCol++;
-            }
-            var cursorPos = { row: pos.row + rowOffset, column: cursorCol };
-            var cursorPos2 = { row: pos.row + rowOffset2, column: cursorCol2 };
-            ace.selection.setSelectionRange({ start: cursorPos, end: cursorPos2 });
+
+            
+            snippetManager.insertSnippet(ace, snippet);
+            
             tooltip.setLastCompletion(match, pos);
             emit("replaceText", {
                 pos: pos,
                 prefix: prefix,
-                newText: paddedLines,
+                newText: newText,
                 match: match
             });
         }
@@ -624,6 +596,7 @@ define(function(require, exports, module) {
                     break;
                 case 27: // Esc
                     closeCompletionBox();
+                    e.stopPropagation();
                     e.preventDefault();
                     e.stopPropagation();
                     break;
