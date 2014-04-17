@@ -777,11 +777,27 @@ define(function(require, exports, module) {
         }
         
         function filterMatches(matches, line, pos) {
-            return matches.filter(function(match) {
-                var idRegex = match.identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
+            var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX
+            var results = matches.filter(function(match) {
+                var idRegex = match.identifierRegex || identifierRegex;
                 var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
                 return match.name.indexOf(prefix) === 0;
-            });
+            });            
+            
+            // Always prefer current identifier
+            var prefixLine = line.substr(0, pos.column);
+            for (var i = 0; i < results.length; i++) {
+                var m = results[i];
+                var match = prefixLine.lastIndexOf(m.replaceText);
+                if (match > -1
+                    && match === pos.column - m.replaceText.length
+                    && completeUtil.retrievePrecedingIdentifier(line, pos.column, m.identifierRegex || identifierRegex)) {
+                    results.splice(i, 1);
+                    results.splice(0, 0, m);
+                }
+            }
+            
+            return results;
         }
         
         function deferredInvoke(now, ace) {
