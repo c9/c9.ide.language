@@ -546,7 +546,9 @@ define(function(require, exports, module) {
             
             var ace = originalTab.editor.ace; 
             var pos = jumptodef.addUnknownColumn(ace, node.pos, node.name);
-            var displayPos = jumptodef.addUnknownColumn(ace, node.displayPos, node.name);
+            var displayPos = node.displayPos
+                ? jumptodef.addUnknownColumn(ace, node.displayPos, node.name)
+                : undefined;
             scrollToDefinition(ace, pos.sl, pos.el);
             var range = displayPos
                 ? new Range(
