@@ -146,7 +146,9 @@ define(function(require, exports, module) {
                 isAvailable : function(editor) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
-                exec : invoke
+                exec : function() {
+                    invoke();
+                }
             }, plugin);
             
             commands.addCommand({
@@ -664,6 +666,15 @@ define(function(require, exports, module) {
             }
         }
         
+        /**
+         * Trigger code completion by firing an event to the worker.
+         * 
+         * @param {Boolean} forceBox  true when completion was triggered automatically
+         *       and a completion box should always be shown (automatic insertion
+         *       is disabled then)
+         * @param {Boolean} deleteSuffix  true when the suffix of the current identifier
+         *       may be overwritten
+         */
         function invoke(forceBox, deleteSuffix) {
             var tab = tabs.focussedTab;
             if (!tab || !language.isEditorSupported(tab))
@@ -681,7 +692,7 @@ define(function(require, exports, module) {
             worker.emit("complete", { data: {
                 pos: pos,
                 line: line,
-                forceBox: true,
+                forceBox: forceBox,
                 deleteSuffix: true
             }});
             if (forceBox)
