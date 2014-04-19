@@ -682,10 +682,9 @@ define(function(require, exports, module) {
             
             var ace = lastAce = tab.editor.ace;
             
-            if (ace.inMultiSelectMode) {
-                // closeCompletionBox();
-                // return;
-            }
+            if (ace.inMultiSelectMode && forceBox)
+                return closeCompletionBox();
+            
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
