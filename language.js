@@ -161,6 +161,8 @@ define(function(require, exports, module) {
             // Create main worker for language processing
             if (UI_WORKER) {
                 worker = new UIWorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
+                if (UI_WORKER === "sync")
+                    worker.setEmitSync(true);
             }
             else  {
                 try {
