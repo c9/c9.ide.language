@@ -268,6 +268,15 @@ define(function(require, exports, module) {
          * is deleted.
          */
         function replaceText(ace, match, deleteSuffix) {
+            if (!ace.inVirtualSelectionMode && ace.inMultiSelectMode) {
+                ace.forEachSelection(function() {
+                    replaceText(ace, match, deleteSuffix);
+                }, null, {keepOrder: true});
+                if (ace.tabstopManager)
+                    ace.tabstopManager.tabNext();
+                return;
+            }
+
             var newText = match.replaceText;
             var pos = ace.getCursorPosition();
             var session = ace.getSession();
@@ -307,21 +316,15 @@ define(function(require, exports, module) {
                 if (isHtml(ace) && line[pos.column-preId.length-1] === '<' && newText[0] === '<')
                     newText = newText.substring(1);
                 
-                
-                // if (line.substring(0, pos.column).match(/require\("[^\"]+$/) && isJavaScript(ace)) {
-                //     if (line.substr(pos.column + postfix.length, 1).match(/['"]/) || newText.substr(0, 1) === '"')
-                //         cursorCol++;
-                //     if (line.substr(pos.column + postfix.length + 1, 1) === ')')
-                //         cursorCol++;
-                // }
-                snippet = newText.replace(/[$]/g, "\\$").replace(/\^\^(.*)\^\^|\^\^/g, "${0$1}");
+                snippet = newText.replace(/[$]/g, "\\$").replace(/\^\^(.*)\^\^|\^\^/g, "${0:$1}");
+                // Remove cursor marker
+                newText = newText.replace(/\^\^/g, "");
             }
 
             if (deleteSuffix || newText.slice(-postfix.length) === postfix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
             else
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
-
             
             snippetManager.insertSnippet(ace, snippet);
             
@@ -682,9 +685,10 @@ define(function(require, exports, module) {
             
             var ace = lastAce = tab.editor.ace;
             
-            if (ace.inMultiSelectMode && forceBox)
-                return closeCompletionBox();
-            
+            if (ace.inMultiSelectMode) {
+                if (forceBox || !sameMultiselectPrefix(ace))
+                    return closeCompletionBox();
+            }
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
@@ -739,6 +743,19 @@ define(function(require, exports, module) {
         
         function setEnterCompletion(enabled) {
             enterCompletion = enabled;
+        }
+            
+        function sameMultiselectPrefix(ace) {
+            var commonPrefix;
+            var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
+            return ace.selection.ranges.every(function(range) {
+                var pos = range.cursor;
+                var line = ace.session.getLine(pos.row);
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
+                if (commonPrefix === undefined)
+                    commonPrefix = prefix;
+                return commonPrefix == prefix;
+            });
         }
             
         /**
