@@ -50,7 +50,7 @@ define(function(require, exports, module) {
         var txtCompleterDoc; // ui elements
         var docElement, lastAce, worker; 
         var matches, eventMatches, popup;
-        var lastUpDownEvent;
+        var lastUpDownEvent, forceOpen;
         
         var idRegexes         = {};
         var completionRegexes = {}; 
@@ -435,6 +435,7 @@ define(function(require, exports, module) {
             }
             commandKeyBeforePatch = textInputBeforePatch = null;
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
+            forceOpen = false;
         }
             
         function populateCompletionBox(ace, matches) {
@@ -686,8 +687,15 @@ define(function(require, exports, module) {
             var ace = lastAce = tab.editor.ace;
             
             if (ace.inMultiSelectMode) {
-                if (forceBox || !sameMultiselectPrefix(ace))
+                var row = ace.selection.lead.row;
+                // allow completion if all selections are empty and on the same line
+                var shouldClose = forceBox && !ace.selection.ranges.every(function(r) {
+                    return r.cursor.row == row && r.isEmpty();
+                });
+                if (shouldClose && !forceOpen || !sameMultiselectPrefix(ace))
                     return closeCompletionBox();
+                else
+                    forceOpen = true;
             }
             ace.addEventListener("change", deferredInvoke);
             var pos = ace.getCursorPosition();
