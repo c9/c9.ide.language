@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport"
+        "browsersupport", "commands"
     ];
     main.provides = ["language"];
     return main;
@@ -20,6 +20,7 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var prefs = imports.preferences;
         var browsers = imports.browsersupport;
+        var commands = imports.commands;
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
 
@@ -282,6 +283,18 @@ define(function(require, exports, module) {
                         }
                     }
                 }
+            }, plugin);
+            
+            // commands
+            commands.addCommand({
+                name: "expandSnippet",
+                bindKey: "Tab",
+                exec: function(editor) {
+                    return editor.ace.expandSnippet();
+                },
+                isAvailable: function(editor) {
+                    return editor.ace.expandSnippet({dryRun: true});
+                },
             }, plugin);
         }
         
