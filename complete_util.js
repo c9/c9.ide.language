@@ -16,7 +16,7 @@ var staticPrefix = "";
 function retrievePrecedingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
     var buf = [];
-    for (var i = offset-1; i >= 0; i--) {
+    for (var i = offset-1; i >= 0 && line; i--) {
         if (regex.test(line[i]))
             buf.push(line[i]);
         else
