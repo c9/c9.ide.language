@@ -65,7 +65,7 @@ define(function(require, exports, module) {
                     function done(err, data) {
                         worker.emit("readFileResult", { data: {
                             id: e.data.id,
-                            err: err,
+                            err: err && JSON.stringify(err),
                             data: data
                         }});
                     }

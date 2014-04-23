@@ -518,7 +518,7 @@ function endTime(t, message, indent) {
                         handler.language = part.language;
                         var t = startTime();
                         handler.analyze(part.getValue(), ast, function(result) {
-                            endTime(t, "Analyze: " + handler.$source);
+                            endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result) {
                                 handler.getResolutions(part.getValue(), ast, result, function(result2) {
                                     if (result2) {
@@ -1273,7 +1273,7 @@ function endTime(t, message, indent) {
             var language = part.language;
             var tStart = startTime();
             _self.parse(part, function(ast) {
-                endTime(tStart, "Completion: parser");
+                endTime(tStart, "Complete: parser");
                 _self.findNode(ast, pos, function(node) {
                     var currentNode = node;
                     var matches = [];
@@ -1285,7 +1285,7 @@ function endTime(t, message, indent) {
                             handler.path = _self.$path;
                             var t = startTime();
                             handler.complete(part, ast, partPos, currentNode, function(completions) {
-                                endTime(t, "Completion: " + handler.$source, 1);
+                                endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                                 if (completions && completions.length)
                                     matches = matches.concat(completions);
                                 next();
