@@ -566,11 +566,40 @@ define(function(require, exports, module) {
         function hideDocPopup() {
             txtCompleterDoc.style.display = "none";
         }
+        
+        /**
+         * Set a tooltip to show when a generic completion was just
+         * typed in by the user.
+         */
+        function setTextInputToolTip(text) {
+            if (text !== "(")
+                return;
+            
+            var foundOne = false;
+            var pos = lastAce.getCursorPosition();
+            var line = lastAce.getSession().getLine(pos.row);
+            for (var i = 0; i < matches.length; i++) {
+                // Find matches that give us a viable tooltip
+                if (!matches[i].isGeneric
+                    || (!matches[i].doc && matches[i].name === matches[i].replaceText)
+                    || !matches[i].replaceText.match(/\)$/))
+                    continue;
+                var replaceText = matches[i].replaceText.replace("^^", "").replace(/\(\)$/, "");
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column - 1, matches[i].identifierRegex || getIdentifierRegex());
+                if (replaceText !== prefix)
+                    continue;
+                if (foundOne)
+                    tooltip.setLastCompletion(null, pos);
+                tooltip.setLastCompletion(matches[i], pos);
+                foundOne = true;
+            }
+        }
     
         function onTextInput(text, pasted) {
             var keyBinding = lastAce.keyBinding;
             textInputBeforePatch.apply(keyBinding, arguments);
             if (!pasted) {
+                setTextInputToolTip(text);
                 var matched = false;
                 for (var i = 0; i < matches.length && !matched; i++) {
                     var idRegex = matches[i].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
