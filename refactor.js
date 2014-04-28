@@ -113,7 +113,7 @@ define(function(require, exports, module) {
                         // because of delays we'll disable by default
                         mnuRename2.disable();
                         var ace = tabs.focussedTab.editor.ace;
-                        if (ace)
+                        if (ace && worker)
                             worker.emit("refactorings", { data: ace.getSelection().getCursor() });
                     }
                 });
