@@ -223,10 +223,12 @@ define(function(require, exports, module) {
             if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)
                 return lastCompletionTooltip = {};
             
+            var matcher = "(" + util.escapeRegExp(simpleName) + ")\\(([^\\)]*)?";
             lastCompletionTooltip = {
                 doc: completion.name,
                 row: pos.row,
-                matcher: new RegExp("(" + util.escapeRegExp(simpleName) + "(\\([^\\)]*)?)$"),
+                matcher: new RegExp(matcher + "$"),
+                substringMatcher: new RegExp(matcher),
                 tab: tabs.focussedTab
             };
         }
@@ -238,13 +240,32 @@ define(function(require, exports, module) {
                 return;
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(pos.row).substr(0, pos.column);
-            if (!line.match(lastCompletionTooltip.matcher)) {
+            if (!line.match(lastCompletionTooltip.matcher))
                 return lastCompletionTooltip.active ? hide() : null;
-            }
+            
+            var args = RegExp.$2;
             var beforeMatch = line.substr(0, line.length - RegExp.$1.length);
-            show(pos.row, beforeMatch.length, lastCompletionTooltip.doc, ace);
+            var doc = beautifyCompletionDoc(args);
+            show(pos.row, beforeMatch.length, doc, ace);
             lastPos = null;
             lastCompletionTooltip.active = true;
+        }
+        
+        function beautifyCompletionDoc(args) {
+            var doc = lastCompletionTooltip.doc;
+            if (!doc.match(lastCompletionTooltip.substringMatcher))
+                return doc;
+            var argIndex = args.split(",").length - 1;
+            return doc.replace(
+                lastCompletionTooltip.substringMatcher,
+                function(all, name, params) {
+                    return name + "(" + params.split(",").map(function(param, i) {
+                        return i === argIndex
+                            ? '<span class="language_activeparam">' + param + '</span>'
+                            : param;
+                    });
+                }
+            );
         }
         
         plugin.freezePublicAPI({
