@@ -27,6 +27,7 @@ define(function(require, exports, module) {
         var question = imports["dialog.question"];
         var completeUtil = require("plugins/c9.ide.language/complete_util");
         var PlaceHolder = require("ace/placeholder").PlaceHolder;
+        var Range = require("ace/range").Range;
 
         var worker;
         var mnuRename;
@@ -37,6 +38,7 @@ define(function(require, exports, module) {
         var lastAce;
         var isGenericRefactor;
         var oldContinuousCompletion;
+        var selectVar;
         
         var loaded;
         function load() {
@@ -88,9 +90,19 @@ define(function(require, exports, module) {
                 hint    : "Rename refactor",
                 bindKey : {mac: "Option-Command-R", win: "Ctrl-Alt-R"},
                 exec: function(editor) {
+                    selectVar = false;
                     beginRename(editor);
                 }
             }, plugin);
+            commands.addCommand({
+                name    : "selectVar",
+                hint    : "select all instances of variable",
+                exec: function(editor) {
+                    selectVar = true;
+                    beginRename(editor);
+                }
+            }, plugin);
+            
             mnuRename = new ui.item({
                 disabled: true,
                 command: "renameVar",
@@ -162,6 +174,18 @@ define(function(require, exports, module) {
             var others = data.others.filter(function (o) {
                 return !(o.row === mainPos.row && o.column === mainPos.column);
             });
+            if (selectVar) {
+                ace.$blockScrolling++;
+                ace.selection.toSingleRange();
+                others.push(mainPos);
+                others.forEach(function(pos) {
+                    ace.selection.addRange(new Range(
+                        pos.row, pos.column, pos.row, pos.column + data.length
+                    ));
+                });
+                ace.$blockScrolling--;
+                return;
+            }
             placeHolder = new PlaceHolder(ace.session, data.length, mainPos, others, "language_rename_main", "language_rename_other");
             if (cursor.row !== mainPos.row || cursor.column < mainPos.column || cursor.column > mainPos.column + data.length) {
                 // Cursor is not "inside" the main identifier, move it there
