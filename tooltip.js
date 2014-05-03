@@ -243,8 +243,9 @@ define(function(require, exports, module) {
             if (!line.match(lastCompletionTooltip.matcher))
                 return lastCompletionTooltip.active ? hide() : null;
             
+            var name = RegExp.$1;
             var args = RegExp.$2;
-            var beforeMatch = line.substr(0, line.length - RegExp.$1.length);
+            var beforeMatch = line.substr(0, line.length - name.length - args.length);
             var doc = beautifyCompletionDoc(args);
             show(pos.row, beforeMatch.length, doc, ace);
             lastPos = null;
