@@ -814,16 +814,18 @@ define(function(require, exports, module) {
         }
         
         function filterMatches(matches, line, pos) {
-            var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX
+            var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var results = matches.filter(function(match) {
                 var idRegex = match.identifierRegex || identifierRegex;
                 var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
                 return match.name.indexOf(prefix) === 0;
             });            
             
-            // Always prefer current identifier
+            // Always prefer current identifier (similar to worker.js)
             var prefixLine = line.substr(0, pos.column);
             for (var i = 0; i < results.length; i++) {
+                if (results[i].isGeneric && results[i].$source !== "local")
+                    continue;
                 var m = results[i];
                 var match = prefixLine.lastIndexOf(m.replaceText);
                 if (match > -1

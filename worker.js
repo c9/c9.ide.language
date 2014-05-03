@@ -1297,9 +1297,11 @@ function endTime(t, message, indent) {
                     }, function() {
                         removeDuplicateMatches(matches);
                         
-                        // Always prefer current identifier
+                        // Always prefer current identifier (similar to complete.js)
                         var prefixLine = line.substr(0, pos.column);
                         matches.forEach(function(m) {
+                            if (m.isGeneric && m.$source !== "local")
+                                return;
                             var match = prefixLine.lastIndexOf(m.replaceText);
                             if (match > -1
                                 && match === pos.column - m.replaceText.length
