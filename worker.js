@@ -118,8 +118,6 @@ exports.createUIWorkerClient = function() {
 var LanguageWorker = exports.LanguageWorker = function(sender) {
     var _self = this;
     this.handlers = [];
-    this.$staticMarkers = [];
-    this.$cursorMarkers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
     this.$initedRegexes = {};
@@ -553,11 +551,9 @@ function endTime(t, message, indent) {
                 });
             });
         }, function() {
-            var extendedMakers = markers.concat(_self.$cursorMarkers);
             _self.cachedAsts = cachedAsts;
             if (!minimalAnalysis) {
-                _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(extendedMakers));
-                _self.$staticMarkers = markers;
+                _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(markers));
             }
             callback();
         });
@@ -738,10 +734,10 @@ function endTime(t, message, indent) {
                     // Send any results so far
                     _self.lastCurrentPosUnparsed = pos;
                     if (result.markers.length) {
-                        _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
+                        _self.scheduleEmit("highlightMarkers", disabledFeatures.instanceHighlight
                             ? []
-                            : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
-                        _self.$cursorMarkers = result.markers;
+                            : result.markers
+                        );
                         event.data.addedMarkers = result.markers;
                     }
                     if (result.hint !== null) {
@@ -819,12 +815,12 @@ function endTime(t, message, indent) {
                     next();
                 }
             }, function() {
-                _self.scheduleEmit("markers", disabledFeatures.instanceHighlight
+                _self.scheduleEmit("highlightMarkers", disabledFeatures.instanceHighlight
                     ? []
-                    : _self.filterMarkersBasedOnLevel(_self.$staticMarkers.concat(result.markers)));
+                    : result.markers
+                );
                 _self.lastCurrentNode = currentNode;
                 _self.lastCurrentPos = pos;
-                _self.$cursorMarkers = result.markers;
                 _self.scheduleEmit("hint", {
                     pos: result.pos,
                     displayPos: result.displayPos,
@@ -1149,7 +1145,6 @@ function endTime(t, message, indent) {
         this.cachedAsts = null;
         this.setValue(code);
         this.lastUpdateTime = 0;
-        this.$cursorMarkers = [];
         asyncForEach(this.handlers, function(handler, next) {
             _self.$initHandler(handler, oldPath, false, next);
         }, function() {

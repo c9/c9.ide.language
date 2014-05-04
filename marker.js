@@ -33,14 +33,31 @@ define(function(require, exports, module) {
         language.on("initWorker", function(e) {
             ui.insertCss(require("text!./marker.css"), language);
 
+            var lastStaticMarkers = [];
+            var lastHighlightMarkers = [];
+            var lastHighlightMarkersString = "[]";
+
             e.worker.on("markers", function(event) {
-                if (language.disabled) return;
-                
                 var tab = tabs.findTab(event.data.path);
                 if (!tab) return;
                 
                 var editor = tab.editor;
-                addMarkers(event, editor.ace);
+                lastStaticMarkers = event.data;
+                addMarkers(lastStaticMarkers.concat(lastHighlightMarkers), editor.ace);
+            });
+            e.worker.on("highlightMarkers", function(event) {
+                var tab = tabs.findTab(event.data.path);
+                if (!tab) return;
+                
+                var editor = tab.editor;
+                
+                // Use a poor man's deep equals to check for changes
+                var string = JSON.stringify(event.data);
+                if (string === lastHighlightMarkersString)
+                    return;
+                lastHighlightMarkers = event.data;
+                lastHighlightMarkersString = string;
+                addMarkers(lastStaticMarkers.concat(lastHighlightMarkers), editor.ace);
             });
             
             e.worker.on("change", function(event, worker) {
@@ -59,8 +76,8 @@ define(function(require, exports, module) {
             session.setAnnotations([]);
         }
     
-        function addMarkers(event, editor) {
-            var annos = event.data;
+
+        function addMarkers(annos, editor) {
             if (!editor)
                 return;
             
