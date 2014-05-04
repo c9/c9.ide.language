@@ -544,7 +544,7 @@ function endTime(t, message, indent) {
                         var pos = marker.pos;
                         pos.sl = pos.el = pos.sl + region.sl;
                         if (pos.sl === region.sl) {
-                            pos.sc +=  region.sc;
+                            pos.sc += region.sc;
                             pos.ec += region.sc;
                         }
                     });
