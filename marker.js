@@ -86,6 +86,7 @@ define(function(require, exports, module) {
             removeMarkers(mySession);
             mySession.languageAnnos = [];
             
+            var lastLine = mySession.getDocument().getLength() - 1;
             var sel = editor.getSelectionRange();
             var showOccurenceMarkers = !editor.inMultiSelectMode
                  && (sel.isEmpty() ? true : sel.isMultiLine() ? false : null);
@@ -99,6 +100,9 @@ define(function(require, exports, module) {
                     return;
                 
                 var pos = anno.pos || {};
+                
+                if (pos.sl > lastLine)
+                    pos.sl = lastLine;
                 
                 var range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
                 if (anno.type == "occurrence_other" || anno.type == "occurrence_main") {
