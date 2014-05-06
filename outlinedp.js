@@ -1,18 +1,18 @@
 define(function(require, exports, module) {
-    var oop          = require("ace/lib/oop");
-    var BaseClass    = require("ace_tree/data_provider");
+    var oop = require("ace/lib/oop");
+    var BaseClass = require("ace_tree/data_provider");
     
-    var CLASS_SELECTED   = "item selected";
+    var CLASS_SELECTED = "item selected";
     var CLASS_UNSELECTED = "item";
     
     var DataProvider = function(root) {
         BaseClass.call(this, root || {});
         
-        this.rowHeight      = 20;
+        this.rowHeight = 20;
         // this.rowHeightInner = 18;
         
         Object.defineProperty(this, "loaded", {
-            get : function() { return this.visibleItems.length; }
+            get: function() { return this.visibleItems.length; }
         });
     };
     oop.inherits(DataProvider, BaseClass);

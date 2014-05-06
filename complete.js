@@ -14,29 +14,29 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var Plugin     = imports.Plugin;
-        var ui         = imports.ui;
-        var c9         = imports.c9;
-        var aceHandle  = imports.ace;
-        var menus      = imports.menus;
-        var tabs       = imports.tabManager;
-        var commands   = imports.commands;
-        var language   = imports.language;
-        var tooltip    = imports["language.tooltip"];
-        var settings   = imports.settings;
+        var Plugin = imports.Plugin;
+        var ui = imports.ui;
+        var c9 = imports.c9;
+        var aceHandle = imports.ace;
+        var menus = imports.menus;
+        var tabs = imports.tabManager;
+        var commands = imports.commands;
+        var language = imports.language;
+        var tooltip = imports["language.tooltip"];
+        var settings = imports.settings;
         
-        var lang           = require("ace/lib/lang");
+        var lang = require("ace/lib/lang");
         var SyntaxDetector = require("./syntax_detector");
-        var completeUtil   = require("plugins/c9.ide.language/complete_util");
-        var Popup          = require("ace/autocomplete/popup").AcePopup;
-        var completedp     = require("./completedp");
-        var assert         = require("c9/assert");
+        var completeUtil = require("plugins/c9.ide.language/complete_util");
+        var Popup = require("ace/autocomplete/popup").AcePopup;
+        var completedp = require("./completedp");
+        var assert = require("c9/assert");
         
         var snippetManager = require("ace/snippets").snippetManager;
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
-        var emit   = plugin.getEmitter();
+        var emit = plugin.getEmitter();
         
         var theme;
         
@@ -52,7 +52,7 @@ define(function(require, exports, module) {
         var matches, eventMatches, popup;
         var lastUpDownEvent, forceOpen;
         
-        var idRegexes         = {};
+        var idRegexes = {};
         var completionRegexes = {}; 
       
         var DEFAULT_ID_REGEX = completeUtil.DEFAULT_ID_REGEX;
@@ -133,35 +133,35 @@ define(function(require, exports, module) {
             
             menus.addItemByPath("Tools/~", new ui.divider(), 2000, plugin);
             menus.addItemByPath("Tools/Show Autocomplete", new ui.item({
-                command : "complete"
+                command: "complete"
             }), 2100, plugin);
             
             commands.addCommand({
-                name    : "complete",
-                hint    : "code complete",
-                bindKey : {
+                name: "complete",
+                hint: "code complete",
+                bindKey: {
                     mac: "Ctrl-Space|Alt-Space", 
                     win: "Ctrl-Space|Alt-Space"
                 },
-                isAvailable : function(editor) {
+                isAvailable: function(editor) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
-                exec : function() {
+                exec: function() {
                     invoke();
                 }
             }, plugin);
             
             commands.addCommand({
-                name    : "completeoverwrite",
-                hint    : "code complete & overwrite",
-                bindKey : {
+                name: "completeoverwrite",
+                hint: "code complete & overwrite",
+                bindKey: {
                     mac: "Ctrl-Shift-Space|Alt-Shift-Space", 
                     win: "Ctrl-Shift-Space|Alt-Shift-Space"
                 },
-                isAvailable : function(editor) {
+                isAvailable: function(editor) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
-                exec : invoke.bind(null, false, true)
+                exec: invoke.bind(null, false, true)
             }, plugin);
             
             aceHandle.on("themeChange", function(e) {
@@ -172,9 +172,9 @@ define(function(require, exports, module) {
                     + (theme.isDark ? " dark" : "");
 
                 popup.setTheme({
-                    cssClass : "code_complete_text",
-                    isDark   : theme.isDark,
-                    padding  : 0
+                    cssClass: "code_complete_text",
+                    isDark: theme.isDark,
+                    padding: 0
                 });
                 popup.renderer.setStyle("dark", theme.isDark);
             }, plugin);
@@ -198,9 +198,9 @@ define(function(require, exports, module) {
             
             popup = new Popup(document.body);
             popup.setTheme({
-                cssClass : "code_complete_text",
-                isDark   : !theme || theme.isDark,
-                padding  : 0
+                cssClass: "code_complete_text",
+                isDark: !theme || theme.isDark,
+                padding: 0
             });
             popup.$imageSize = 8 + 5 + 7 + 1;
             // popup.renderer.scroller.style.padding = "1px 2px 1px 1px";
@@ -895,7 +895,7 @@ define(function(require, exports, module) {
              * @param {Boolean} now   Show without delay
              * @param {ace}     ace   The current tab's editor.ace object
              */
-            deferredInvoke : deferredInvoke,
+            deferredInvoke: deferredInvoke,
             
             /**
              * @ignore
@@ -910,22 +910,22 @@ define(function(require, exports, module) {
             /**
              * Close the completion popup.
              */
-            closeCompletionBox : closeCompletionBox,
+            closeCompletionBox: closeCompletionBox,
             
             /**
              * Determines whether a completion popup is currently visible.
              */
-            isPopupVisible : isPopupVisible,
+            isPopupVisible: isPopupVisible,
             
             /**
              * @internal
              */
-            setEnterCompletion : setEnterCompletion,
+            setEnterCompletion: setEnterCompletion,
             
             /**
              * @internal
              */
-            $setShowDocDelay : function(value) {
+            $setShowDocDelay: function(value) {
                 SHOW_DOC_DELAY = value;
             },
             

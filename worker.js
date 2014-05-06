@@ -449,7 +449,7 @@ function endTime(t, message, indent) {
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "hierarchy")) {
                 handler.hierarchy(_self.doc, data.pos, function(hierarchy) {
-                    if(hierarchy)
+                    if (hierarchy)
                         return _self.sender.emit("hierarchy", hierarchy);
                     else
                         next();
@@ -492,11 +492,11 @@ function endTime(t, message, indent) {
         if (!ast || !ast.getAnnotation)
             return;
         var error = ast.getAnnotation("error");
-        if(!error)
+        if (!error)
             return;
         for (var i = 0; i < markers.length; i++) {
             var marker = markers[i];
-            if(marker.type !== 'error' && marker.pos.sl >= error.line && marker.pos.el <= error.line + 2) {
+            if (marker.type !== 'error' && marker.pos.sl >= error.line && marker.pos.el <= error.line + 2) {
                 markers.splice(i, 1);
                 i--;
             }
@@ -568,7 +568,7 @@ function endTime(t, message, indent) {
     this.filterMarkersBasedOnLevel = function(markers) {
         for (var i = 0; i < markers.length; i++) {
             var marker = markers[i];
-            if(marker.level && WARNING_LEVELS[marker.level] < WARNING_LEVELS[this.$warningLevel]) {
+            if (marker.level && WARNING_LEVELS[marker.level] < WARNING_LEVELS[this.$warningLevel]) {
                 markers.splice(i, 1);
                 i--;
             }

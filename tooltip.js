@@ -194,7 +194,7 @@ define(function(require, exports, module) {
             if (isVisible) {
                 try {
                     tooltipEl.parentElement.removeChild(tooltipEl);
-                } catch(e) {
+                } catch (e) {
                     console.error(e);
                 }
                 window.document.removeEventListener("mousedown", onMouseDown);

@@ -134,9 +134,9 @@ define(function(require, exports, module) {
                 "Language" : {
                     "Jump To Definition" : {
                         "Use cmd-click for jump to definition" : {
-                            type     : "checkbox",
-                            path     : "user/language/@overrideMultiselectShortcuts",
-                            position : 4000
+                            type: "checkbox",
+                            path: "user/language/@overrideMultiselectShortcuts",
+                            position: 4000
                         }
                     }
                 }
@@ -340,7 +340,7 @@ define(function(require, exports, module) {
         register(null, {
             "language.jumptodef": plugin.freezePublicAPI({
                 /** @ignore */
-                addUnknownColumn : addUnknownColumn
+                addUnknownColumn: addUnknownColumn
             })
         });
     }

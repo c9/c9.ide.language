@@ -84,9 +84,9 @@ define(function(require, exports, module) {
             });
             
             commands.addCommand({
-                name    : "renameVar",
-                hint    : "Rename refactor",
-                bindKey : {mac: "Option-Command-R", win: "Ctrl-Alt-R"},
+                name: "renameVar",
+                hint: "Rename refactor",
+                bindKey: {mac: "Option-Command-R", win: "Ctrl-Alt-R"},
                 exec: function(editor) {
                     beginRename(editor);
                 }
@@ -97,8 +97,8 @@ define(function(require, exports, module) {
                 caption: "Rename Variable"
             });
             mnuRename2 = new ui.item({
-                id : "mnuCtxEditorRename",
-                caption : "Rename",
+                id: "mnuCtxEditorRename",
+                caption: "Rename",
                 command: "renameVar"
             });
             menus.addItemByPath("Tools/~", new ui.divider(), 10000, plugin);
