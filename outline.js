@@ -8,44 +8,44 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var c9        = imports.c9;
-        var Panel     = imports.Panel;
-        var settings  = imports.settings;
-        var ui        = imports.ui;
-        var util      = imports.util;
-        var menus     = imports.menus;
-        var panels    = imports.panels;
-        var layout    = imports.layout;
-        var navigate  = imports.navigate;
-        var tabs      = imports.tabManager;
-        var language  = imports.language;
-        var commands  = imports.commands;
+        var c9 = imports.c9;
+        var Panel = imports.Panel;
+        var settings = imports.settings;
+        var ui = imports.ui;
+        var util = imports.util;
+        var menus = imports.menus;
+        var panels = imports.panels;
+        var layout = imports.layout;
+        var navigate = imports.navigate;
+        var tabs = imports.tabManager;
+        var language = imports.language;
+        var commands = imports.commands;
         var jumptodef = imports["language.jumptodef"];
         
-        var Range    = require("ace/range").Range;
-        var search   = require("../c9.ide.navigate/search");
-        var markup   = require("text!./outline.xml");
-        var Tree     = require("ace_tree/tree");
+        var Range = require("ace/range").Range;
+        var search = require("../c9.ide.navigate/search");
+        var markup = require("text!./outline.xml");
+        var Tree = require("ace_tree/tree");
         var TreeData = require("./outlinedp");
         
         /***** Initialization *****/
         
         var plugin = new Panel("Ajax.org", main.consumes, {
-            index        : options.index || 50,
-            width        : 250,
-            caption      : "Outline",
-            elementName  : "winOutline",
-            minWidth     : 130,
-            where        : options.where || "right",
-            autohide     : true
+            index: options.index || 50,
+            width: 250,
+            caption: "Outline",
+            elementName: "winOutline",
+            minWidth: 130,
+            where: options.where || "right",
+            autohide: true
         });
         
-        var fullOutline         = [];
-        var filteredOutline     = [];
-        var ignoreSelectOnce    = false;
-        var ignoreFocusOnce     = false;
+        var fullOutline = [];
+        var filteredOutline = [];
+        var ignoreSelectOnce = false;
+        var ignoreFocusOnce = false;
         var isKeyDownAfterDirty = false;
-        var staticPrefix        = options.staticPrefix;
+        var staticPrefix = options.staticPrefix;
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
         var originalLine, originalColumn, originalTab;
@@ -61,10 +61,10 @@ define(function(require, exports, module) {
             loaded = true;
             
             plugin.setCommand({
-                name    : "outline",
-                hint    : "search for a definition and jump to it",
-                bindKey : { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
-                exec    : function() {
+                name: "outline",
+                hint: "search for a definition and jump to it",
+                bindKey: { mac: "Command-Shift-E", win: "Ctrl-Shift-E" },
+                exec: function() {
                     if (isActive) {
                         if (focussed) {
                             panels.deactivate("outline");
@@ -148,7 +148,7 @@ define(function(require, exports, module) {
                 var node = navigate.tree.selection.getCursor();
                 if (node) onSelect(node);
             };
-            navigate.on("outline", function(e){
+            navigate.on("outline", function(e) {
                 var value = e.value;
                 
                 if (!tdOutline) createProvider();
@@ -156,8 +156,8 @@ define(function(require, exports, module) {
                 tabs.focusTab(e.tab, true);
                 
                 hasNavigateOutline = true;
-                wasActive          = isActive;
-                isActive           = true;
+                wasActive = isActive;
+                isActive = true;
                 onTabFocus(e, true);
                 
                 navigate.tree.setDataProvider(tdOutline);
@@ -168,7 +168,7 @@ define(function(require, exports, module) {
                 
                 ui.setStyleClass(navigate.tree.container, "outline");
             });
-            navigate.on("outline.stop", function(e){
+            navigate.on("outline.stop", function(e) {
                 hasNavigateOutline = false;
                 renderOutline(true);
                 navigate.tree.off("changeSelection", onsel);
@@ -284,7 +284,7 @@ define(function(require, exports, module) {
             ui.insertMarkup(options.aml, markup, plugin);
             
             treeParent = plugin.getElement("outlineTree");
-            textbox    = plugin.getElement("textbox");
+            textbox = plugin.getElement("textbox");
             winOutline = plugin.getElement("winOutline");
             
             var key = commands.getHotkey("outline");
@@ -315,8 +315,8 @@ define(function(require, exports, module) {
             
             textbox.ace.commands.addCommands([
                 {
-                    bindKey : "ESC",
-                    exec    : function() {
+                    bindKey: "ESC",
+                    exec: function() {
                         if (!originalTab.loaded) 
                             return clear();
                         
@@ -332,14 +332,14 @@ define(function(require, exports, module) {
                         tabs.focusTab(originalTab);
                     }
                 }, {
-                    bindKey : "Up",
-                    exec    : function() { tree.execCommand("goUp"); }
+                    bindKey: "Up",
+                    exec: function() { tree.execCommand("goUp"); }
                 }, {
-                    bindKey : "Down",
-                    exec    : function() { tree.execCommand("goDown"); }
+                    bindKey: "Down",
+                    exec: function() { tree.execCommand("goDown"); }
                 }, {
-                    bindKey : "Enter",
-                    exec    : function() {
+                    bindKey: "Enter",
+                    exec: function() {
                         onSelect();
                         
                         textbox.setValue("");
@@ -376,11 +376,11 @@ define(function(require, exports, module) {
                 ui.setStyleClass(treeParent.$int, "focus"); 
                 
                 var tab = tabs.focussedTab;
-                var ace  = tab && tab.editor.ace;
+                var ace = tab && tab.editor.ace;
                 if (!ace) return;
                 
-                var cursor     = ace.getCursorPosition();
-                originalLine   = cursor.row + 1;
+                var cursor = ace.getCursorPosition();
+                originalLine = cursor.row + 1;
                 originalColumn = cursor.column;
             }
             function onBlur() { 
@@ -472,7 +472,7 @@ define(function(require, exports, module) {
                 return;
             }
             
-            var tab    = tabs.focussedTab;
+            var tab = tabs.focussedTab;
             var editor = tab && tab.editor;
             if (!tab || (!tab.path && !tab.document.meta.newfile) || !editor.ace)
                 return;
@@ -488,7 +488,7 @@ define(function(require, exports, module) {
         }
         
         function renderOutline(ignoreFilter, filter) {
-            var tab    = tabs.focussedTab;
+            var tab = tabs.focussedTab;
             var editor = tab && tab.editor;
             if (!tab || !tab.path && !tab.document.meta.newfile || !editor.ace)
                 return;
@@ -508,7 +508,7 @@ define(function(require, exports, module) {
             
             tdOutline.setRoot(outline);
             tdOutline.selected = selected;
-            tdOutline.filter   = filter;
+            tdOutline.filter = filter;
             tdOutline.reFilter = util.escapeRegExp(filter);
             
             if (filter) {
@@ -619,7 +619,7 @@ define(function(require, exports, module) {
         });
         plugin.on("unload", function() {
             loaded = false;
-            drawn  = false;
+            drawn = false;
             
             clearInterval(timer);
         });

@@ -9,14 +9,14 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
     
     expect.setupArchitectTest([
         {
-            packagePath  : "plugins/c9.core/c9",
-            workspaceId  : "ubuntu/ip-10-35-77-180",
-            startdate    : new Date(),
-            debug        : true,
-            hosted       : true,
-            local        : false,
-            davPrefix    : "/",
-            staticPrefix : "/static"
+            packagePath: "plugins/c9.core/c9",
+            workspaceId: "ubuntu/ip-10-35-77-180",
+            startdate: new Date(),
+            debug: true,
+            hosted: true,
+            local: false,
+            davPrefix: "/",
+            staticPrefix: "/static"
         },
         
         "plugins/c9.core/ext",
@@ -29,8 +29,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         },
         "plugins/c9.core/api.js",
         {
-            packagePath  : "plugins/c9.ide.ui/ui",
-            staticPrefix : "plugins/c9.ide.ui"
+            packagePath: "plugins/c9.ide.ui/ui",
+            staticPrefix: "plugins/c9.ide.ui"
         },
         "plugins/c9.ide.editors/document",
         "plugins/c9.ide.editors/undomanager",
@@ -44,12 +44,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.editors/pane",
         "plugins/c9.ide.editors/tab",
         {
-            packagePath : "plugins/c9.ide.ace/ace",
-            staticPrefix : "plugins/c9.ide.layout.classic"
+            packagePath: "plugins/c9.ide.ace/ace",
+            staticPrefix: "plugins/c9.ide.layout.classic"
         },
         {
             packagePath: "plugins/c9.ide.language/language",
-            workspaceDir : "/"
+            workspaceDir: "/"
         },
         "plugins/c9.ide.language/keyhandler",
         "plugins/c9.ide.language/complete",
@@ -69,7 +69,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.ui/menus",
         {
             packagePath: "plugins/c9.ide.immediate/immediate",
-            staticPrefix : "plugins/c9.ide.layout.classic"
+            staticPrefix: "plugins/c9.ide.layout.classic"
         },
         "plugins/c9.ide.language.javascript.immediate/immediate",
         "plugins/c9.ide.immediate/evaluator",
@@ -80,17 +80,17 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         
         // Mock plugins
         {
-            consumes : ["apf", "ui", "Plugin"],
-            provides : [
+            consumes: ["apf", "ui", "Plugin"],
+            provides: [
                 "commands", "menus", "layout", "watcher", 
                 "save", "preferences", "anims", "clipboard", "auth.bootstrap",
                 "info", "dialog.error", "panels", "tree", "dialog.question",
                 "dialog.alert"
             ],
-            setup    : expect.html.mocked
+            setup: expect.html.mocked
         },
         {
-            consumes : [
+            consumes: [
                 "tabManager",
                 "ace",
                 "Document",
@@ -98,8 +98,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 "language.complete",
                 "language"
             ],
-            provides : [],
-            setup    : main
+            provides: [],
+            setup: main
         }
     ], architect);
     
@@ -151,7 +151,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         });
         
         describe('ace', function() {
-            before(function(done){
+            before(function(done) {
                 apf.config.setProperty("allow-select", false);
                 apf.config.setProperty("allow-blur", false);
                 
@@ -268,8 +268,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 it('shows a word completer in an immediate tab', function(done) {
                     tabs.open(
                         {
-                            active     : true,
-                            editorType : "immediate"
+                            active: true,
+                            editorType: "immediate"
                         },
                         function(err, tab) {
                             // We get a tab, but it's not done yet, so we wait
@@ -290,8 +290,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 it('shows an immediate completer in an immediate tab', function(done) {
                     tabs.open(
                         {
-                            active     : true,
-                            editorType : "immediate"
+                            active: true,
+                            editorType: "immediate"
                         },
                         function(err, tab) {
                             // We get a tab, but it's not done yet, so we wait

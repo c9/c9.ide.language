@@ -74,7 +74,7 @@ module.exports = {
             name: "quickfix",
             hint: "quickfix",
             bindKey: {mac: "Ctrl-Shift-Q|Ctrl-Alt-Q", win: "Ctrl-Shift-Q|Alt-Shift-Q"},
-            isAvailable : function(editor) {
+            isAvailable: function(editor) {
                 return apf.activeElement.localName == "codeeditor";
             },
             exec: function(editor) {
@@ -85,7 +85,7 @@ module.exports = {
         ide.addEventListener("init.ext/code/code", function() {
             ext.nodes.push(
                 menus.addItemByPath("Tools/Quickfix", new apf.item({
-                    caption : "Quickfix",
+                    caption: "Quickfix",
                     command: "quickfix"
                 }), 20001)
             );
@@ -96,7 +96,7 @@ module.exports = {
     init: function(amlNode) {
     },
     
-    initEditor : function(editor) {
+    initEditor: function(editor) {
         var _self = this;
                
         editor.on("guttermousedown", editor.$markerListener = function(e) {
@@ -196,7 +196,7 @@ module.exports = {
 
 
         // Monkey patch
-        if(!oldCommandKey) {
+        if (!oldCommandKey) {
             oldCommandKey = ace.keyBinding.onCommandKey;
             ace.keyBinding.onCommandKey = this.onKeyPress.bind(this);
             oldOnTextInput = ace.keyBinding.onTextInput;
@@ -223,12 +223,12 @@ module.exports = {
         
         var pos = anno.getScreenCoordinates();
         apf.popup.show("quickfixBox", {
-            x        : pos.pageX, 
-            y        : pos.pageY + _self.cursorConfig.lineHeight, 
-            height   : quickfixBoxHeight,
-            width    : MENU_WIDTH,
-            animate  : false,
-            callback : function() {
+            x: pos.pageX, 
+            y: pos.pageY + _self.cursorConfig.lineHeight, 
+            height: quickfixBoxHeight,
+            width: MENU_WIDTH,
+            animate: false,
+            callback: function() {
                 barQuickfixCont.setHeight(quickfixBoxHeight);
                 barQuickfixCont.$ext.style.height = quickfixBoxHeight + "px";
                 sbQuickfix.$resize();
@@ -244,7 +244,7 @@ module.exports = {
         ace.container.addEventListener("mousewheel", quickfix.closeQuickfixBox, false);
     },
 
-    closeQuickfixBox : function(event) {
+    closeQuickfixBox: function(event) {
         var qfBoxTime = new Date().getTime() - quickfix.popupTime;
         if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME) {
             return;
@@ -262,7 +262,7 @@ module.exports = {
         ace.container.removeEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
         ace.container.removeEventListener("mousewheel", quickfix.closeQuickfixBox, false);
         
-        if(oldCommandKey) {
+        if (oldCommandKey) {
             ace.keyBinding.onCommandKey = oldCommandKey;
             ace.keyBinding.onTextInput = oldOnTextInput;
         }
@@ -321,7 +321,7 @@ module.exports = {
         
     },
     
-    updateDoc : function(delayPopup) {
+    updateDoc: function(delayPopup) {
         this.docElement.innerHTML = '<span class="code_complete_doc_body">';
         var selected = this.quickFixes[this.selectedIdx];
 
@@ -344,16 +344,16 @@ module.exports = {
         this.docElement.innerHTML += '</span>';
     },
 
-    enable : function() {
+    enable: function() {
     },
 
-    disable : function() {
+    disable: function() {
     },
 
-    destroy : function() {
+    destroy: function() {
     },
     
-    applyQuickfix : function(qfix) {
+    applyQuickfix: function(qfix) {
         var amlEditor = editors.currentEditor.amlEditor;
         var doc = amlEditor.getSession().getDocument();
 
@@ -369,13 +369,13 @@ module.exports = {
         }
     },
     
-    onTextInput : function(text, pasted) {
+    onTextInput: function(text, pasted) {
         this.closeQuickfixBox();
     },
 
-    onKeyPress : function(e, hashKey, keyCode) {
+    onKeyPress: function(e, hashKey, keyCode) {
         
-        if(e.metaKey || e.ctrlKey || e.altKey) {
+        if (e.metaKey || e.ctrlKey || e.altKey) {
             this.closeQuickfixBox();
             return;
         }
@@ -417,10 +417,10 @@ module.exports = {
                 e.stopPropagation();
                 e.preventDefault();
                 this.quickfixEls[this.selectedIdx].className = CLASS_UNSELECTED;
-                if(this.selectedIdx < this.quickFixes.length-1)
+                if (this.selectedIdx < this.quickFixes.length-1)
                     this.selectedIdx++;
                 this.quickfixEls[this.selectedIdx].className = CLASS_SELECTED;
-                if(this.selectedIdx - this.scrollIdx > MENU_SHOWN_ITEMS) {
+                if (this.selectedIdx - this.scrollIdx > MENU_SHOWN_ITEMS) {
                     this.scrollIdx++;
                     this.quickfixEls[this.scrollIdx].scrollIntoView(true);
                 }
@@ -438,7 +438,7 @@ module.exports = {
                 this.quickfixEls[this.selectedIdx].className = CLASS_UNSELECTED;
                 this.selectedIdx--;
                 this.quickfixEls[this.selectedIdx].className = CLASS_SELECTED;
-                if(this.selectedIdx < this.scrollIdx) {
+                if (this.selectedIdx < this.scrollIdx) {
                     this.scrollIdx--;
                     this.quickfixEls[this.scrollIdx].scrollIntoView(true);
                 }

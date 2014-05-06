@@ -28,7 +28,7 @@ define(function(require, exports, module) {
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
         var INITIAL_DELAY = 2000;
-        var UI_WORKER  = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
+        var UI_WORKER = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
             || (browsers.getIEVersion() && browsers.getIEVersion() < 10) || options.useUIWorker;
 
         var delayedTransfer;
@@ -39,7 +39,7 @@ define(function(require, exports, module) {
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
-        var emit   = plugin.getEmitter();
+        var emit = plugin.getEmitter();
         emit.setMaxListeners(50); // avoid warnings during initialization
         
         var worker;
@@ -228,16 +228,16 @@ define(function(require, exports, module) {
             prefs.add({
                 "Project" : {
                     "Markers" : {
-                        position : 200,
+                        position: 200,
                         "Warning Level" : {
-                           type     : "dropdown",
-                           path     : "project/language/@warnLevel",
-                           items    : [
+                           type: "dropdown",
+                           path: "project/language/@warnLevel",
+                           items: [
                                { caption : "Error", value : "error" },
                                { caption : "Warning", value : "warning" },
                                { caption : "Info", value : "info" }
                            ],
-                           position : 5000
+                           position: 5000
                         }
                     }
                 }
@@ -245,41 +245,41 @@ define(function(require, exports, module) {
             
             prefs.add({
                 "Language" : {
-                    position : 500,
+                    position: 500,
                     "Auto Complete" : {
-                        position : 100,
+                        position: 100,
                         "Complete As You Type" : {
-                            type     : "checkbox",
-                            path     : "user/language/@continuousCompletion",
-                            position : 4000
+                            type: "checkbox",
+                            path: "user/language/@continuousCompletion",
+                            position: 4000
                         },
                         "Complete On Enter" : {
-                            type     : "checkbox",
-                            path     : "user/language/@enterCompletion",
-                            position : 5000
+                            type: "checkbox",
+                            path: "user/language/@enterCompletion",
+                            position: 5000
                         },
                     },
                     "Markers" : {
-                        position : 200,
+                        position: 200,
                         "Enable Hints and Warnings" : {
-                            type     : "checkbox",
-                            path     : "user/language/@jshint",
-                            position : 1000
+                            type: "checkbox",
+                            path: "user/language/@jshint",
+                            position: 1000
                         },
                         "Highlight Variable Instances" : {
-                            type     : "checkbox",
-                            path     : "user/language/@instanceHighlight",
-                            position : 2000
+                            type: "checkbox",
+                            path: "user/language/@instanceHighlight",
+                            position: 2000
                         },
                         "Mark Undeclared Variables" : {
-                            type     : "checkbox",
-                            path     : "user/language/@undeclaredVars",
-                            position : 3000
+                            type: "checkbox",
+                            path: "user/language/@undeclaredVars",
+                            position: 3000
                         },
                         "Mark Unused Function Arguments" : {
-                            type     : "checkbox",
-                            path     : "user/language/@unusedFunctionArgs",
-                            position : 4000
+                            type: "checkbox",
+                            path: "user/language/@unusedFunctionArgs",
+                            position: 4000
                         }
                     }
                 }
@@ -497,27 +497,27 @@ define(function(require, exports, module) {
             /**
              * @ignore
              */
-            isEditorSupported : isEditorSupported,
+            isEditorSupported: isEditorSupported,
 
             /**
              * Returns true if the "continuous completion" IDE setting is enabled
              * @ignore
              * @return {Boolean}
              */
-            isContinuousCompletionEnabled : isContinuousCompletionEnabled,
+            isContinuousCompletionEnabled: isContinuousCompletionEnabled,
             
             /**
              * Sets whether the "continuous completion" IDE setting is enabled
              * @ignore
              * @param {Boolean} value
              */
-            setContinuousCompletionEnabled : setContinuousCompletionEnabled,
+            setContinuousCompletionEnabled: setContinuousCompletionEnabled,
             
             /**
              * Returns whether type inference for JavaScript is available.
              * @ignore
              */
-            isInferAvailable : isInferAvailable,
+            isInferAvailable: isInferAvailable,
             
             /**
              * Registers a new language handler in the web worker.
@@ -533,7 +533,7 @@ define(function(require, exports, module) {
              * @param {String} callback.err    Any error that occured when loading this handler
              * @param {Object} callback.worker The worker object (see {@link #getWorker})
              */
-            registerLanguageHandler : registerLanguageHandler,
+            registerLanguageHandler: registerLanguageHandler,
             
             /**
              * Gets the current worker, or waits for it to be ready and gets it.
@@ -549,10 +549,10 @@ define(function(require, exports, module) {
              * @param {String} callback.result.on.event        Event name
              * @param {Object} callback.result.on.data         Event data
              */
-            getWorker : getWorker,
+            getWorker: getWorker,
             
             /** @ignore */
-            onCursorChange : onCursorChange
+            onCursorChange: onCursorChange
         });
         
         register(null, {

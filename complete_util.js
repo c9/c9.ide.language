@@ -74,7 +74,7 @@ function fetchText(path) {
         xhr.send();
     }
     // Likely we got a cross-script error (equivalent with a 404 in our cloud setup)
-    catch(e) {
+    catch (e) {
         return false;
     }
     if (xhr.status === 200 || xhr.responseText) // when loading from file:// status is always 0
@@ -133,31 +133,31 @@ function inCompletableCodeContext(line, column, id, ace) {
         return true;
     var inMode = null;
     for (var i = 0; i < column; i++) {
-        if(line[i] === '"' && !inMode)
+        if (line[i] === '"' && !inMode)
             inMode = '"';
-        else if(line[i] === '"' && inMode === '"' && line[i-1] !== "\\")
+        else if (line[i] === '"' && inMode === '"' && line[i-1] !== "\\")
             inMode = null;
-        else if(line[i] === "'" && !inMode)
+        else if (line[i] === "'" && !inMode)
             inMode = "'";
-        else if(line[i] === "'" && inMode === "'" && line[i-1] !== "\\")
+        else if (line[i] === "'" && inMode === "'" && line[i-1] !== "\\")
             inMode = null;
-        else if(line[i] === "/" && line[i+1] === "/") {
+        else if (line[i] === "/" && line[i+1] === "/") {
             inMode = '//';
             i++;
         }
-        else if(line[i] === "/" && line[i+1] === "*" && !inMode) {
+        else if (line[i] === "/" && line[i+1] === "*" && !inMode) {
             if (line.substr(i + 2, 6) === "global")
                 continue;
             inMode = '/*';
             i++;
         }
-        else if(line[i] === "*" && line[i+1] === "/" && inMode === "/*") {
+        else if (line[i] === "*" && line[i+1] === "/" && inMode === "/*") {
             inMode = null;
             i++;
         }
-        else if(line[i] === "/" && ace.getSession().syntax === "javascript" && !inMode)
+        else if (line[i] === "/" && ace.getSession().syntax === "javascript" && !inMode)
             inMode = "/";
-        else if(line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
+        else if (line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
             inMode = null;
     }
     return inMode != "/";
@@ -197,7 +197,7 @@ exports.fetchText = fetchText;
 /**
  * @ignore
  */
-exports.setStaticPrefix  = setStaticPrefix;
+exports.setStaticPrefix = setStaticPrefix;
 
 /**
  * @ignore

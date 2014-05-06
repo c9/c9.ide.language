@@ -24,7 +24,7 @@ define(function(require, exports, module) {
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
-        //var emit   = plugin.getEmitter();
+        //var emit = plugin.getEmitter();
         
         var loaded = false;
         function load() {
@@ -174,7 +174,7 @@ define(function(require, exports, module) {
             /**
              * 
              */
-            composeHandlers : composeHandlers
+            composeHandlers: composeHandlers
         });
         
         register(null, {

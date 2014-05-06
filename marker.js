@@ -61,7 +61,7 @@ define(function(require, exports, module) {
     
         function addMarkers(event, editor) {
             var annos = event.data;
-            if(!editor)
+            if (!editor)
                 return;
             
             var mySession = editor.session;
@@ -78,7 +78,7 @@ define(function(require, exports, module) {
                 if (disabledMarkerTypes[anno.type])
                     return;
                 // Multi-line markers are not supported, and typically are a result from a bad error recover, ignore
-                if(anno.pos.el && anno.pos.sl !== anno.pos.el)
+                if (anno.pos.el && anno.pos.sl !== anno.pos.el)
                     return;
                 
                 var pos = anno.pos || {};
@@ -226,8 +226,8 @@ define(function(require, exports, module) {
         
         register(null, {
             "language.marker": {
-                disableMarkerType : disableMarkerType,
-                enableMarkerType : enableMarkerType
+                disableMarkerType: disableMarkerType,
+                enableMarkerType: enableMarkerType
             }
         });
     }
