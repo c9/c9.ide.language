@@ -130,6 +130,9 @@ function getContextSyntaxPart(doc, pos, originalSyntax) {
                 if (!value)
                     value = doc.getValue();
                 return value;
+            },
+            getLength: function() {
+                return doc.getLength();
             }
         };
         // TODO: remove this; not exposed as public API
@@ -190,6 +193,9 @@ function regionToCodePart(doc, region, index) {
             if (!value)
                 value = this.getAllLines().join(doc.getNewLineCharacter());
             return value;
+        },
+        getLength: function() {
+            return  region.el - region.sl + 1;
         }
     };
     // TODO: remove this; not exposed as public API
