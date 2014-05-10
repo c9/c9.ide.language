@@ -142,7 +142,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         }
         
         function isCompleterOpen() {
-            return document.getElementsByClassName("ace_autocomplete")[0].style.display === "none";
+            var el = document.getElementsByClassName("ace_autocomplete")[0];
+            return el && el.style.display === "none";
         }
         
         expect.html.setConstructor(function(tab) {
