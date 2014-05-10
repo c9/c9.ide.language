@@ -208,10 +208,10 @@ define(function(require, exports, module) {
         }
         
         function getSyntax(ace) {
-            return SyntaxDetector.getContextSyntax(
-                ace.getSession().getDocument(),
+            return ace && SyntaxDetector.getContextSyntax(
+                ace.session.doc,
                 ace.getCursorPosition(),
-                ace.getSession().syntax);
+                ace.session.syntax);
         }
         
         function setLastCompletion(completion, pos) {
