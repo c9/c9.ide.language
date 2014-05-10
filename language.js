@@ -303,24 +303,28 @@ define(function(require, exports, module) {
             var editor = e.editor;
             
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
-                tabs.getTabs().forEach(function(tab) {
-                    if (isEditorSupported(tab)) {
-                        setTimeout(function() {
-                            if (tab.value)
-                                return notifyWorker("documentOpen", { tab: tab, value: tab.value });
-                            var value = tab.document.value;
-                            if (value)
-                                return notifyWorker("documentOpen", { tab: tab, value: value });
-                            tab.document.once("valueSet", function(e) {
-                                notifyWorker("documentOpen", { tab: tab, value: e.value });
-                            });
-                        }, UI_WORKER ? UI_WORKER_DELAY : INITIAL_DELAY);
-                    }
+                tabs.on("ready", function() {
+                    if (initedTabs)
+                        return;
+                    tabs.getTabs().forEach(function(tab) {
+                        if (isEditorSupported(tab)) {
+                            setTimeout(function() {
+                                if (tab.value)
+                                    return notifyWorker("documentOpen", { tab: tab, value: tab.value });
+                                var value = tab.document.value;
+                                if (value)
+                                    return notifyWorker("documentOpen", { tab: tab, value: value });
+                                tab.document.once("valueSet", function(e) {
+                                    notifyWorker("documentOpen", { tab: tab, value: e.value });
+                                });
+                            }, UI_WORKER ? UI_WORKER_DELAY : INITIAL_DELAY);
+                        }
+                    });
+                    if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
+                        notifyWorker("switchFile", { tab: tabs.focussedTab });
+
+                    initedTabs = true;
                 });
-                if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
-                    notifyWorker("switchFile", { tab: tabs.focussedTab });
-                
-                initedTabs = true;
             }
             
             editor.on("documentLoad", function(e) {
