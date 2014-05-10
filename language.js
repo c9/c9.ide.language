@@ -79,6 +79,14 @@ define(function(require, exports, module) {
             var tab = e.tab;
             var path = getTabPath(tab);
             var c9session = tab.document.getSession();
+            if (tab.document.hasValue && !tab.document.hasValue()) {
+                tab.document.once("setValue", function() {
+                    setTimeout(function() { // wait for event to be consumed by others
+                        notifyWorker(type, e);
+                    });
+                });
+                return;
+            }
             var session = c9session && c9session.loaded && c9session.session;
             if (!session)
                 return;
@@ -379,10 +387,8 @@ define(function(require, exports, module) {
                 notifyWorker("switchFile", { tab: tabs.focussedTab });
         }
         
-        /***** Methods *****/
-        
         function isEditorSupported(tab) {
-            return ["ace", "immediate"].indexOf(tab.editor ? tab.editor.type : tab.editorType) !== -1;
+            return tab && ["ace", "immediate"].indexOf(tab.editor ? tab.editor.type : tab.editorType) !== -1;
         }
         
         function isWorkerEnabled() {
