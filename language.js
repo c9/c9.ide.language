@@ -139,7 +139,7 @@ define(function(require, exports, module) {
         }
         
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
-            if (type === "switchFile" && getTabPath(tabs.focussedTab) !== path)
+            if (type === "switchFile" && getTabPath(getActiveTab()) !== path)
                 return;
             console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
@@ -328,8 +328,9 @@ define(function(require, exports, module) {
                             }, UI_WORKER ? UI_WORKER_DELAY : INITIAL_DELAY);
                         }
                     });
-                    if (tabs.focussedTab && tabs.focussedTab.path && tabs.focussedTab.editor.ace)
-                        notifyWorker("switchFile", { tab: tabs.focussedTab });
+                    var activeTab = getActiveTab();
+                    if (isEditorSupported(activeTab))
+                        notifyWorker("switchFile", { tab: activeTab });
 
                     initedTabs = true;
                 });
@@ -348,6 +349,16 @@ define(function(require, exports, module) {
             editor.on("documentUnload", function(e) {
             });
         });
+        
+        function getActiveTab() {
+            return isEditorSupported(tabs.focussedTab)
+                ? tabs.focussedTab
+                : tabs.getPanes().map(function(p) {
+                      return p.activeTab;
+                  }).filter(function(t) {
+                      return isEditorSupported(t);
+                  })[0];
+        }
         
         function draw() {
             emit("draw");
