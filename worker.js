@@ -16,7 +16,6 @@ var oop = require("ace/lib/oop");
 var Mirror = require("ace/worker/mirror").Mirror;
 var tree = require('treehugger/tree');
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
-var linereport = require("plugins/c9.ide.language.generic.linereport/linereport_base");
 var syntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
 var base_handler = require("./base_handler");
@@ -125,7 +124,6 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     this.serverProxy = new ServerProxy(sender);
 
     Mirror.call(this, sender);
-    linereport.sender = sender;
     this.setTimeout(0);
     exports.sender = sender;
     exports.$lastWorker = this;
@@ -1133,10 +1131,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var oldPath = this.$path;
         var code = this.$documentToString(document);
-        linereport.workspaceDir =
-            this.$workspaceDir = workspaceDir === "" ? "/" : workspaceDir;
-        linereport.path =
-            this.$path = path;
+        this.$workspaceDir = workspaceDir === "" ? "/" : workspaceDir;
+        this.$path = path;
         this.$language = language;
         this.immediateWindow = immediateWindow;
         this.lastCurrentNode = null;
