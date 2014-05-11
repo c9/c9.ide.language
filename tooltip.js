@@ -260,7 +260,7 @@ define(function(require, exports, module) {
             return doc.replace(
                 lastCompletionTooltip.substringMatcher,
                 function(all, name, params) {
-                    return name + "(" + params.split(",").map(function(param, i) {
+                    return name + "(" + (params || "").split(",").map(function(param, i) {
                         return i === argIndex
                             ? '<span class="language_activeparam">' + param + '</span>'
                             : param;
