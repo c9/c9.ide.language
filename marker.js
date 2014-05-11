@@ -15,6 +15,7 @@ define(function(require, exports, module) {
         var language = imports.language;
         var tabs = imports.tabManager;
         var ui = imports.ui;
+        var completeUtil = require("./complete_util");
 
         var Range = require("ace/range").Range;
         var Anchor = require('ace/anchor').Anchor;
@@ -103,6 +104,8 @@ define(function(require, exports, module) {
                 
                 if (pos.sl > lastLine)
                     pos.sl = lastLine;
+                if (pos.sc && pos.sl && !pos.ec)
+                    pos.ec = inferEndColumn(mySession.getDocument(), pos);
                 
                 var range = new Range(pos.sl, pos.sc || 0, pos.el, pos.ec || 0);
                 if (anno.type == "occurrence_other" || anno.type == "occurrence_main") {
@@ -150,6 +153,14 @@ define(function(require, exports, module) {
             }
             
             mySession.setAnnotations(mySession.languageAnnos);
+        }
+        
+        function inferEndColumn(doc, pos) {
+            var line = doc.getLine(pos.sl);
+            line = line && line.substr(pos.sc);
+            var id = line && line.match(/\W*\w+/)[0];
+            var ec = id && pos.sc + id.length;
+            return ec > pos.sc && ec;
         }
     
         /**
