@@ -106,7 +106,7 @@ define(function(require, exports, module) {
         
         function inputTriggerTooltip(text, pasted) {
             var tooltipRegex = tooltip.getTooltipRegex(null, ace);
-            if (!pasted && text.match(tooltipRegex))
+            if (!pasted && tooltipRegex && text.match(tooltipRegex))
                 language.onCursorChange(null, null, true);
         }
         
