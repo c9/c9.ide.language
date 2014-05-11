@@ -141,7 +141,8 @@ define(function(require, exports, module) {
         function inferEndColumn(doc, pos) {
             var line = doc.getLine(pos.sl);
             line = line && line.substr(pos.sc);
-            var id = line && line.match(/\W*\w+/)[0];
+            var match = line && line.match(/\W*\w+/);
+            var id = match && match[0];
             var ec = id && pos.sc + id.length;
             return ec > pos.sc && ec;
         }
