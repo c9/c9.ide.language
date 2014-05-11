@@ -108,11 +108,13 @@ module.exports = {
      *
      * @method
      * 
-     * @param {String}   path           the path of the file to read
-     * @param {Object}   [encoding]     the encoding of the content for the file
-     * @param {Function} [callback]     called after the file is read
-     * @param {Error}    callback.err   the error information returned by the operation
-     * @param {String}   callback.data  the contents of the file that was read
+     * @param {String}   path               the path of the file to read
+     * @param {Object}   [options]          options or encoding of this file
+     * @param {String}   [options.encoding] the encoding of this file
+     * @param {Boolean}  [options.unsaved]  whether to return unsaved changes
+     * @param {Function} [callback]         called after the file is read
+     * @param {Error}    callback.err       the error information returned by the operation
+     * @param {String}   callback.data      the contents of the file that was read
      * @fires error
      * @fires downloadProgress
      */

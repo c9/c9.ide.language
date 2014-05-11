@@ -45,30 +45,13 @@ define(function(require, exports, module) {
                 });
                 
                 worker.on("readFile", function(e) {
-                    // Try to get the contents from a tab first
-                    // may not be 100% reliable atm, but good enough for us
-                    var allTabs = tabs.getTabs();
-                    for (var i = 0; i < allTabs.length; i++) {
-                        var tab = allTabs[i];
-                        var value = tab.value || tab.document && tab.document.value;
-                        var saved = save.getSavingState(tab) === "saved";
-                        if (tab.path !== e.data.path || !value || !saved)
-                            continue;
-                        return done(null, value);
-                    }
-                    
-                    ensureConnected(
-                        fs.readFile.bind(fs, e.data.path, e.data.encoding),
-                        done
-                    );
-                    
-                    function done(err, data) {
+                    readTabOrFile(e.data.path, e.data.encoding, function(err, value) {
                         worker.emit("readFileResult", { data: {
                             id: e.data.id,
                             err: err && JSON.stringify(err),
-                            data: data
+                            data: value
                         }});
-                    }
+                    });
                 });
                 
                 worker.on("getTokens", function(e) {
@@ -135,8 +118,46 @@ define(function(require, exports, module) {
             });
         }
         
+        function readTabOrFile(path, options, callback) {
+            var allowUnsaved = options.allowUnsaved;
+            delete options.allowUnsaved;
+            
+            var tab = tabs.findTab(path);
+            if (tab) {
+                if (options.unsaved) {
+                    var unsavedValue = tab.value
+                        || tab.document && tab.document.hasValue && tab.document.hasValue()
+                           && tab.document.value;
+                    if (unsavedValue)
+                        return callback(null, unsavedValue);
+                }
+                else {
+                    var saved = allowUnsaved || save.getSavingState(tab) === "saved";
+                    var value = saved
+                        ? tab.value || tab.document && tab.document.value
+                        : tab.document.meta && typeof tab.document.meta.$savedValue === "string"
+                          && tab.document.meta.$savedValue;
+                    if (value)
+                        return callback(null, value);
+                }
+                
+            }
+            
+            if (!options.encoding)
+                options.encoding = "utf8"; // TODO: get from c9?
+            
+            ensureConnected(
+                fs.readFile.bind(fs, path, options),
+                callback
+            );
+        }
+        
         plugin.on("load", function() {
             load();
+        });
+        
+        plugin.freezePublicAPI({
+            readTabOrFile: readTabOrFile
         });
         
         register(null, {
