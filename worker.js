@@ -32,7 +32,7 @@ var WARNING_LEVELS = {
 };
 
 var UPDATE_TIMEOUT_MIN = 500;
-var UPDATE_TIMEOUT_MAX = 10000;
+var UPDATE_TIMEOUT_MAX = 15000;
 var DEBUG = !isInWebWorker;
 var STATS = false;
 
@@ -1054,25 +1054,36 @@ function endTime(t, message, indent) {
         });
     };
 
+    var updateScheduled;
+    var updateRunning;
+    var updateAgain;
+    var updateWatchDog;
     this.onUpdate = function(now) {
         var _self = this;
         
-        if (this.scheduledUpdate && !now)
+        if (updateRunning) {
+            // Busy. Try again after last job finishes.
+            updateAgain = { now: now };
             return;
+        }
+        
+        if (updateScheduled && !now) {
+            // Already scheduled
+            return;
+        }
+        
+        updateAgain = null;
         
         if (!DEBUG) {
-            clearTimeout(this.scheduledUpdateFail);
-            this.scheduledUpdateFail = setTimeout(function() {
-                _self.scheduledUpdate = null;
-                console.log("Warning: worker analysis taking too long or failed to call back, rescheduling");
+            clearTimeout(updateWatchDog);
+            updateWatchDog = setTimeout(function() {
+                updateScheduled = updateRunning = null;
+                console.error("Warning: worker analysis taking too long or failed to call back, rescheduling");
             }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
         
         if (now) {
-            if (this.scheduledUpdate === "now")
-                return;
             clearTimeout(this.scheduledUpdate);
-            this.scheduledUpdate = "now";
             doUpdate(function() {
                 // Schedule another analysis without the
                 // now & minimalAnalysis options.
@@ -1081,10 +1092,14 @@ function endTime(t, message, indent) {
             return;
         }
         this.scheduledUpdate = setTimeout(function() {
-           doUpdate();
+           doUpdate(function() {
+               if (updateAgain)
+                   _self.onUpdate(updateAgain.now);
+           });
         }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
         
         function doUpdate(done) {
+            updateRunning = true;
             var startTime = new Date().getTime();
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler, null, "onUpdate")) {
@@ -1104,7 +1119,8 @@ function endTime(t, message, indent) {
                         _self.postponedCursorMove = null;
                     }
                     _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
-                    clearTimeout(_self.scheduledUpdateFail);
+                    clearTimeout(updateWatchDog);
+                    updateRunning = false;
                     done && done();
                 });
             });
