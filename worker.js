@@ -1075,6 +1075,7 @@ function endTime(t, message, indent) {
         updateAgain = null;
         clearTimeout(updateWatchDog);
         clearTimeout(this.scheduledUpdate);
+        this.scheduledUpdate = null;
 
         if (!DEBUG) {
             updateWatchDog = setTimeout(function() {
