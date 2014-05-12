@@ -502,6 +502,7 @@ function endTime(t, message, indent) {
         var parts = syntaxDetector.getCodeParts(this.doc, this.$language);
         var markers = [];
         var cachedAsts = {};
+        var t0 = startTime();
         asyncForEach(parts, function(part, nextPart) {
             var partMarkers = [];
             _self.parse(part, function(ast) {
@@ -549,6 +550,7 @@ function endTime(t, message, indent) {
                 });
             });
         }, function() {
+            endTime(t0, "Analyzed all");
             _self.cachedAsts = cachedAsts;
             if (!minimalAnalysis) {
                 _self.scheduleEmit("markers", _self.filterMarkersBasedOnLevel(markers));
