@@ -298,10 +298,10 @@ define(function(require, exports, module) {
                 name: "expandSnippet",
                 bindKey: "Tab",
                 exec: function(editor) {
-                    return editor.ace.expandSnippet();
+                    return editor && editor.ace.expandSnippet();
                 },
                 isAvailable: function(editor) {
-                    return editor.ace.expandSnippet({dryRun: true});
+                    return editor && editor.ace.expandSnippet({dryRun: true});
                 },
             }, plugin);
         }
