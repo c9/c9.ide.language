@@ -165,7 +165,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
       
                 document.body.style.marginBottom = "33%";
                 
-                tabs.on("ready", function(){
+                tabs.once("ready", function(){
                     tabs.getPanes()[0].focus();
                     done();
                 });
