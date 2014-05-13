@@ -84,6 +84,8 @@ define(function(require, exports, module) {
         }
         
         function onBackspace(e) {
+            return false; // Experiment: on backspace behavior disabled
+            
             if (complete.isPopupVisible())
                 return false;
             var pos = ace.getCursorPosition();

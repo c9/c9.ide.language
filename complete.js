@@ -147,7 +147,7 @@ define(function(require, exports, module) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec: function() {
-                    invoke();
+                    invoke(true);
                 }
             }, plugin);
             
