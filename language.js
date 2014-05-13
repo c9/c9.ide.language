@@ -311,7 +311,7 @@ define(function(require, exports, module) {
             var editor = e.editor;
             
             if (!initedTabs && tabs.getPanes) { // not in single-pane minimal UI
-                tabs.on("ready", function() {
+                tabs.once("ready", function() {
                     if (initedTabs)
                         return;
                     tabs.getTabs().forEach(function(tab) {
