@@ -37,6 +37,8 @@ define(function(require, exports, module) {
             var lastStaticMarkers = [];
             var lastHighlightMarkers = [];
             var lastHighlightMarkersString = "[]";
+            var lastStaticMarkersTab = null;
+            var lastHighlightMarkersTab = null;
 
             e.worker.on("markers", function(event) {
                 var tab = tabs.findTab(event.data.path);
@@ -44,7 +46,11 @@ define(function(require, exports, module) {
                 
                 var editor = tab.editor;
                 lastStaticMarkers = event.data;
-                addMarkers(lastStaticMarkers.concat(lastHighlightMarkers), editor.ace);
+                lastStaticMarkersTab = tab;
+                var markers = lastHighlightMarkersTab === tab
+                    ? lastStaticMarkers.concat(lastHighlightMarkers)
+                    : lastStaticMarkers;
+                addMarkers(markers, editor.ace);
             });
             e.worker.on("highlightMarkers", function(event) {
                 var tab = tabs.findTab(event.data.path);
@@ -53,12 +59,18 @@ define(function(require, exports, module) {
                 var editor = tab.editor;
                 
                 // Use a poor man's deep equals to check for changes
+                // since we don't want to reposition old error markers
+                // needlessly
                 var string = JSON.stringify(event.data);
-                if (string === lastHighlightMarkersString)
+                if (lastHighlightMarkersTab === tab && string === lastHighlightMarkersString)
                     return;
                 lastHighlightMarkers = event.data;
                 lastHighlightMarkersString = string;
-                addMarkers(lastStaticMarkers.concat(lastHighlightMarkers), editor.ace);
+                lastHighlightMarkersTab = tab;
+                var markers = lastStaticMarkersTab === tab
+                    ? lastHighlightMarkers.concat(lastStaticMarkers)
+                    : lastHighlightMarkers;
+                addMarkers(markers, editor.ace);
             });
             
             e.worker.on("change", function(event, worker) {
