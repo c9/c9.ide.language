@@ -320,6 +320,8 @@ define(function(require, exports, module) {
                 // Remove cursor marker
                 newText = newText.replace(/\^\^/g, "");
             }
+            
+            tooltip.setLastCompletion(match, pos);
 
             if (deleteSuffix || newText.slice(-postfix.length) === postfix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
@@ -328,7 +330,6 @@ define(function(require, exports, module) {
             
             snippetManager.insertSnippet(ace, snippet);
             
-            tooltip.setLastCompletion(match, pos);
             emit("replaceText", {
                 pos: pos,
                 prefix: prefix,
