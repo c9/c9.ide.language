@@ -770,7 +770,7 @@ function endTime(t, message, indent) {
             // Our intelligence is outdated, tell the client
             return this.scheduleEmit("hint", { line: null });
         }
-        if (this.scheduledUpdate) {
+        if (this.updateScheduled) {
             // Postpone the cursor move until the update propagates
             this.postponedCursorMove = event;
             if (event.data.now)
@@ -795,7 +795,7 @@ function endTime(t, message, indent) {
         
         function callHandlers(ast, currentNode) {
             asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.scheduledUpdate) {
+                if (_self.updateScheduled) {
                     // Postpone the cursor move until the update propagates
                     _self.postponedCursorMove = event;
                     return;
@@ -1057,31 +1057,30 @@ function endTime(t, message, indent) {
     };
 
     var updateRunning;
-    var updateAgain;
     var updateWatchDog;
     this.onUpdate = function(now) {
         var _self = this;
         
         if (updateRunning) {
             // Busy. Try again after last job finishes.
-            updateAgain = { now: now || updateAgain && updateAgain.now };
+            this.updateAgain = { now: now || this.updateAgain && this.updateAgain.now };
             return;
         }
         
-        if (this.scheduledUpdate && !now) {
+        if (this.updateScheduled && !now) {
             // Already scheduled
             return;
         }
         
         // Cleanup
-        updateAgain = null;
+        this.updateAgain = null;
         clearTimeout(updateWatchDog);
-        clearTimeout(this.scheduledUpdate);
-        this.scheduledUpdate = null;
+        clearTimeout(this.updateScheduled);
+        this.updateScheduled = null;
 
         if (!DEBUG) {
             updateWatchDog = setTimeout(function() {
-                _self.scheduledUpdate = updateRunning = null;
+                _self.updateScheduled = updateRunning = null;
                 console.error("Warning: worker analysis taking too long or failed to call back, rescheduling");
             }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
@@ -1095,11 +1094,11 @@ function endTime(t, message, indent) {
             return;
         }
         
-        this.scheduledUpdate = setTimeout(function() {
-            _self.scheduledUpdate = null;
+        this.updateScheduled = setTimeout(function() {
+            _self.updateScheduled = null;
             doUpdate(function() {
-                if (updateAgain)
-                    _self.onUpdate(updateAgain.now);
+                if (_self.updateAgain)
+                    _self.onUpdate(_self.updateAgain.now);
             });
         }, UPDATE_TIMEOUT_MIN + Math.min(this.lastUpdateTime, UPDATE_TIMEOUT_MAX));
         
