@@ -312,7 +312,7 @@ define(function(require, exports, module) {
         }
     
         function activateSpinner(tab) {
-            tab.className.add("loading");
+            tab.classList.add("loading");
             clearTimeout(tab.$jumpToDefReset);
             tab.$jumpToDefReset = setTimeout(function() {
                 clearSpinners(tab);
@@ -321,7 +321,7 @@ define(function(require, exports, module) {
     
         function clearSpinners(tab) {
             clearTimeout(tab.$jumpToDefReset);
-            tab.className.remove("loading");
+            tab.classList.remove("loading");
         }
         
         plugin.on("load", function() {
