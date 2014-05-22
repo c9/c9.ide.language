@@ -483,6 +483,8 @@ define(function(require, exports, module) {
                     delete m.meta;
                 }
             }
+            
+            return matches;
         }
         
         function isIgnoreGenericEnabled(matches) {
@@ -761,7 +763,7 @@ define(function(require, exports, module) {
             if (event.data.line !== line)
                 matches = filterMatches(matches, line, pos);
                 
-            cleanupMatches(matches, editor.ace, pos);
+            matches = cleanupMatches(matches, editor.ace, pos);
             
             if (matches.length === 1 && !event.data.forceBox) {
                 replaceText(editor.ace, matches[0], event.data.deleteSuffix);
@@ -807,7 +809,8 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            matches = filterMatches(eventMatches, line, pos);
+            matches = cleanupMatches(eventMatches, ace, pos);
+            matches = filterMatches(matches, line, pos);
             if (matches.length)
                 showCompletionBox({ace: ace}, matches, prefix, line);
             else
