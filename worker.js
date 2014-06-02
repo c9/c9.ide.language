@@ -330,7 +330,7 @@ function endTime(t, message, indent) {
                 if (!this.immediateWindow)
                     return;
         }
-        if (!handler.handlesLanguage(part ? part.language : this.$language))
+        if (!handler.handlesLanguage(part ? part.language : this.$language, part))
             return;
         var docLength = ignoreSize ? null : part
             ? part.getValue().length
@@ -505,6 +505,7 @@ function endTime(t, message, indent) {
         var t0 = startTime();
         asyncForEach(parts, function(part, nextPart) {
             var partMarkers = [];
+            _self.part = part;
             _self.parse(part, function(ast) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
