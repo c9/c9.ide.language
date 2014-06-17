@@ -37,7 +37,7 @@ define(function(require, exports, module) {
     
 
     function tokenizeRow() {
-        return [{}];
+        return [];
     }
     function renderLineInner(builder, row) {
         var match = this.data[row];
