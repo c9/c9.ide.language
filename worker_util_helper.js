@@ -45,7 +45,9 @@ define(function(require, exports, module) {
                 });
                 
                 worker.on("readFile", function(e) {
-                    readTabOrFile(e.data.path, e.data.encoding, function(err, value) {
+                    readTabOrFile(e.data.path, {
+                        encoding: e.data.encoding
+                    }, function(err, value) {
                         worker.emit("readFileResult", { data: {
                             id: e.data.id,
                             err: err && JSON.stringify(err),
