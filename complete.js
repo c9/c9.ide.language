@@ -50,7 +50,7 @@ define(function(require, exports, module) {
         var txtCompleterDoc; // ui elements
         var docElement, lastAce, worker; 
         var matches, eventMatches, popup;
-        var lastUpDownEvent, forceOpen;
+        var lastUpDownEvent, forceOpen, $closeTrigger;
         
         var idRegexes = {};
         var completionRegexes = {}; 
@@ -147,7 +147,7 @@ define(function(require, exports, module) {
                     return editor && language.isEditorSupported({ editor: editor });
                 },
                 exec: function() {
-                    invoke(true);
+                    invoke();
                 }
             }, plugin);
             
@@ -705,13 +705,11 @@ define(function(require, exports, module) {
         /**
          * Trigger code completion by firing an event to the worker.
          * 
-         * @param {Boolean} forceBox  true when completion was triggered automatically
-         *       and a completion box should always be shown (automatic insertion
-         *       is disabled then)
+         * @param {Boolean} autoInvoke  true when completion was triggered automatically
          * @param {Boolean} deleteSuffix  true when the suffix of the current identifier
          *       may be overwritten
          */
-        function invoke(forceBox, deleteSuffix) {
+        function invoke(autoInvoke, deleteSuffix) {
             var tab = tabs.focussedTab;
             if (!tab || !language.isEditorSupported(tab))
                 return;
@@ -721,7 +719,7 @@ define(function(require, exports, module) {
             if (ace.inMultiSelectMode) {
                 var row = ace.selection.lead.row;
                 // allow completion if all selections are empty and on the same line
-                var shouldClose = forceBox && !ace.selection.ranges.every(function(r) {
+                var shouldClose = autoInvoke && !ace.selection.ranges.every(function(r) {
                     return r.cursor.row == row && r.isEmpty();
                 });
                 if (shouldClose && !forceOpen || !sameMultiselectPrefix(ace))
@@ -735,10 +733,10 @@ define(function(require, exports, module) {
             worker.emit("complete", { data: {
                 pos: pos,
                 line: line,
-                forceBox: forceBox,
+                forceBox: true,
                 deleteSuffix: true
             }});
-            if (forceBox)
+            if (autoInvoke)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }
         
@@ -811,10 +809,12 @@ define(function(require, exports, module) {
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             matches = cleanupMatches(eventMatches, ace, pos);
             matches = filterMatches(matches, line, pos);
-            if (matches.length)
+            if (matches.length) {
                 showCompletionBox({ace: ace}, matches, prefix, line);
-            else
+            } else {
                 closeCompletionBox();
+                $closeTrigger = ace.prevOp;
+            }
         }
         
         function filterMatches(matches, line, pos) {
@@ -823,7 +823,7 @@ define(function(require, exports, module) {
                 var idRegex = match.identifierRegex || identifierRegex;
                 var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
                 return match.name.indexOf(prefix) === 0;
-            });            
+            });
             
             // Always prefer current identifier (similar to worker.js)
             var prefixLine = line.substr(0, pos.column);
@@ -843,7 +843,9 @@ define(function(require, exports, module) {
             return results;
         }
         
-        function deferredInvoke(now, ace) {
+        function deferredInvoke(now, ace, fromBackspace) {
+            if (fromBackspace && (!$closeTrigger || ace.prevOp != $closeTrigger))
+                return;
             ace = ace || lastAce;
             now = now || !isPopupVisible();
             var delay = now  ? 0 : AUTO_UPDATE_DELAY;

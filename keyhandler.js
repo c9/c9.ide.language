@@ -35,11 +35,11 @@ define(function(require, exports, module) {
                 var kb = ace.keyBinding;
                 var defaultCommandHandler = kb.onCommandKey.bind(kb);
                 kb.onCommandKey = composeHandlers(onCommandKey, defaultCommandHandler, ace);
-                ace.commands.on("afterExec", onAfterExec);
+                ace.commands.on("afterExec", onAfterExec, true);
             });
             complete.on("replaceText", function(e) {
                 onTextInput(e.newText, false, true);
-            })
+            });
         }
         
         /***** Methods *****/
@@ -84,8 +84,6 @@ define(function(require, exports, module) {
         }
         
         function onBackspace(e) {
-            return false; // Experiment: on backspace behavior disabled
-            
             if (complete.isPopupVisible())
                 return false;
             var pos = ace.getCursorPosition();
@@ -95,7 +93,7 @@ define(function(require, exports, module) {
             if (!complete_util.precededByIdentifier(line, pos.column, null, ace) && !inTextToken(pos))
                 return false;
             if (complete.getCompletionRegex(null, ace))
-                complete.deferredInvoke(false, ace);
+                complete.deferredInvoke(false, ace, true);
         }
         
         function inputTriggerComplete(text, pasted) {
