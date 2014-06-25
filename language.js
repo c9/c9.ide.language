@@ -24,6 +24,8 @@ define(function(require, exports, module) {
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
 
+        var async = require("async");
+
         var BIG_FILE_LINES = 5000;
         var BIG_FILE_DELAY = 500;
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
@@ -235,7 +237,7 @@ define(function(require, exports, module) {
             // Preferences
             prefs.add({
                 "Project" : {
-                    "Markers" : {
+                    "Hints & Warnings" : {
                         position: 200,
                         "Warning Level" : {
                            type: "dropdown",
@@ -267,7 +269,7 @@ define(function(require, exports, module) {
                             position: 5000
                         },
                     },
-                    "Markers" : {
+                    "Hints & Warnings" : {
                         position: 200,
                         "Enable Hints and Warnings" : {
                             type: "checkbox",
@@ -393,9 +395,18 @@ define(function(require, exports, module) {
             
             isContinuousCompletionEnabledSetting = 
                 settings.get("user/language/@continuousCompletion");
+            
+            var activeTabs = tabs.getPanes().map(function(pane){
+                return pane.getTab();
+            })
+            
+            async.forEach(activeTabs, function(tab, next){
+                if (!tab || tab.editorType != "ace")
+                    return next();
                 
-            if (tabs.focussedTab)
-                notifyWorker("switchFile", { tab: tabs.focussedTab });
+                notifyWorker("switchFile", { tab: tab });
+                worker.once("markers", function(event){ next(); });
+            });
         }
         
         function isEditorSupported(tab) {
