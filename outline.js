@@ -423,7 +423,7 @@ define(function(require, exports, module) {
                     dirty = false;
                     worker.emit("outline", { data: {
                         ignoreFilter: false,
-                        path: tabs.focussedTab.path
+                        path: tabs.focussedTab && tabs.focussedTab.path
                     }});
                 });
                 
