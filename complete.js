@@ -461,10 +461,19 @@ define(function(require, exports, module) {
             popup.setRow(0);
         }
         
-        function cleanupMatches(matches, ace, pos) {
+        function cleanupMatches(matches, ace, pos, line) {
             if (isIgnoreGenericEnabled(matches)) {
                 // Disable generic matches when possible
                 matches = matches.filter(function(m) { return !m.isGeneric; });
+            }
+            
+            if (ace.inMultiSelectMode) {
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column);
+                for (var i = 0; i < matches.length; i++) {
+                    var m = matches[i];
+                    if (m.replaceText === prefix)
+                        matches.splice(i--, 1);
+                }
             }
             
             // Simpler look & feel in strings
@@ -763,7 +772,7 @@ define(function(require, exports, module) {
             if (event.data.line !== line)
                 matches = filterMatches(matches, line, pos);
                 
-            matches = cleanupMatches(matches, editor.ace, pos);
+            matches = cleanupMatches(matches, editor.ace, pos, line);
             
             if (matches.length === 1 && !event.data.forceBox) {
                 replaceText(editor.ace, matches[0], event.data.deleteSuffix);
@@ -809,7 +818,7 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            matches = cleanupMatches(eventMatches, ace, pos);
+            matches = cleanupMatches(eventMatches, ace, pos, line);
             matches = filterMatches(matches, line, pos);
             if (matches.length)
                 showCompletionBox({ace: ace}, matches, prefix, line);
