@@ -218,15 +218,15 @@ define(function(require, exports, module) {
 
             settings.on("read", function() {
                 settings.setDefaults("user/language", [
-                    ["jshint", "true"], //@todo move to appropriate plugin
-                    ["instanceHighlight", "true"],
-                    ["undeclaredVars", "true"],
-                    ["unusedFunctionArgs", "false"],
+                    ["hints", "true"],
                     ["continuousCompletion", "true"],
                     ["enterCompletion", "true"]
                 ]);
                 settings.setDefaults("project/language", [
-                    ["warnLevel", "info"]
+                    ["warnLevel", "info"],
+                    ["instanceHighlight", "true"],
+                    ["undeclaredVars", "true"],
+                    ["unusedFunctionArgs", "false"]
                 ]);
                 updateSettings();
             });
@@ -248,6 +248,21 @@ define(function(require, exports, module) {
                                { caption : "Info", value : "info" }
                            ],
                            position: 5000
+                        },
+                        "Highlight Variable Instances" : {
+                            type: "checkbox",
+                            path: "user/language/@instanceHighlight",
+                            position: 6000
+                        },
+                        "Mark Undeclared Variables" : {
+                            type: "checkbox",
+                            path: "user/language/@undeclaredVars",
+                            position: 7000
+                        },
+                        "Mark Unused Function Arguments" : {
+                            type: "checkbox",
+                            path: "user/language/@unusedFunctionArgs",
+                            position: 8000
                         }
                     }
                 }
@@ -256,7 +271,7 @@ define(function(require, exports, module) {
             prefs.add({
                 "Language" : {
                     position: 500,
-                    "Auto Complete" : {
+                    "Input" : {
                         position: 100,
                         "Complete As You Type" : {
                             type: "checkbox",
@@ -273,23 +288,8 @@ define(function(require, exports, module) {
                         position: 200,
                         "Enable Hints and Warnings" : {
                             type: "checkbox",
-                            path: "user/language/@jshint",
+                            path: "user/language/@hints",
                             position: 1000
-                        },
-                        "Highlight Variable Instances" : {
-                            type: "checkbox",
-                            path: "user/language/@instanceHighlight",
-                            position: 2000
-                        },
-                        "Mark Undeclared Variables" : {
-                            type: "checkbox",
-                            path: "user/language/@undeclaredVars",
-                            position: 3000
-                        },
-                        "Mark Unused Function Arguments" : {
-                            type: "checkbox",
-                            path: "user/language/@unusedFunctionArgs",
-                            position: 4000
                         }
                     }
                 }

@@ -132,11 +132,11 @@ define(function(require, exports, module) {
             });
             prefs.add({
                 "Language" : {
-                    "Jump To Definition" : {
-                        "Use cmd-click for jump to definition" : {
+                    "Input" : {
+                        "Use Cmd-Click for Jump to Definition" : {
                             type: "checkbox",
                             path: "user/language/@overrideMultiselectShortcuts",
-                            position: 4000
+                            position: 6000
                         }
                     }
                 }
