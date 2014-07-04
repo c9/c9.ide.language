@@ -243,12 +243,8 @@ function endTime(t, message, indent) {
 
 (function() {
     
-    this.enableFeature = function(name) {
-        disabledFeatures[name] = false;
-    };
-
-    this.disableFeature = function(name) {
-        disabledFeatures[name] = true;
+    this.enableFeature = function(name, value) {
+        disabledFeatures[name] = !value;
     };
 
     this.setWarningLevel = function(level) {
@@ -561,6 +557,8 @@ function endTime(t, message, indent) {
     };
 
     this.filterMarkersBasedOnLevel = function(markers) {
+        if (disabledFeatures.hints)
+            return [];
         for (var i = 0; i < markers.length; i++) {
             var marker = markers[i];
             if (marker.level && WARNING_LEVELS[marker.level] < WARNING_LEVELS[this.$warningLevel]) {

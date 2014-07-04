@@ -379,13 +379,17 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", updateSettings);
             
-            ["jshint", "instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
-              .forEach(function(s) {
+            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
+            .forEach(function(s) {
                 worker.call(
-                    (settings.getBool("user/language/@" + s) ? "enable" : "disable")
-                    + "Feature", [s]);
+                    "enableFeature",
+                    [s, settings.getBool("project/language/@" + s)]
+                );
             });
-                
+            worker.call(
+                "enableFeature",
+                ["hints", settings.getBool("user/language/@hints")]
+            );
             worker.call("setWarningLevel", 
                 [settings.get("project/language/@warnLevel")]);
                 
