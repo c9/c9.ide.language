@@ -137,11 +137,11 @@ define(function(require, exports, module) {
                 return delayedTransfer;
             }
 
-            notifyWorkerTransferData(type, path, immediateWindow, syntax, value);
+            return notifyWorkerTransferData(type, path, immediateWindow, syntax, value, e.force);
         }
         
-        function notifyWorkerTransferData(type, path, immediateWindow, syntax, value) {
-            if (type === "switchFile" && getTabPath(getActiveTab()) !== path)
+        function notifyWorkerTransferData(type, path, immediateWindow, syntax, value, force) {
+            if (!force && type === "switchFile" && getTabPath(getActiveTab()) !== path)
                 return;
             console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
@@ -155,6 +155,7 @@ define(function(require, exports, module) {
                 path, immediateWindow, syntax, value, null, 
                 options.workspaceDir
             ]);
+            return true;
         }
         
         function getTabPath(tab) {
@@ -217,6 +218,10 @@ define(function(require, exports, module) {
             emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
+                updateSettings();
+            });
+            
+            settings.once("read", function() {
                 settings.setDefaults("user/language", [
                     ["hints", "true"],
                     ["continuousCompletion", "true"],
@@ -228,11 +233,9 @@ define(function(require, exports, module) {
                     ["undeclaredVars", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
-                updateSettings();
+                settings.on("user/language", updateSettings);
+                settings.on("project/language", updateSettings);
             });
-            
-            settings.on("user/language", updateSettings);
-            settings.on("project/language", updateSettings);
     
             // Preferences
             prefs.add({
@@ -341,7 +344,7 @@ define(function(require, exports, module) {
             editor.on("documentLoad", function(e) {
                 var session = e.doc.getSession().session;
                 
-                updateSettings(e); //@todo
+                notifyWorker("documentOpen", { tab: e.doc.tab });
                 session.once("changeMode", function() {
                     if (tabs.focussedTab === e.doc.tab)
                         notifyWorker("switchFile", { tab: e.doc.tab });
@@ -375,7 +378,7 @@ define(function(require, exports, module) {
             });
         }
         
-        function updateSettings() {
+        function updateSettings(e) {
             if (!worker)
                 return plugin.once("initWorker", updateSettings);
             
@@ -400,16 +403,24 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = 
                 settings.get("user/language/@continuousCompletion");
             
+            refreshAllMarkers();
+        }
+        
+        function refreshAllMarkers() {
             var activeTabs = tabs.getPanes().map(function(pane){
                 return pane.getTab();
-            })
+            });
             
-            async.forEach(activeTabs, function(tab, next){
-                if (!tab || tab.editorType != "ace")
+            async.forEachSeries(activeTabs, function(tab, next){
+                if (!isEditorSupported(tab))
                     return next();
                 
-                notifyWorker("switchFile", { tab: tab });
-                worker.once("markers", function(event){ next(); });
+                if (!notifyWorker("switchFile", { tab: tab, force: true }))
+                    return next();
+                
+                worker.once("markers", function(e) {
+                    next();
+                });
             });
         }
         
