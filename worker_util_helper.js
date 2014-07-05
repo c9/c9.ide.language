@@ -149,7 +149,16 @@ define(function(require, exports, module) {
                 options.encoding = "utf8"; // TODO: get from c9?
             
             ensureConnected(
-                fs.readFile.bind(fs, path, options),
+                function(next) {
+                    fs.exists(path, function(exists) {
+                        if (!exists) {
+                            var err = new Error("Does not exist: " + path);
+                            err.code = "ENOENT";
+                            return next(err);
+                        }
+                        fs.readFile(path, options, next);
+                    });
+                },
                 callback
             );
         }

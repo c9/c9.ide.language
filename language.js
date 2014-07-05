@@ -306,7 +306,8 @@ define(function(require, exports, module) {
                     return editor && editor.ace.expandSnippet();
                 },
                 isAvailable: function(editor) {
-                    return editor && editor.ace.expandSnippet({dryRun: true});
+                    if (editor && editor.ace)
+                        return editor.ace.expandSnippet({dryRun: true});
                 },
             }, plugin);
         }
