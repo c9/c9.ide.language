@@ -412,6 +412,8 @@ define(function(require, exports, module) {
                 return pane.getTab();
             });
             
+            lastWorkerMessage = {};
+            
             async.forEachSeries(activeTabs, function(tab, next){
                 if (!isEditorSupported(tab))
                     return next();
