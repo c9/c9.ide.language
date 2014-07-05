@@ -218,7 +218,7 @@ define(function(require, exports, module) {
             emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
-                updateSettings();
+                setTimeout(function() { updateSettings(); });
             });
             
             settings.once("read", function() {
