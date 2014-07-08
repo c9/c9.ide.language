@@ -70,16 +70,13 @@ define(function(require, exports, module) {
                             "Are you sure you would like to rename '" + data.oldName + "' to '" + data.newName + "'?",
                             data.err,
                             function() { // yes
-                                placeHolder.detach();
                                 cleanup();
                             },
                             function() { // no
                                 cancelRename();
-                                cleanup();
                             }
                         );
                     } else {
-                        placeHolder.detach();
                         cleanup();
                     }
                 });
@@ -221,10 +218,8 @@ define(function(require, exports, module) {
         }
     
         function cancelRename() {
-            if (placeHolder) {
-                placeHolder.detach();
+            if (placeHolder)
                 placeHolder.cancel();
-            }
             worker.emit("onRenameCancel", {data: {}});
             // todo: currently onRenameCancel in the worker doesn't do anything
             // so we need to call cleanup here
@@ -232,6 +227,7 @@ define(function(require, exports, module) {
         }
     
         function cleanup() {
+            placeHolder.detach();
             language.setContinuousCompletionEnabled(oldContinuousCompletion);
             marker.enableMarkerType('occurrence_main');
             marker.enableMarkerType('occurrence_other');
