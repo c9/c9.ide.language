@@ -186,6 +186,10 @@ define(function(require, exports, module) {
                 ace.$blockScrolling--;
                 return;
             }
+            
+            if (placeHolder)
+                return;
+                
             placeHolder = new PlaceHolder(ace.session, data.length, mainPos, others, "language_rename_main", "language_rename_other");
             if (cursor.row !== mainPos.row || cursor.column < mainPos.column || cursor.column > mainPos.column + data.length) {
                 // Cursor is not "inside" the main identifier, move it there
@@ -222,6 +226,9 @@ define(function(require, exports, module) {
                 placeHolder.cancel();
             }
             worker.emit("onRenameCancel", {data: {}});
+            // todo: currently onRenameCancel in the worker doesn't do anything
+            // so we need to call cleanup here
+            cleanup();
         }
     
         function cleanup() {
