@@ -414,8 +414,13 @@ define(function(require, exports, module) {
             
             lastWorkerMessage = {};
             
+            var focussedTab = tabs.focussedTab;
+            activeTabs = activeTabs.filter(function(tab) {
+                return tab !== focussedTab
+            }).concat(focussedTab);
+            
             async.forEachSeries(activeTabs, function(tab, next){
-                if (!isEditorSupported(tab))
+                if (!isEditorSupported(tab) || tab === focussedTab)
                     return next();
                 
                 if (!notifyWorker("switchFile", { tab: tab, force: true }))
@@ -424,6 +429,9 @@ define(function(require, exports, module) {
                 worker.once("markers", function(e) {
                     next();
                 });
+            }, function() {
+                if (focussedTab !== tabs.focussedTab && isEditorSupported(tabs.focussedTab))
+                    notifyWorker("switchFile", { tab: tabs.focussedTab });
             });
         }
         
