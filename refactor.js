@@ -241,9 +241,17 @@ define(function(require, exports, module) {
     
         function onKeyPress(e, hashKey, keyCode) {
             var keyBinding = lastAce.keyBinding;
-    
+            var selection = placeHolder.session.selection;
+            var col = 0;
+            
             switch(keyCode) {
                 case 32: // Space can't be accepted as it will ruin the logic of retrieveFullIdentifier
+                    col = selection.lead.column;
+                    var start = placeHolder.pos.column;
+                    var end = start + placeHolder.length;
+                    if (col == start || col == end)
+                        commitRename();
+                    break;
                 case 27: // Esc
                     cancelRename();
                     e.preventDefault();
@@ -252,10 +260,24 @@ define(function(require, exports, module) {
                     commitRename();
                     e.preventDefault();
                     break;
-                default:
-                    oldCommandKey.apply(keyBinding, arguments);
+                case 35: // End
+                    col = placeHolder.length; 
+                    /* falls through */
+                case 36: // Home
+                    var row = selection.lead.row;
+                    col += placeHolder.pos.column;
+                    
+                    if (e.shiftKey)
+                        selection.selectTo(row, col);
+                    else
+                        selection.moveTo(row, col);
                     break;
+                default:
+                    return oldCommandKey.apply(keyBinding, arguments);
             }
+            
+            e.preventDefault();
+            e.stopPropagation();
         }
     
         function destroy() {
