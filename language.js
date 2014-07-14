@@ -198,7 +198,8 @@ define(function(require, exports, module) {
                 var path = e.tab.path;
                 if (path)
                     worker.emit("documentClose", {data: path});
-                if (e.tab.document.getSession().session == worker.$doc)
+                var c9session = e.tab.document.getSession();
+                if (c9session && c9session.session == worker.$doc)
                     worker.$doc = null;
             });
             
