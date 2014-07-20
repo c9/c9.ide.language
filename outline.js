@@ -317,7 +317,7 @@ define(function(require, exports, module) {
                 {
                     bindKey: "ESC",
                     exec: function() {
-                        if (!originalTab.loaded) 
+                        if (!originalTab || !originalTab.loaded) 
                             return clear();
                         
                         if (originalLine) {
