@@ -155,6 +155,7 @@ define(function(require, exports, module) {
                 path, immediateWindow, syntax, value, null, 
                 options.workspaceDir
             ]);
+            onChangeMode();
             return true;
         }
         
