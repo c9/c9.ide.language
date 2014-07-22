@@ -315,6 +315,10 @@ function endTime(t, message, indent) {
     };
     
     this.isHandlerMatch = function(handler, part, method, ignoreSize) {
+        if (!handler[method]) {
+            reportError(new Error("Handler " + handler.$source + " does not have method " + method));
+            return false;
+        }
         if (handler[method].base_handler)
             return;
         switch (handler.handlesEditor()) {
@@ -1409,6 +1413,12 @@ function endTime(t, message, indent) {
             this.complete({data: {pos: pos, line: line, isUpdate: true, forceBox: true}});
         }
     };
+    
+    function reportError(exception) {
+        setTimeout(function() {
+            throw exception; // throw bare exception so it gets reported
+        });
+    }
 
 }).call(LanguageWorker.prototype);
 
