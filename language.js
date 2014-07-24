@@ -310,8 +310,9 @@ define(function(require, exports, module) {
                     return editor && editor.ace.expandSnippet();
                 },
                 isAvailable: function(editor) {
-                    if (editor && editor.ace)
-                        return editor.ace.expandSnippet({dryRun: true});
+                    var ace = editor && editor.ace;
+                    if (ace && ace.selection.isEmpty())
+                        return ace.expandSnippet({dryRun: true});
                 },
             }, plugin);
         }
