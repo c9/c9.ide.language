@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport", "commands"
+        "browsersupport", "commands", "error_handler"
     ];
     main.provides = ["language"];
     return main;
@@ -185,6 +185,13 @@ define(function(require, exports, module) {
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
                     throw e;
                 }
+                worker.reportError = function(err) {
+                    console.error(err);
+                    imports.error_handler.reportError(err, {}, ["worker"]);
+                };
+                worker.$worker.onerror = function(e) {
+                    e.preventDefault();
+                };
             }
             
             worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
