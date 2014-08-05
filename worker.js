@@ -199,24 +199,26 @@ function applyEventOnce(eventHandler, waitForMirror) {
 
 oop.inherits(LanguageWorker, Mirror);
 
-var asyncForEach = module.exports.asyncForEach = function(array, fn, callback) {
+var asyncForEach = module.exports.asyncForEach = function(array, fn, test, callback) {
+    if (!callback) {
+        callback = test;
+        test = null;
+    }
+
     array = array.slice(); // copy before use
-    function processOne() {
+    
+    loop();
+    
+    function loop() {
+        while (array.length > 0 && test && !test(array[0]))
+            array.shift();
+        
         var item = array.shift();
-        fn(item, function processNext(result, err) {
-            if (array.length > 0) {
-                processOne();
-            }
-            else if (callback) {
-                callback(err, result);
-            }
-        });
-    }
-    if (array.length > 0) {
-        processOne();
-    }
-    else if (callback) {
-        callback();
+        // TODO: implement proper err argument?
+        if (!item)
+            return callback && callback();
+        
+        fn(item, loop);
     }
 };
 
@@ -313,6 +315,21 @@ function endTime(t, message, indent) {
         }
         onRegistered(handler);
     };
+
+    this.asyncForEachHandler = function(options, fn, callback) {
+        var that = this;
+        var part = options.part;
+        var method = options.method;
+        var ignoreSize = options.ignoreSize;
+        asyncForEach(
+            this.handlers,
+            fn,
+            function(handler) {
+                return that.isHandlerMatch(handler, part, method, ignoreSize);
+            },
+            callback
+        );
+    };
     
     this.isHandlerMatch = function(handler, part, method, ignoreSize) {
         if (!handler[method]) {
@@ -339,7 +356,6 @@ function endTime(t, message, indent) {
     };
 
     this.parse = function(part, callback, allowCached, forceCached) {
-        var _self = this;
         var value = (part || this.doc).getValue();
         var language = part ? part.language : this.$language;
 
@@ -352,20 +368,19 @@ function endTime(t, message, indent) {
             return callback(null);
 
         var resultAst = null;
-        asyncForEach(this.handlers, function parseNext(handler, next) {
-            if (_self.isHandlerMatch(handler, part, "parse")) {
+        this.asyncForEachHandler(
+            { part: part, method: "parse" },
+            function parseNext(handler, next) {
                 handler.parse(value, function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
                 });
+            },
+            function() {
+                callback(resultAst);
             }
-            else {
-                next();
-            }
-        }, function() {
-            callback(resultAst);
-        });
+        );
     };
 
     /**
@@ -387,18 +402,17 @@ function endTime(t, message, indent) {
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
         var result;
-        asyncForEach(_self.handlers, function(handler, next) {
-            if (_self.isHandlerMatch(handler, part, "findNode")) {
+        this.asyncForEachHandler(
+            { part: part, method: "findNode" },
+            function(handler, next) {
                 handler.findNode(ast, posInPart, function(node) {
                     if (node)
                         result = node;
                     next();
                 });
-            }
-            else {
-                next();
-            }
-        }, function() { callback(result); });
+            },
+            function() { callback(result); }
+        );
     };
 
     this.outline = function(event) {
@@ -509,8 +523,9 @@ function endTime(t, message, indent) {
             _self.parse(part, function(ast) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
-                asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part, "analyze")) {
+                _self.asyncForEachHandler(
+                    { part: part, method: "analyze" },
+                    function(handler, next) {
                         handler.language = part.language;
                         var t = startTime();
                         handler.analyze(part.getValue(), ast, function(result) {
@@ -529,26 +544,24 @@ function endTime(t, message, indent) {
                                 next();
                             }
                         }, minimalAnalysis);
+                    },
+                    function () {
+                        filterMarkersAroundError(ast, partMarkers);
+                        var region = part.region;
+                        partMarkers.forEach(function (marker) {
+                            if (marker.skipMixed)
+                                return;
+                            var pos = marker.pos;
+                            pos.sl = pos.el = pos.sl + region.sl;
+                            if (pos.sl === region.sl) {
+                                pos.sc += region.sc;
+                                pos.ec += region.sc;
+                            }
+                        });
+                        markers = markers.concat(partMarkers);
+                        nextPart();
                     }
-                    else {
-                        next();
-                    }
-                }, function () {
-                    filterMarkersAroundError(ast, partMarkers);
-                    var region = part.region;
-                    partMarkers.forEach(function (marker) {
-                        if (marker.skipMixed)
-                            return;
-                        var pos = marker.pos;
-                        pos.sl = pos.el = pos.sl + region.sl;
-                        if (pos.sl === region.sl) {
-                            pos.sc += region.sc;
-                            pos.ec += region.sc;
-                        }
-                    });
-                    markers = markers.concat(partMarkers);
-                    nextPart();
-                });
+                );
             });
         }, function() {
             endTime(t0, "Analyzed all");
@@ -1108,28 +1121,28 @@ function endTime(t, message, indent) {
         function doUpdate(done) {
             updateRunning = true;
             var startTime = new Date().getTime();
-            asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler, null, "onUpdate")) {
+            _self.asyncForEachHandler(
+                { method: "onUpdate" },
+                function(handler, next) {
                     var t = startTime();
                     handler.onUpdate(_self.doc, function() {
                         endTime(t, "Update: " + handler.$source);
                         next();
                     });
+                },
+                function() {
+                    _self.analyze(now, function() {
+                        if (_self.postponedCursorMove) {
+                            _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
+                            _self.postponedCursorMove = null;
+                        }
+                        _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
+                        clearTimeout(updateWatchDog);
+                        updateRunning = false;
+                        done && done();
+                    });
                 }
-                else
-                    next();
-            }, function() {
-                _self.analyze(now, function() {
-                    if (_self.postponedCursorMove) {
-                        _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
-                        _self.postponedCursorMove = null;
-                    }
-                    _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
-                    clearTimeout(updateWatchDog);
-                    updateRunning = false;
-                    done && done();
-                });
-            });
+            );
         }
     };
     
