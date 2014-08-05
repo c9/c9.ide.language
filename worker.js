@@ -517,10 +517,10 @@ function endTime(t, message, indent) {
         var markers = [];
         var cachedAsts = {};
         var t0 = startTime();
-        asyncForEach(parts, function(part, nextPart) {
+        asyncForEach(parts, function analyzePart(part, nextPart) {
             var partMarkers = [];
             _self.part = part;
-            _self.parse(part, function(ast) {
+            _self.parse(part, function analyzeParsed(ast) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
                 _self.asyncForEachHandler(
