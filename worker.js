@@ -507,49 +507,47 @@ function endTime(t, message, indent) {
             var partMarkers = [];
             _self.part = part;
             _self.parse(part, function(ast) {
-                setTimeout(function() { // Avoid stack overflow
-                    cachedAsts[part.index] = {part: part, ast: ast};
-    
-                    asyncForEach(_self.handlers, function(handler, next) {
-                        if (_self.isHandlerMatch(handler, part, "analyze")) {
-                            handler.language = part.language;
-                            var t = startTime();
-                            handler.analyze(part.getValue(), ast, function(result) {
-                                endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
-                                if (result) {
-                                    handler.getResolutions(part.getValue(), ast, result, function(result2) {
-                                        if (result2) {
-                                            partMarkers = partMarkers.concat(result2);
-                                        } else {
-                                            partMarkers = partMarkers.concat(result);
-                                        }
-                                        next();
-                                    });
-                                }
-                                else {
+                cachedAsts[part.index] = {part: part, ast: ast};
+
+                asyncForEach(_self.handlers, function(handler, next) {
+                    if (_self.isHandlerMatch(handler, part, "analyze")) {
+                        handler.language = part.language;
+                        var t = startTime();
+                        handler.analyze(part.getValue(), ast, function(result) {
+                            endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
+                            if (result) {
+                                handler.getResolutions(part.getValue(), ast, result, function(result2) {
+                                    if (result2) {
+                                        partMarkers = partMarkers.concat(result2);
+                                    } else {
+                                        partMarkers = partMarkers.concat(result);
+                                    }
                                     next();
-                                }
-                            }, minimalAnalysis);
-                        }
-                        else {
-                            next();
-                        }
-                    }, function () {
-                        filterMarkersAroundError(ast, partMarkers);
-                        var region = part.region;
-                        partMarkers.forEach(function (marker) {
-                            if (marker.skipMixed)
-                                return;
-                            var pos = marker.pos;
-                            pos.sl = pos.el = pos.sl + region.sl;
-                            if (pos.sl === region.sl) {
-                                pos.sc += region.sc;
-                                pos.ec += region.sc;
+                                });
                             }
-                        });
-                        markers = markers.concat(partMarkers);
-                        nextPart();
+                            else {
+                                next();
+                            }
+                        }, minimalAnalysis);
+                    }
+                    else {
+                        next();
+                    }
+                }, function () {
+                    filterMarkersAroundError(ast, partMarkers);
+                    var region = part.region;
+                    partMarkers.forEach(function (marker) {
+                        if (marker.skipMixed)
+                            return;
+                        var pos = marker.pos;
+                        pos.sl = pos.el = pos.sl + region.sl;
+                        if (pos.sl === region.sl) {
+                            pos.sc += region.sc;
+                            pos.ec += region.sc;
+                        }
                     });
+                    markers = markers.concat(partMarkers);
+                    nextPart();
                 });
             });
         }, function() {
