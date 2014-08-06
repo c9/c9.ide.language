@@ -206,7 +206,7 @@ define(function(require, exports, module) {
             
             if ((!tab.path && !tab.document.meta.newfile) || tab.editorType !== "ace") {
                 originalTab = null;
-                return clear();
+                return clear(tab.editorType);
             }
             
             if (!tab.editor)
@@ -565,10 +565,13 @@ define(function(require, exports, module) {
             ace.selection.setSelectionRange(range);
         }
         
-        function clear() {
+        function clear(type) {
             if (textbox) {
                 textbox.setValue("");
-                tdOutline.setRoot({});
+                if (type === "terminal")
+                    tdOutline.setRoot([{icon: "property", name: "Terminal" }]);
+                else
+                    tdOutline.setRoot({});
             }
         }
         
