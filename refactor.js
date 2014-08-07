@@ -172,7 +172,6 @@ define(function(require, exports, module) {
                 return !(o.row === mainPos.row && o.column === mainPos.column);
             });
             if (selectVar) {
-                ace.$blockScrolling++;
                 ace.selection.toSingleRange();
                 others.push(mainPos);
                 others.forEach(function(pos) {
@@ -180,7 +179,6 @@ define(function(require, exports, module) {
                         pos.row, pos.column, pos.row, pos.column + data.length
                     ));
                 });
-                ace.$blockScrolling--;
                 return;
             }
             

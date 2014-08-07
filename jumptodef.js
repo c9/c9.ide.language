@@ -98,7 +98,7 @@ define(function(require, exports, module) {
                     }
                     
                     var ace = tabs.focussedTab && tabs.focussedTab.editor && tabs.focussedTab.editor.ace;
-                    if (ace.hoverLink && ace.hoverLink.isOpen) {
+                    if (ace && ace.hoverLink && ace.hoverLink.isOpen) {
                         var pos = ev.data.pos;
                         if (!ev.data.value) {
                             ace.hoverLink.range.contains(pos.row, pos.column);
