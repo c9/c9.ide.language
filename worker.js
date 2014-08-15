@@ -400,6 +400,8 @@ function endTime(t, message, indent) {
         
         var _self = this;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+        if (!part)
+            return; // cursor position no longer current
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
         var result;
         this.asyncForEachHandler(
@@ -597,6 +599,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = { row: event.data.row, column: event.data.column };
         var part = this.getPart({ row: event.data.row, column: event.data.col });
+        if (!part)
+            return; // cursor position no longer current
         var partPos = syntaxDetector.posToRegion(part.region, pos);
         this.parse(part, function(ast) {
             _self.findNode(ast, pos, function(node) {
@@ -709,6 +713,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = event.data.pos;
         var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
         var line = this.doc.getLine(pos.row);
         
         if (line != event.data.line) {
@@ -780,6 +786,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = event.data.pos;
         var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
         var line = this.doc.getLine(pos.row);
         
         if (line != event.data.line) {
@@ -887,6 +895,8 @@ function endTime(t, message, indent) {
 
         var _self = this;
         var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
         var posInPart = syntaxDetector.posToRegion(part.region, pos);
 
         this.parse(part, function(ast) {
@@ -952,6 +962,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = event.data;
         var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
         var partPos = syntaxDetector.posToRegion(part.region, pos);
         
         this.parse(part, function(ast) {
@@ -982,6 +994,8 @@ function endTime(t, message, indent) {
         var _self = this;
         var pos = event.data;
         var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
         var partPos = syntaxDetector.posToRegion(part.region, pos);
 
         function posFromRegion(pos) {
@@ -1291,8 +1305,10 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         var line = _self.doc.getLine(pos.row);
         
-        _self.waitForCompletionSync(event, function(identifierRegex) {
+        _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+            if (!part)
+                return; // cursor position not current
             var partPos = syntaxDetector.posToRegion(part.region, pos);
             var language = part.language;
             var tStart = startTime();
