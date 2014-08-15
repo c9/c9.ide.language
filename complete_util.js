@@ -28,7 +28,7 @@ function retrievePrecedingIdentifier(line, offset, regex) {
 function retrieveFollowingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
     var buf = [];
-    for (var i = offset; i < line.length && line; i++) {
+    for (var i = offset; line && i < line.length; i++) {
         if (regex.test(line[i]))
             buf.push(line[i]);
         else
