@@ -496,7 +496,8 @@ define(function(require, exports, module) {
             
         });
         plugin.on("unload", function() {
-            // loaded = false;
+            loaded = false;
+            worker.terminate();
         });
         
         /***** Register and define API *****/
