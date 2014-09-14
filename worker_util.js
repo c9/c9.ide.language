@@ -154,9 +154,9 @@ module.exports = {
     getOpenFiles: function() {
         var results = [];
         var set = worker.$lastWorker.$openDocuments;
-        for (var e in set) {
+        Object.keys(set).forEach(function(e) {
             results.push(set[e]);
-        }
+        });
         return results;
     },
     
