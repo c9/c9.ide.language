@@ -31,7 +31,7 @@ var WARNING_LEVELS = {
     info: 1
 };
 
-var UPDATE_TIMEOUT_MIN = 500;
+var UPDATE_TIMEOUT_MIN = !isInWebWorker && window.c9Test ? 5 : 500;
 var UPDATE_TIMEOUT_MAX = 15000;
 var DEBUG = !isInWebWorker;
 var STATS = false;
