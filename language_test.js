@@ -113,32 +113,34 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         util.setStaticPrefix("/static");
         complete.$setShowDocDelay(50);
         
+        var timer;
+        after(function() { clearTimeout(timer); });
+        
         function getTabHtml(tab) {
             return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
         }
         
-        function afterCompleteOpen(callback) {
-            setTimeout(function() {
+        function afterCompleteOpen(callback, delay) {
+            clearTimeout(timer);
+            timer = setTimeout(function() {
                 var el = document.getElementsByClassName("ace_autocomplete")[0];
                 if (!el || el.style.display === "none")
-                    return setTimeout(function() {
-                         afterCompleteOpen(callback);
-                    }, 1000);
-                setTimeout(function() {
+                    return afterCompleteOpen(callback, 100);
+                timer = setTimeout(function() {
                     callback(el);
-                }, 50);
-            }, 50);
+                }, 10);
+            }, delay || 10);
         }
         
-        function afterCompleteDocOpen(callback) {
-            setTimeout(function() {
+        function afterCompleteDocOpen(callback, delay) {
+            timer = setTimeout(function() {
                 var el = document.getElementsByClassName("code_complete_doc_text")[0];
                 if (!el || el.style.display === "none")
                     return afterCompleteDocOpen(callback);
-                setTimeout(function() {
+                timer = setTimeout(function() {
                     callback(el);
-                }, 50);
-            }, 50);
+                }, 10);
+            }, delay || 10);
         }
         
         function isCompleterOpen() {
