@@ -20,7 +20,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         },
         
         "plugins/c9.core/ext",
-        "plugins/c9.core/http",
+        "plugins/c9.core/http-xhr",
         "plugins/c9.core/util",
         "plugins/c9.ide.ui/lib_apf",
         {
