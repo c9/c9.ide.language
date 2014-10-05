@@ -144,7 +144,8 @@ define(function(require, exports, module) {
             
             // Extends navigate with outline support
             
-            var wasActive, onsel = function(){ 
+            var wasActive, onsel = function(){
+                if (!navigate.tree.isFocused()) return;
                 var node = navigate.tree.selection.getCursor();
                 if (node) onSelect(node);
             };
@@ -160,11 +161,11 @@ define(function(require, exports, module) {
                 isActive = true;
                 onTabFocus(e, true);
                 
-                navigate.tree.setDataProvider(tdOutline);
                 navigate.tree.off("changeSelection", onsel);
+                navigate.tree.setDataProvider(tdOutline);
                 navigate.tree.on("changeSelection", onsel);
                 
-                renderOutline(!value, value);
+                renderOutline(true, value);
                 
                 ui.setStyleClass(navigate.tree.container, "outline");
             });
@@ -352,8 +353,9 @@ define(function(require, exports, module) {
                 renderOutline();
             });
             
-            tree.on("changeSelection", function() { 
-                onSelect();
+            tree.on("changeSelection", function() {
+                if (tree.isFocused())
+                    onSelect();
             });
             
             function onAllBlur(e) {
@@ -465,6 +467,8 @@ define(function(require, exports, module) {
     
         function onOutlineData(event) {
             scheduled = false;
+            if (hasNavigateOutline)
+                return;
             var data = event.data;
             if (data.error) {
                 // TODO: show error in outline?
