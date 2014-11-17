@@ -61,7 +61,7 @@
     color: @complete-docs-color;
     min-height: 100px;
     max-width: 300px;
-    border: 1px solid @complete-border-color;
+    border: 1px solid @complete-docs-border-color;
     .box-shadow(~"@{complete-box-shadow}, inset 1px 1px @{complete-inner-border-color}, inset -1px -1px @{complete-inner-border-color}");
     font-size: 12px;
 }
