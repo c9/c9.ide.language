@@ -18,6 +18,7 @@ define(function(require, exports, module) {
 
         var Range = require("ace/range").Range;
         var Anchor = require('ace/anchor').Anchor;
+        var comparePoints = Range.comparePoints;
 
         function SimpleAnchor(row, column) {
             this.row = row;
@@ -187,10 +188,9 @@ define(function(require, exports, module) {
          * This attempts to predict how the worker is going to adapt markers based on the given edit
          * it does so instanteously, rather than with a 500ms delay, thereby avoid ugly box bouncing etc.
          */
-        function onChange(session, event) {
-            var range = event.data.range;
-            var isInserting = event.data.action[0] !== "r";
-            var text = event.data.text;
+        function onChange(session, delta) {
+            var isInserting = delta.action[0] !== "r";
+            var text = delta.lines[0];
             var adaptingId = text && text.search(/[^a-zA-Z0-9\$_]/) === -1;
             var languageAnnos = [];
             var markers = session.markerAnchors || [];
@@ -201,18 +201,18 @@ define(function(require, exports, module) {
                 for (var i = markers.length; i--;) {
                     marker = markers[i];
                     
-                    if (!range.compareInside(marker.start.row, marker.start.column)) {
+                    if (comparePoints(delta.start, marker.start) < 0 && comparePoints(delta.end, marker.start) > 0) {
                         session.removeMarker(marker.id);
                         foundOne = true;
                         continue;
                     }
-                    else if (adaptingId && marker.range && marker.range.contains(range.start.row, range.start.column)) {
+                    else if (adaptingId && marker.range && marker.range.contains(delta.start.row, delta.start.column)) {
                         foundOne = true;
                         marker.colDiff -= text.length;
                     }
                     
                     start = marker.start;
-                    start.onChange(event);
+                    start.onChange(delta);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
                         marker.range.end.column = start.column + marker.colDiff;
@@ -232,16 +232,16 @@ define(function(require, exports, module) {
                 for (var i = markers.length; i--;) {
                     marker = markers[i];
                     // Only if inserting an identifier
-                    if (marker.range && marker.range.contains(range.start.row, range.start.column)) {
+                    if (marker.range && marker.range.contains(delta.start.row, delta.start.column)) {
                         foundOne = true;
                         if (adaptingId) {
                             marker.colDiff += text.length;
-                        } else if (Range.comparePoints(range.start, marker.range.start) > 0)
+                        } else if (Range.comparePoints(delta.start, marker.range.start) > 0)
                             session.removeMarker(marker.id);
                     }
                     
                     start = marker.start;
-                    start.onChange(event);
+                    start.onChange(delta);
                     if (marker.range) {
                         marker.range.end.row = start.row + marker.rowDiff;
                         marker.range.end.column = start.column + marker.colDiff;
