@@ -207,18 +207,25 @@ var asyncForEach = module.exports.asyncForEach = function(array, fn, test, callb
 
     array = array.slice(); // copy before use
     
+    var nested = false, callNext = true;
     loop();
     
     function loop() {
-        while (array.length > 0 && test && !test(array[0]))
-            array.shift();
-        
-        var item = array.shift();
-        // TODO: implement proper err argument?
-        if (!item)
-            return callback && callback();
-        
-        fn(item, loop);
+        while (callNext && !nested) {
+            callNext = false;
+            while (array.length > 0 && test && !test(array[0]))
+                array.shift();
+
+            var item = array.shift();
+            // TODO: implement proper err argument?
+            if (!item)
+                return callback && callback();
+
+            nested = true;
+            fn(item, loop);
+            nested = false;
+        }
+        callNext = true;
     }
 };
 
