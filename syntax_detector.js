@@ -23,6 +23,7 @@ var mixedLanguages = {
         "javascript-end": /<\/script>/
     }
 };
+mixedLanguages.handlebars = mixedLanguages.html;
 
 /* Now:
  * - One level syntax nesting supported
