@@ -642,8 +642,10 @@ define(function(require, exports, module) {
                     closeCompletionBox();
                     break;
                 case 27: // Esc
+                    // special case for vim mode, needed because complete hijacks ace keybinding
+                    if (lastAce.$vimModeHandler)
+                        commandKeyBeforePatch.apply(keyBinding, arguments);
                     closeCompletionBox();
-                    e.stopPropagation();
                     e.preventDefault();
                     e.stopPropagation();
                     break;
