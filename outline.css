@@ -62,22 +62,46 @@
 }
 
 .outline.ace_tree .tree-row .icon.event{
-    background: url("@{image-path}/event.png") no-repeat 4px;
+    .image-2x("@{complete-icon-event}", 8px, 8px);
+    background-position: 4px;
 }
 .outline.ace_tree .tree-row .icon.method{
-    background: url("@{image-path}/method.png") no-repeat 4px;
+    .image-2x("@{complete-icon-method}", 8px, 8px);
+    background-position: 4px;
 }
 .outline.ace_tree .tree-row .icon.method2{
-    background: url("@{image-path}/method2.png") no-repeat 4px;
+    .image-2x("@{complete-icon-method2}", 8px, 8px);
+    background-position: 4px;
 }
 .outline.ace_tree .tree-row .icon.package{
-    background: url("@{image-path}/package.png") no-repeat 4px;
+    .image-2x("@{complete-icon-package}", 8px, 8px);
+    background-position: 4px;
 }
 .outline.ace_tree .tree-row .icon.property{
-    background: url("@{image-path}/property.png") no-repeat 4px;
+    .image-2x("@{complete-icon-property}", 8px, 8px);
+    background-position: 4px;
 }
 .outline.ace_tree .tree-row .icon.property2{
-    background: url("@{image-path}/property2.png") no-repeat 4px;
+    .image-2x("@{complete-icon-property2}", 8px, 8px);
+    background-position: 4px;
+}
+.lang-icon-event{
+    .image-2x("@{complete-icon-event}", 8px, 8px, no-repeat, true);
+}
+.lang-icon-method{
+    .image-2x("@{complete-icon-method}", 8px, 8px, no-repeat, true);
+}
+.lang-icon-method2{
+    .image-2x("@{complete-icon-method2}", 8px, 8px, no-repeat, true);
+}
+.lang-icon-package{
+    .image-2x("@{complete-icon-package}", 8px, 8px, no-repeat, true);
+}
+.lang-icon-property{
+    .image-2x("@{complete-icon-property}", 8px, 8px, no-repeat, true);
+}
+.lang-icon-property2{
+    .image-2x("@{complete-icon-property2}", 8px, 8px, no-repeat, true);
 }
 
 .outline.ace_tree .message{
