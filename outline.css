@@ -11,7 +11,7 @@
     margin: 4px 0 0 3px;
 }
 .outline.ace_tree .toggler:not(.empty){
-    background-image: url("@{image-path}/@{tree-arrow}");
+    .image-2x("@{image-path}/@{tree-arrow}", 20px, 10px);
 }
 
 .outline.ace_tree .ace_tree_cell-layer>div>span{
@@ -33,7 +33,7 @@
     color : @highlight-selected-color;
 }
 .outline.ace_tree.focus .tree-row.selected .toggler:not(.empty){
-    background-image: url("@{image-path}/@{tree-arrow-focus-selected}");
+    .image-2x("@{image-path}/@{tree-arrow-focus-selected}", 20px, 10px);
 }
 
 .outline.ace_tree .tree-row{
