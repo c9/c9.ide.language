@@ -172,8 +172,12 @@ module.exports = {
 
     /**
      * Returns a regular expression for identifiers in the handler's language.
-     * If not specified, /[A-Za-z0-9\$\_]/ is used.
+     * If not specified, /[A-Za-z0-9$_]/ is used.
      * 
+     * Note: to indicate dollars are allowed at the start of identifiers
+     * (like with php $variables), include '$$'' in the regex, e.g.
+     * /[A-Z0-9$$_]/.
+     *
      * Should be overridden by inheritors that implement code completion.
      * 
      * @return RegExp
