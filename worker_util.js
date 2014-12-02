@@ -101,7 +101,7 @@ module.exports = {
      * 
      * Example:
      * 
-     *     fs.readFile('/config/server.js', function (err, data) {
+     *     worker_util.readFile('/config/server.js', function (err, data) {
      *         if (err) throw err;
      *         console.log(data);
      *     });
