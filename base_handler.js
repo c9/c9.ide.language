@@ -355,7 +355,20 @@ module.exports = {
      * @param {Object} currentNode                         The AST node the cursor is currently at (if any)
      * @param {Function} callback                          The callback; must be called
      * @param {Object} callback.result                     The function's result
-     * @param {String} callback.result.hint                An HTML string with the tooltip to display
+     * @param {Object|String} callback.result.hint         An object or HTML string with the tooltip to display
+     * @param {Object[]} [callback.result.signatures]      One or more function signatures to show
+     * @param {String} callback.result.signatures.name     Function name
+     * @param {String} [callback.result.signatures.doc]    Function documentation
+     * @param {Object[]} callback.result.signatures.parameters
+     *                                                     Function parameters
+     * @param {String} callback.result.signatures.parameters.name
+     *                                                     Parameter name
+     * @param {String} [callback.result.signatures.parameters.type]
+     *                                                     Parameter type
+     * @param {String} [callback.result.signatures.parameters.doc]
+     *                                                     Parameter documentation
+     * @param {String} [callback.result.signatures.returnType]
+     *                                                     The function return type
      * @param {Object} callback.result.pos                 The position range for which this tooltip is valid
      * @param {Number} callback.result.pos.sl              The starting line
      * @param {Number} callback.result.pos.el              The ending line
