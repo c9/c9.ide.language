@@ -179,7 +179,7 @@ define(function(require, exports, module) {
             }
             else  {
                 try {
-                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
+                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins", "acorn", "tern"], id, "LanguageWorker", path);
                 } catch (e) {
                     if (e.code === 18 && window.location && window.location.origin === "file://")
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
