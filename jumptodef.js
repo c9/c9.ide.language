@@ -210,7 +210,6 @@ define(function(require, exports, module) {
                 jumpToPos(lastJump.sourcePath, lastJump.sourcePos);
                 return;
             }
-                
             
             lastJump = null;
     
@@ -272,6 +271,7 @@ define(function(require, exports, module) {
                     }
                     delete state.value;
                     tab.document.setState(state);
+                    tabs.focusTab(tab)
                 }
             );
         }
