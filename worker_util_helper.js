@@ -126,7 +126,7 @@ define(function(require, exports, module) {
             
             var tab = tabs.findTab(path);
             if (tab) {
-                if (options.unsaved) {
+                if (allowUnsaved) {
                     var unsavedValue = tab.value
                         || tab.document && tab.document.hasValue && tab.document.hasValue()
                            && tab.document.value;
@@ -134,7 +134,7 @@ define(function(require, exports, module) {
                         return callback(null, unsavedValue);
                 }
                 else {
-                    var saved = allowUnsaved || save.getSavingState(tab) === "saved";
+                    var saved = save.getSavingState(tab) === "saved";
                     var value = saved
                         ? tab.value || tab.document && tab.document.value
                         : tab.document.meta && typeof tab.document.meta.$savedValue === "string"

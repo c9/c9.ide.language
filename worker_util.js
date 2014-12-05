@@ -111,7 +111,8 @@ module.exports = {
      * @param {String}   path               the path of the file to read
      * @param {Object}   [options]          options or encoding of this file
      * @param {String}   [options.encoding] the encoding of this file
-     * @param {Boolean}  [options.unsaved]  whether to return unsaved changes
+     * @param {Boolean}  [options.allowUnsaved]
+     *                                      whether to return unsaved changes
      * @param {Function} [callback]         called after the file is read
      * @param {Error}    callback.err       the error information returned by the operation
      * @param {String}   callback.data      the contents of the file that was read
@@ -127,6 +128,12 @@ module.exports = {
         if (worker.$lastWorker.$path === path) {
             callback && setTimeout(callback.bind(null, null, worker.$lastWorker.doc.getValue()), 0);
             return;
+        }
+        
+        if (path.match(/\/$/) || path === ".") { // fail fast
+            var err = new Error("File is a directory");
+            err.code = "EISDIR";
+            return callback(err);
         }
         
         var id = msgId++;
