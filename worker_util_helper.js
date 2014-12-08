@@ -56,6 +56,16 @@ define(function(require, exports, module) {
                     });
                 });
                 
+                worker.on("stat", function(e) {
+                    fs.stat(e.data.path, function(err, value) {
+                        worker.emit("statResult", { data: {
+                            id: e.data.id,
+                            err: err && JSON.stringify(err),
+                            data: value
+                        }});
+                    });
+                });
+                
                 worker.on("getTokens", function(e) {
                     var path = e.data.path;
                     var identifiers = e.data.identifiers;

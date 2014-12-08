@@ -147,6 +147,43 @@ module.exports = {
     },
     
     /**
+     * Loads the stat information for a single path entity.
+     *
+     * @param {String}   path      the path of the file or directory to stat
+     * @param {Function} callback  called after the information is retrieved
+     * @param {Error}    callback.err  
+     * @param {Object}   callback.data 
+     * @param {String}   callback.data.name      The basename of the file path (eg: file.txt).
+     * @param {Number}   callback.data.size      The size of the entity in bytes.
+     * @param {Number}   callback.data.mtime     The mtime of the file in ms since epoch.
+     * @param {Number}   callback.data.mime      The mime type of the entity. 
+     *   Directories will have a mime that matches /(folder|directory)$/. 
+     *   This implementation will give inode/directory for directories.
+     * @param {String}   callback.data.link      If the file is a symlink, 
+     *   this property will contain the link data as a string.
+     * @param {Object}   callback.data.linkStat  The stat information 
+     *   for what the link points to.
+     * @param {String}   callback.data.fullPath  The linkStat object 
+     *   will have an additional property that's the resolved path relative to the root.
+     * @fires error
+     */
+   stat: function(path, callback) {
+        if (!callback) { // fix arguments
+            callback = encoding;
+            encoding = null;
+        }
+        
+        var id = msgId++;
+        worker.sender.on("statResult", function onReadFileResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("statResult", onReadFileResult);
+            callback && callback(event.data.err && JSON.parse(event.data.err), event.data.data);
+        });
+        worker.sender.emit("stat", { path: path, id: id });
+    },
+    
+    /**
      * @ignore
      */
     asyncForEach: function(array, fn, callback) {
