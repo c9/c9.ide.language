@@ -62,9 +62,9 @@ define(function(require, exports, module) {
             worker._signal("change", e);
         }
         function onChangeMode() {
-            if (worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab) {
-                notifyWorker("switchFile", { tab: worker.$doc.c9doc.tab });
-                worker._signal("changeMode");
+            var tab = worker && worker.$doc && worker.$doc.c9doc && worker.$doc.c9doc.tab;
+            if (tab) {
+                notifyWorker("switchFile", { tab: tab });
             }
         }
         
@@ -155,7 +155,8 @@ define(function(require, exports, module) {
                 path, immediateWindow, syntax, value, null, 
                 options.workspaceDir
             ]);
-            onChangeMode();
+            if (type === "switchFile")
+                worker._signal("changeMode");
             return true;
         }
         
