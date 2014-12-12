@@ -154,8 +154,8 @@ module.exports = {
      * @return {Number}
      */
     getMaxFileSizeSupported: function() {
-        // Conservative default
-        return 10000 * 80;
+        // Moderately conservative default (well, still 800K)
+        return 10 * 1000 * 80;
     },
 
     /**

@@ -359,7 +359,7 @@ function endTime(t, message, indent) {
         var docLength = ignoreSize ? null : part
             ? part.getValue().length
             : this.doc.$lines.reduce(function(t,l) { return t + l.length; }, 0);
-         return ignoreSize || docLength < handler.getMaxFileSizeSupported();
+        return ignoreSize || docLength < handler.getMaxFileSizeSupported();
     };
 
     this.parse = function(part, callback, allowCached, forceCached) {
