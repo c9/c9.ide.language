@@ -243,6 +243,7 @@ define(function(require, exports, module) {
                     ["warnLevel", "info"],
                     ["instanceHighlight", "true"],
                     ["undeclaredVars", "true"],
+                    ["semi", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
                 settings.on("user/language", updateSettings);
@@ -269,15 +270,20 @@ define(function(require, exports, module) {
                             path: "user/language/@instanceHighlight",
                             position: 6000
                         },
+                        "Mark Missing Optional Semicolons" : {
+                            type: "checkbox",
+                            path: "user/language/@semi",
+                            position: 7000
+                        },
                         "Mark Undeclared Variables" : {
                             type: "checkbox",
                             path: "user/language/@undeclaredVars",
-                            position: 7000
+                            position: 8000
                         },
                         "Mark Unused Function Arguments" : {
                             type: "checkbox",
                             path: "user/language/@unusedFunctionArgs",
-                            position: 8000
+                            position: 9000
                         }
                     }
                 }
