@@ -113,7 +113,7 @@ function precededByIdentifier(line, column, postfix, ace) {
 }
 
 function isRequireJSCall(line, column, identifier, ace, noQuote) {
-    if (ace.getSession().syntax !== "javascript")
+    if (["javascript", "jsx"].indexOf(ace.getSession().syntax) === -1)
         return false;
     var id = identifier == null ? retrievePrecedingIdentifier(line, column, REQUIRE_ID_REGEX) : identifier;
     var LENGTH = 'require("'.length - (noQuote ? 1 : 0);
@@ -129,8 +129,9 @@ function isRequireJSCall(line, column, identifier, ace, noQuote) {
  * Right now this only returns false when in a JavaScript regular expression.
  */
 function inCompletableCodeContext(line, column, id, ace) {
-    if (ace.getSession().syntax !== "javascript")
+    if (["javascript", "jsx"].indexOf(ace.getSession().syntax) === -1)
         return true;
+    var isJavaScript = true;
     var inMode = null;
     for (var i = 0; i < column; i++) {
         if (line[i] === '"' && !inMode)
@@ -155,7 +156,7 @@ function inCompletableCodeContext(line, column, id, ace) {
             inMode = null;
             i++;
         }
-        else if (line[i] === "/" && ace.getSession().syntax === "javascript" && !inMode)
+        else if (line[i] === "/" && !inMode && isJavaScript)
             inMode = "/";
         else if (line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
             inMode = null;

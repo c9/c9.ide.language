@@ -118,10 +118,6 @@ define(function(require, exports, module) {
             handleChar(text, idRegex, completionRegex); 
         }
         
-        function isJavaScript() {
-            return ace.getSession().syntax === "javascript";
-        }
-        
         function inTextToken(pos) {
             var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type === "text";

@@ -549,7 +549,7 @@ define(function(require, exports, module) {
          *         var handler = module.exports = Object.create(baseHandler);
          *      
          *         handler.handlesLanguage = function(language) {
-         *             return language === "javascript";
+         *             return language === "javascript" || language === "jsx";
          *         };
          *      
          *         handler.analyze = function(value, ast, callback) {

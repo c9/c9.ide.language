@@ -254,7 +254,7 @@ define(function(require, exports, module) {
         }
         
         function isJavaScript(ace) {
-            return getSyntax(ace) === "javascript";
+            return ["javascript", "jsx"].indexOf(getSyntax(ace)) > -1;
         }
         
         function isHtml(ace) {
