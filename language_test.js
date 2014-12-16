@@ -52,6 +52,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             workspaceDir: "/"
         },
         "plugins/c9.ide.language/keyhandler",
+        "plugins/c9.ide.language/worker_util_helper",
         "plugins/c9.ide.language/complete",
         "plugins/c9.ide.language/tooltip",
         "plugins/c9.ide.language/marker",
@@ -59,6 +60,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.language.css/css",
         "plugins/c9.ide.language.javascript/javascript",
         "plugins/c9.ide.language.javascript.infer/jsinfer",
+        "plugins/c9.ide.language.javascript.tern/tern",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.fs/proc",
         "plugins/c9.vfs.client/vfs_client",
