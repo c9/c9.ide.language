@@ -21,6 +21,9 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var save = imports.save;
         var syntaxDetector = require("./syntax_detector");
+
+        var readFileQueue = [];
+        var readFileBusy = false;
         
         var loaded;
         function load() {
@@ -44,10 +47,12 @@ define(function(require, exports, module) {
                     );
                 });
                 
-                worker.on("readFile", function(e) {
+                worker.on("readFile", function tryIt(e) {
                     readTabOrFile(e.data.path, {
                         encoding: e.data.encoding
                     }, function(err, value) {
+                        if (err && err.code === "EDISCONNECT")
+                            return ensureConnected(tryIt.bind(null, e));
                         worker.emit("readFileResult", { data: {
                             id: e.data.id,
                             err: err && JSON.stringify(err),
@@ -57,12 +62,16 @@ define(function(require, exports, module) {
                 });
                 
                 worker.on("stat", function(e) {
-                    fs.stat(e.data.path, function(err, value) {
-                        worker.emit("statResult", { data: {
-                            id: e.data.id,
-                            err: err && JSON.stringify(err),
-                            data: value
-                        }});
+                    ensureConnected(function tryIt() {
+                        fs.stat(e.data.path, function(err, value) {
+                            if (err && err.code === "EDISCONNECT")
+                                return ensureConnected(tryIt);
+                            worker.emit("statResult", { data: {
+                                id: e.data.id,
+                                err: err && JSON.stringify(err),
+                                data: value
+                            }});
+                        });
                     });
                 });
                 
@@ -157,20 +166,35 @@ define(function(require, exports, module) {
             
             if (!options.encoding)
                 options.encoding = "utf8"; // TODO: get from c9?
+
+            if (readFileBusy)
+                return readFileQueue.push(startDownload);
             
-            ensureConnected(
-                function(next) {
-                    fs.exists(path, function(exists) {
-                        if (!exists) {
-                            var err = new Error("Does not exist: " + path);
-                            err.code = "ENOENT";
-                            return next(err);
-                        }
-                        fs.readFile(path, options, next);
-                    });
-                },
-                callback
-            );
+            readFileBusy = true;
+            startDownload();
+
+            function startDownload() {
+                ensureConnected(
+                    function(next) {
+                        fs.exists(path, function(exists) {
+                            if (!exists) {
+                                var err = new Error("Does not exist: " + path);
+                                err.code = "ENOENT";
+                                return next(err);
+                            }
+                            fs.readFile(path, options, next);
+                        });
+                    },
+                    function(err, result) {
+                        callback(err, result);
+                        
+                        if (!readFileQueue.length)
+                            return readFileBusy = false;
+                        var task = readFileQueue.pop();
+                        task();
+                    }
+                );
+            }
         }
         
         plugin.on("load", function() {
