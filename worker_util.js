@@ -267,6 +267,33 @@ module.exports = {
             worker.sender.off("getTokensResult", onResult);
             callback(event.data.err, event.data.results);
         });
+    },
+    
+    /**
+     * Watch a directory for changes.
+     * @internal
+     * @ignore
+     */
+    $watchDir: function(path, plugin) {
+        worker.sender.emit("watchDir", { path: path });
+    },
+    
+    /**
+     * Unwatch a directory watched for changes.
+     * @internal
+     * @ignore
+     */
+    $unwatchDir: function(path, plugin) {
+        worker.sender.emit("watchDir", { path: path });
+    },
+    
+    /**
+     * Get notified when a watched directory changes.
+     * @internal
+     * @ignore
+     */
+    $onWatchDirChange: function(listener) {
+        worker.sender.on("watchDirResult", listener);
     }
 };
 

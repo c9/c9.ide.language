@@ -6,7 +6,8 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "language", "proc", "fs", "tabManager", "save"
+        "Plugin", "c9", "language", "proc", "fs", "tabManager", "save",
+        "watcher", "tree"
     ];
     main.provides = ["language.worker_util_helper"];
     return main;
@@ -20,19 +21,30 @@ define(function(require, exports, module) {
         var fs = imports.fs;
         var tabs = imports.tabManager;
         var save = imports.save;
+        var watcher = imports.watcher;
+        var tree = imports.tree;
         var syntaxDetector = require("./syntax_detector");
 
         var readFileQueue = [];
         var readFileBusy = false;
+        var worker;
+        var watched = {};
         
         var loaded;
         function load() {
             if (loaded) return;
             loaded = true;
     
-            language.getWorker(function(err, worker) {
+            language.getWorker(function(err, _worker) {
                 if (err)
                     return console.error(err);
+                
+                worker = _worker;
+                worker.on("watchDir", watchDir);
+                worker.on("unwatchDir", unwatchDir);
+                watcher.on("unwatch", onWatchRemoved);
+                watcher.on("directory", onWatchChange);
+                
                 worker.on("execFile", function(e) {
                     ensureConnected(
                         proc.execFile.bind(proc, e.data.path, e.data.options),
@@ -195,6 +207,32 @@ define(function(require, exports, module) {
                     }
                 );
             }
+        }
+    
+        function watchDir(e) {
+            var path = e.data.path;
+            watcher.watch(path);
+            watched[path] = true;
+        }
+        
+        function unwatchDir(e) {
+            var path = e.data.path;
+            watched[path] = false;
+            // HACK: don't unwatch if visible in tree
+            if (tree.getAllExpanded().indexOf(path) > -1)
+                return;
+            watcher.unwatch(path);
+        }
+        
+        function onWatchRemoved(e) {
+            // HACK: check if someone removed my watcher
+            if (watched[e.path])
+                watchDir({ data: { path: e.path } });
+        }
+        
+        function onWatchChange(e) {
+            if (watched[e.path])
+                worker.emit("watchDirResult", { data: e });
         }
         
         plugin.on("load", function() {
