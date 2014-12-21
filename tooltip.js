@@ -109,7 +109,7 @@ define(function(require, exports, module) {
                         }).join(", ")
                         + ")";
                     if (sig.returnType)
-                        doc += " : " + util.escapeXml(returnType);
+                        doc += " : " + util.escapeXml(sig.returnType);
                     if (activeParam && (activeParam.doc || activeParam.type)) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
