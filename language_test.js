@@ -2,8 +2,9 @@
 
 "use client";
 
-require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/complete_util"], function (architect, chai, util, complete) {
+require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/complete_util", "assert"], function (architect, chai, util, complete) {
     var expect = chai.expect;
+    var assert = require("assert");
     
     util.setStaticPrefix("/static");
     
@@ -223,6 +224,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it('shows a word completer popup for things in comments', function(done) {
+                    jsSession.setValue("// conny\nco");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0} });
+                    jsTab.editor.ace.onTextInput("n");
+                    afterCompleteOpen(function(el) {
+                        expect.html(el).text(/conny/);
+                        done();
+                    });
+                });
+                
                 it('shows an inference completer popup on keypress', function(done) {
                     jsSession.setValue("console.");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
@@ -310,6 +321,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             });
                         }
                     );
+                });
+                
+                it("doesn't show a word completer when there are contextual completions", function(done) {
+                    jsSession.setValue("// logaritm\nconsole.");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("l");
+                    afterCompleteOpen(function(el) {
+                        assert(!el.textContent.match(/logarithm/));
+                        done();
+                    });
                 });
             });
         });
