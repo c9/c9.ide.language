@@ -488,7 +488,7 @@ define(function(require, exports, module) {
                         m.icon = null;
                     var simpleName = m.replaceText.replace("^^", "").replace(/\(\)$/, "");
                     if (m.name.indexOf(simpleName) === 0)
-                        m.name = simpleName;
+                        m.name = m.replaceText = simpleName;
                     delete m.isContextual;
                     delete m.meta;
                 }

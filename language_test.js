@@ -332,6 +332,46 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         done();
                     });
                 });
+                
+                it("completes with parentheses insertion", function(done) {
+                    jsSession.setValue("// logaritm\nconsole.");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("l");
+                    afterCompleteOpen(function(el) {
+                        jsTab.editor.ace.keyBinding.onCommandKey({ preventDefault: function() {} }, 0, 13);
+                        setTimeout(function() {
+                            assert(jsSession.getValue().match(/console.log\(\)/));
+                            done();
+                        })
+                    });
+                });
+                
+                it("completes local functions with parentheses insertion", function(done) {
+                    jsSession.setValue('function foobar() {}\nfoo');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("b");
+                    afterCompleteOpen(function(el) {
+                        jsTab.editor.ace.keyBinding.onCommandKey({ preventDefault: function() {} }, 0, 13);
+                        setTimeout(function() {
+                            assert(jsSession.getValue().match(/foobar\(\)/));
+                            done();
+                        })
+                    });
+                });
+                
+                it("completes without parentheses insertion in strings", function(done) {
+                    jsSession.setValue('function foobar() {}\n\"foo');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("b");
+                    afterCompleteOpen(function(el) {
+                        jsTab.editor.ace.keyBinding.onCommandKey({ preventDefault: function() {} }, 0, 13);
+                        setTimeout(function() {
+                            assert(jsSession.getValue().match(/"foobar/));
+                            assert(!jsSession.getValue().match(/"foobar\(\)/));
+                            done();
+                        })
+                    });
+                });
             });
         });
         
