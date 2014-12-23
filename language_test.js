@@ -404,6 +404,26 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         done();
                     });
                 });
+                
+                it("doesn't show default browser properties like onabort for global completions", function(done) {
+                    jsSession.setValue('// function onlyShowMe() {}; \no');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("n");
+                    afterCompleteOpen(function(el) {
+                        assert(!el.textContent.match(/onabort/));
+                        done();
+                    });
+                });
+                
+                it("shows default browser properties like onabort when 3 characters were typed", function(done) {
+                    jsSession.setValue('// function onlyShowMeAndMore() {};\non');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("a");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/onabort/));
+                        done();
+                    });
+                });
             });
         });
         
