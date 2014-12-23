@@ -537,6 +537,7 @@ function endTime(t, message, indent) {
                     function(handler, next) {
                         handler.language = part.language;
                         var t = startTime();
+                        _self.$lastAnalyzer = handler.$source;
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result) {
@@ -1118,7 +1119,7 @@ function endTime(t, message, indent) {
         if (!DEBUG) {
             updateWatchDog = setTimeout(function() {
                 _self.updateScheduled = updateRunning = null;
-                console.error("Warning: worker analysis taking too long or failed to call back, rescheduling");
+                console.error("Warning: worker analysis taking too long or failed to call back (" + this.$lastAnalyzer + "), rescheduling");
             }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
         

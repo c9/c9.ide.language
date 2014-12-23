@@ -187,7 +187,7 @@ define(function(require, exports, module) {
                     throw e;
                 }
                 worker.reportError = function(err) {
-                    console.error(err);
+                    console.error(err.stack || err);
                     imports.error_handler.reportError(err, {}, ["worker"]);
                 };
                 worker.$worker.onerror = function(e) {
