@@ -342,7 +342,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         setTimeout(function() {
                             assert(jsSession.getValue().match(/console.log\(\)/));
                             done();
-                        })
+                        });
                     });
                 });
                 
@@ -355,7 +355,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         setTimeout(function() {
                             assert(jsSession.getValue().match(/foobar\(\)/));
                             done();
-                        })
+                        });
                     });
                 });
                 
@@ -369,7 +369,39 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             assert(jsSession.getValue().match(/"foobar/));
                             assert(!jsSession.getValue().match(/"foobar\(\)/));
                             done();
-                        })
+                        });
+                    });
+                });
+                
+                it("completes following local dependencies", function(done) {
+                    jsSession.setValue('var test2 = require("./test2.js");\ntest2.');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("h");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/hoi/));
+                        done();
+                    });
+                });
+                
+                it("completes following local with absolute paths", function(done) {
+                    jsSession.setValue('var ext = require("plugins/c9.dummy/dep");\next.');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("e");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/export3/));
+                        assert(el.textContent.match(/export4/));
+                        done();
+                    });
+                });
+                
+                it("completes following local with absolute paths and common js style exports", function(done) {
+                    jsSession.setValue('var ext = require("plugins/c9.dummy/dep-define");\next.');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("e");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/export1/));
+                        assert(el.textContent.match(/export2/));
+                        done();
                     });
                 });
             });
