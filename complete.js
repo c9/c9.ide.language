@@ -676,16 +676,16 @@ define(function(require, exports, module) {
                     break;
                 case 40: // Down
                     isDocShown = true;
-                    var time = new Date().getTime();
+                    var time = Date.now();
                     if (popup.getRow() == popup.matches.length - 1) {
-                        if ((popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                        if (!(lastUpDownEvent + REPEAT_IGNORE_RATE > time)
                             || popup.matches.length === 1)
                             return closeCompletionBox();
-                        popup.onLastLine = true;
+                    }
+                    else {
+                        popup.setRow(popup.getRow() + 1);
                     }
                     lastUpDownEvent = time;
-                    if (!popup.onLastLine)
-                        popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;
