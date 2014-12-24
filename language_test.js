@@ -80,6 +80,15 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.console/console",
         "plugins/c9.ide.ace.statusbar/statusbar",
         "plugins/c9.ide.ace.gotoline/gotoline",
+        {
+            packagePath: "plugins/c9.ide.language.jsonalyzer/jsonalyzer",
+            bashBin: "bash",
+            useCollab: false,
+            useSend: true,
+            homeDir: "~",
+            workspaceDir: "/fake_root/",
+        },
+        "plugins/c9.ide.language.jsonalyzer/mock_collab",
         
         // Mock plugins
         {
@@ -112,6 +121,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         var Document = imports.Document;
         var language = imports.language;
         var complete = imports["language.complete"];
+        var worker;
         
         util.setStaticPrefix("/static");
         complete.$setShowDocDelay(50);
@@ -122,6 +132,13 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         function getTabHtml(tab) {
             return tab.pane.aml.getPage("editor::" + tab.editorType).$ext;
         }
+
+        function afterNoCompleteOpen(callback) {
+            worker.once("complete", function(e) {
+                assert(!e.data.matches.length, "Completion opened")
+                callback();
+            });
+        };
         
         function afterCompleteOpen(callback, delay) {
             clearTimeout(timer);
@@ -131,8 +148,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     return afterCompleteOpen(callback, 100);
                 timer = setTimeout(function() {
                     callback(el);
-                }, 10);
-            }, delay || 10);
+                }, 5);
+            }, delay || 5);
         }
         
         function afterCompleteDocOpen(callback, delay) {
@@ -142,8 +159,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     return afterCompleteDocOpen(callback);
                 timer = setTimeout(function() {
                     callback(el);
-                }, 10);
-            }, delay || 10);
+                }, 5);
+            }, delay || 5);
         }
         
         function isCompleterOpen() {
@@ -180,6 +197,13 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 this.timeout(10000);
                 var jsTab;
                 var jsSession;
+
+                before(function(done) {
+                    language.getWorker(function(err, value) {
+                        worker = value;
+                        done();
+                    });
+                })
                 
                 // Setup
                 beforeEach(function(done) {
@@ -421,6 +445,80 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.onTextInput("a");
                     afterCompleteOpen(function(el) {
                         assert(el.textContent.match(/onabort/));
+                        done();
+                    });
+                });
+                
+                it("shows no self-completion for 'var b'", function(done) {
+                    jsSession.setValue('var ');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("b");
+                    afterCompleteOpen(function(el) {
+                        assert(!el.textContent.match(/bb/));
+                        assert(el.textContent.match(/break/));
+                        done();
+                    });
+                });
+                
+                it("shows word completion for 'var b'", function(done) {
+                    jsSession.setValue('// blie\nvar ');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("b");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/blie/));
+                        done();
+                    });
+                });
+                
+                it("shows no self-completion for 'function blie'", function(done) {
+                    jsSession.setValue('function bli');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("e");
+                    afterNoCompleteOpen(done);
+                });
+                
+                it("shows no completion for 'function blie(param'", function(done) {
+                    jsSession.setValue('function blie(para');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("m");
+                    afterNoCompleteOpen(done);
+                });
+                
+                it("shows word completion for 'function blie(param'", function(done) {
+                    jsSession.setValue('function parametric() {}\nfunction blie(para');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("m");
+                    afterCompleteOpen(function(el) {
+                        assert(!el.textContent.match(/parapara/));
+                        assert(el.textContent.match(/parametric/));
+                        done();
+                    });
+                });
+                
+                it("shows no self-completion for 'x={ prop'", function(done) {
+                    jsSession.setValue('x={ pro');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("p");
+                    afterNoCompleteOpen(done);
+                });
+                
+                it("shows no function completion for 'x={ prop: 2 }'", function(done) {
+                    jsSession.setValue('function propAccess() {}\nx={ pro: 2 }');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 7 }, end: { row: 1, column: 7 } });
+                    jsTab.editor.ace.onTextInput("p");
+                    afterCompleteOpen(function(el) {
+                        assert(!el.textContent.match(/propAccess\(\)/));
+                        assert(el.textContent.match(/propAccess/));
+                        done();
+                    });
+                });
+                
+                it("shows completion for '{ prop: fo'", function(done) {
+                    jsSession.setValue('function foo() {}\n{ prop: f');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/foo()/));
                         done();
                     });
                 });
