@@ -13,21 +13,21 @@ var mixedLanguages = {
         "php-end": /\?>/,
         "css-start": /<style[^>]*>/,
         "css-end": /<\/style>/,
-        "javascript-start": /<script(?:\"[^\"]*\"|'[^']*'|[^'">\/])*>/,
+        "javascript-start": /<script(?:\"[^\"]*\"|'[^']*'|[^'">])*>/,
         "javascript-end": /<\/script>/
     },
     html: {
         "css-start": /<style[^>]*>/,
         "css-end": /<\/style>/,
-        "javascript-start": /<script(?:\"[^\"]*\"|'[^']*'|[^'">\/])*>/,
+        "javascript-start": /<script(?:\"[^\"]*\"|'[^']*'|[^'">])*>/,
         "javascript-end": /<\/script>/
     }
 };
 mixedLanguages.handlebars = mixedLanguages.html;
 var scriptTypeTests = {
     javascript: function(v) {
-        var m = /type\s*=\s*("[^"]+"|'[^']+')/.exec(v);
-        if (m && m[1].indexOf("javascript") == -1)
+        var m = /type\s*=\s*("[^"]+"|'[^']+'|[^\s'">]+)/.exec(v);
+        if (m && !/javascript|ecmascript/i.test(m[1]))
             return false;
         return true;
     }
