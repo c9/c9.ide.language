@@ -24,7 +24,14 @@ var mixedLanguages = {
     }
 };
 mixedLanguages.handlebars = mixedLanguages.html;
-
+var scriptTypeTests = {
+    javascript: function(v) {
+        var m = /type\s*=\s*("[^"]+"|'[^']+')/.exec(v);
+        if (m && m[1].indexOf("javascript") == -1)
+            return false;
+        return true;
+    }
+};
 /* Now:
  * - One level syntax nesting supported
  * Future: (if worth it)
@@ -88,6 +95,8 @@ function getSyntaxRegions(doc, originalSyntax) {
             }
             if (m) {
                 syntax = starter.replace("-start", "");
+                if (scriptTypeTests[syntax] && !scriptTypeTests[syntax](m[0]))
+                    syntax = defaultSyntax;
                 endLang = type[syntax+"-end"];
                 regions[regions.length-1].el = row;
                 regions[regions.length-1].ec = inLine + m.index + m[0].length;
