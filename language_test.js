@@ -518,8 +518,23 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
-                        assert(el.textContent.match(/foo()/));
+                        assert(el.textContent.match(/foo\(\)/));
                         done();
+                    });
+                });
+                
+                it("extracts types from comments", function(done) {
+                    jsSession.setValue('/**\ndocs be here\n@param {String} text\n*/\nfunction foo(text) {}\nf');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
+                    jsTab.editor.ace.onTextInput("o");
+
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/foo\(text\)/));
+                        afterCompleteDocOpen(function(el) {
+                            assert(el.textContent.match(/string/i));
+                            assert(el.textContent.match(/docs/i));
+                            done();
+                        });
                     });
                 });
             });
