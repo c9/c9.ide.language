@@ -196,6 +196,8 @@ define(function(require, exports, module) {
             }
             
             worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
+            if (document.location.hostname.match(/c9.dev|cloud9beta.com|localhost|127.0.0.1/))
+                worker.call("setDebug", [true]);
 
             aceHandle.on("create", function(e) {
                 e.editor.on("createAce", function (ace) {

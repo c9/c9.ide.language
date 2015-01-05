@@ -33,7 +33,7 @@ var WARNING_LEVELS = {
 
 var UPDATE_TIMEOUT_MIN = !isInWebWorker && window.c9Test ? 5 : 200;
 var UPDATE_TIMEOUT_MAX = 15000;
-var DEBUG = !isInWebWorker;
+var DEBUG = !isInWebWorker; // set to true by setDebug() for c9.dev/cloud9beta.com
 var STATS = false;
 
 // Leaking into global namespace of worker, to allow handlers to have access
@@ -261,6 +261,10 @@ function endTime(t, message, indent) {
     };
     
     this.setStaticPrefix = completeUtil.setStaticPrefix;
+
+    this.setDebug = function(value) {
+        DEBUG = value;
+    };
 
     /**
      * Registers a handler by loading its code and adding it the handler array
