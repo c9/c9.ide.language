@@ -519,7 +519,8 @@ module.exports = {
      * @param {String} [callback.result.id]  The short name that identifies this completion
      * @param {String} callback.result.replaceText
      *                                       The text to replace the selection with
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} [callback.result.icon]
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}
+     *        [callback.result.icon]
      *                                       The icon to use
      * @param {String} callback.result.meta  Additional information to show
      * @param {String} callback.result.doc   Documentation to display
