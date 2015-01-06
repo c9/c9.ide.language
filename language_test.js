@@ -8,7 +8,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
     
     util.setStaticPrefix("/static");
     
-    expect.setupArchitectTest([
+    expect.setupArchitectTest(window.plugins = [
         {
             packagePath: "plugins/c9.core/c9",
             workspaceId: "ubuntu/ip-10-35-77-180",
@@ -60,8 +60,10 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.language.generic/generic",
         "plugins/c9.ide.language.css/css",
         "plugins/c9.ide.language.javascript/javascript",
+        "plugins/c9.ide.language.javascript.eslint/eslint",
         "plugins/c9.ide.language.javascript.infer/jsinfer",
         "plugins/c9.ide.language.javascript.tern/tern",
+        "plugins/c9.ide.language.javascript.tern/architect_resolver",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.fs/proc",
         "plugins/c9.vfs.client/vfs_client",
@@ -535,6 +537,27 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             assert(el.textContent.match(/docs/i));
                             done();
                         });
+                    });
+                });
+                
+                it("supports linting basic es6", function(done) {
+                    tabs.openFile("test_es6.js", function(err, _tab) {
+                        var tab = _tab;
+                        tabs.focusTab(tab);
+                        var session = tab.document.getSession().session;
+                        
+                        session.on("changeAnnotation", testAnnos);
+                        testAnnos();
+                        
+                        function testAnnos() {
+                            var annos = session.getAnnotations();
+                            if (!annos.length)
+                                return;
+                            session.off("changeAnnotation", testAnnos);
+                            assert(annos.length === 1);
+                            assert(annos[0].text.match(/param2.*defined/));
+                            done();
+                        }
                     });
                 });
             });
