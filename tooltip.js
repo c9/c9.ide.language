@@ -106,8 +106,8 @@ define(function(require, exports, module) {
                             return p.active
                                 ? '<span class="language_activeparam">'
                                     + util.escapeXml(p.name)
-                                    + util.escapeXml(p.type ? " : " + p.type : "")
                                     + "</span>"
+                                    + (p.type ? ' : <span class="language_type">' + util.escapeXml(p.type) + "</span>" : "")
                                 : '<span class="language_param">' + util.escapeXml(p.name) + "</span>";
                         }).join(", ")
                         + ")";
