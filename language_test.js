@@ -561,7 +561,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it("doesnt't assume undeclared vars are functions", function(done) {
+                it("doesn't assume undeclared vars are functions", function(done) {
                     jsSession.setValue('window[imUndefined] = function(json) {};\n\
                         var unassigned;\n\
                         ');
@@ -570,6 +570,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     afterCompleteOpen(function(el) {
                         assert(el.textContent.match(/unassigned/));
                         assert(!el.textContent.match(/unassigned\(/));
+                        done();
+                    });
+                });
+                
+                it("doesn't assume arrays are optional", function(done) {
+                    jsSession.setValue('function myFun(arr){}\nvar a = []\nmyFun(a)\nmyF');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
+                    jsTab.editor.ace.onTextInput("u");
+                    afterCompleteDocOpen(function(el) {
+                        assert(el.textContent.match(/myFun\(arr.*\[\]/));
                         done();
                     });
                 });
