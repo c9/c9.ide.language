@@ -267,24 +267,19 @@ define(function(require, exports, module) {
                            ],
                            position: 5000
                         },
-                        "Highlight Variable Instances" : {
-                            type: "checkbox",
-                            path: "user/language/@instanceHighlight",
-                            position: 6000
-                        },
                         "Mark Missing Optional Semicolons" : {
                             type: "checkbox",
-                            path: "user/language/@semi",
+                            path: "project/language/@semi",
                             position: 7000
                         },
                         "Mark Undeclared Variables" : {
                             type: "checkbox",
-                            path: "user/language/@undeclaredVars",
+                            path: "project/language/@undeclaredVars",
                             position: 8000
                         },
                         "Mark Unused Function Arguments" : {
                             type: "checkbox",
-                            path: "user/language/@unusedFunctionArgs",
+                            path: "project/language/@unusedFunctionArgs",
                             position: 9000
                         }
                     }
@@ -305,6 +300,11 @@ define(function(require, exports, module) {
                             type: "checkbox",
                             path: "user/language/@enterCompletion",
                             position: 5000
+                        },
+                        "Highlight Variable Under Cursor" : {
+                            type: "checkbox",
+                            path: "user/language/@instanceHighlight",
+                            position: 6000
                         },
                     },
                     "Hints & Warnings" : {
