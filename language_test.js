@@ -420,7 +420,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it("completes following local with absolute paths and common js style exports", function(done) {
+                it("completes following local dependencies with absolute paths and common js style exports", function(done) {
                     jsSession.setValue('var ext = require("plugins/c9.dummy/dep-define");\next.');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("e");
@@ -579,7 +579,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
                     jsTab.editor.ace.onTextInput("u");
                     afterCompleteDocOpen(function(el) {
-                        assert(el.textContent.match(/myFun\(arr.*\[\]/));
+                        assert(el.textContent.match(/myFun\(arr.*Array/));
                         done();
                     });
                 });
