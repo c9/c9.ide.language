@@ -107,12 +107,17 @@ define(function(require, exports, module) {
                                 ? '<span class="language_activeparam">'
                                     + util.escapeXml(p.name)
                                     + "</span>"
-                                    + (p.type ? ' : <span class="language_type">' + util.escapeXml(p.type) + "</span>" : "")
                                 : '<span class="language_param">' + util.escapeXml(p.name) + "</span>";
                         }).join(", ")
                         + ")";
                     if (sig.returnType)
                         doc += " : " + util.escapeXml(sig.returnType);
+                    if (activeParam && activeParam.type) {
+                         doc += '&nbsp;&mdash; <span class="language_type">'
+                            + util.escapeXml(activeParam.name)
+                            + ':&nbsp;' + util.escapeXml(activeParam.type)
+                            + "</span>";
+                    }
                     if (activeParam && (activeParam.doc)) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
