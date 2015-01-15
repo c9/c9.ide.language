@@ -37,6 +37,7 @@ define(function(require, exports, module) {
         var lastWorkerMessage = {};
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
+        var ignoredMarkers;
         
         /***** Initialization *****/
         
@@ -281,6 +282,11 @@ define(function(require, exports, module) {
                             type: "checkbox",
                             path: "project/language/@unusedFunctionArgs",
                             position: 9000
+                        },
+                        "Ignore Messages Matching This <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                            type: "textbox",
+                            path: "project/language/@ignoredMarkers",
+                            position: 10000
                         }
                     }
                 }
@@ -313,6 +319,11 @@ define(function(require, exports, module) {
                             type: "checkbox",
                             path: "user/language/@hints",
                             position: 1000
+                        },
+                        "Ignore Messages Matching This <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                            type: "textbox",
+                            path: "user/language/@ignoredMarkers",
+                            position: 2000
                         }
                     }
                 }
@@ -424,6 +435,10 @@ define(function(require, exports, module) {
             
             isContinuousCompletionEnabledSetting = 
                 settings.get("user/language/@continuousCompletion");
+            ignoredMarkers =
+                (settings.get("user/language/@ignoredMarkers") || "(?!NONE)NONE")
+                + "|"
+                + (settings.get("project/language/@ignoredMarkers") || "(?!NONE)NONE");
             
             refreshAllMarkers();
         }
@@ -459,10 +474,6 @@ define(function(require, exports, module) {
         function isEditorSupported(tab) {
             return tab && ["ace", "immediate"].indexOf(tab.editor ? tab.editor.type : tab.editorType) !== -1;
         }
-        
-        function isWorkerEnabled() {
-            return !UI_WORKER;
-        }
     
         function isInferAvailable() {
             return c9.hosted; // || !!req uire("core/ext").extLut["ext/jsinfer/jsinfer"];
@@ -470,6 +481,10 @@ define(function(require, exports, module) {
         
         function isContinuousCompletionEnabled() {
             return isContinuousCompletionEnabledSetting;
+        }
+        
+        function getIgnoredMarkers() {
+            return ignoredMarkers;
         }
     
         function setContinuousCompletionEnabled(value) {
@@ -633,6 +648,9 @@ define(function(require, exports, module) {
             
             /** @ignore */
             onCursorChange: onCursorChange,
+            
+            /** @ignore */
+            getIgnoredMarkers: getIgnoredMarkers,
             
             /**
              * Refresh all language markers in open editors.
