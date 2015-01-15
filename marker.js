@@ -6,7 +6,7 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "tabManager", "language", "ui"
+        "Plugin", "tabManager", "language", "ui", "dialog.error"
     ];
     main.provides = ["language.marker"];
     return main;
@@ -15,6 +15,7 @@ define(function(require, exports, module) {
         var language = imports.language;
         var tabs = imports.tabManager;
         var ui = imports.ui;
+        var showError = imports["dialog.error"].show;
 
         var Range = require("ace/range").Range;
         var Anchor = require('ace/anchor').Anchor;
@@ -94,6 +95,7 @@ define(function(require, exports, module) {
             if (!editor)
                 return;
             
+            var ignoredMarkers = language.getIgnoredMarkers();
             var mySession = editor.session;
             if (!mySession.markerAnchors) mySession.markerAnchors = [];
             removeMarkers(mySession);
@@ -140,8 +142,13 @@ define(function(require, exports, module) {
                     anno.rowDiff = pos.el - pos.sl;
                 }
 
-                if (!anno.message)
-                    return;
+                try {
+                    if (!anno.message || anno.message.match(ignoredMarkers))
+                        return;
+                }
+                catch (e) {
+                    showError("Illegal ignore message filter: " + e.message);
+                }
                 var gutterAnno = {
                     guttertext: anno.message,
                     type: anno.level || "warning",
