@@ -7,7 +7,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "language", "proc", "fs", "tabManager", "save",
-        "watcher", "tree"
+        "watcher", "tree", "dialog.error"
     ];
     main.provides = ["language.worker_util_helper"];
     return main;
@@ -23,6 +23,7 @@ define(function(require, exports, module) {
         var save = imports.save;
         var watcher = imports.watcher;
         var tree = imports.tree;
+        var showError = imports["dialog.error"].show;
         var syntaxDetector = require("./syntax_detector");
 
         var readFileQueue = [];
@@ -44,6 +45,7 @@ define(function(require, exports, module) {
                 worker.on("unwatchDir", unwatchDir);
                 watcher.on("unwatch", onWatchRemoved);
                 watcher.on("directory", onWatchChange);
+                worker.on("refreshAllMarkers", language.refreshAllMarkers.bind(language));
                 
                 worker.on("execFile", function(e) {
                     ensureConnected(
@@ -85,6 +87,10 @@ define(function(require, exports, module) {
                             }});
                         });
                     });
+                });
+
+                worker.on("showError", function(e) {
+                    showError(e.data.message, e.data.timeout);
                 });
                 
                 worker.on("getTokens", function(e) {

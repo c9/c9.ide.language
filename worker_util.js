@@ -168,11 +168,6 @@ module.exports = {
      * @fires error
      */
    stat: function(path, callback) {
-        if (!callback) { // fix arguments
-            callback = encoding;
-            encoding = null;
-        }
-        
         var id = msgId++;
         worker.sender.on("statResult", function onReadFileResult(event) {
             if (event.data.id !== id)
@@ -181,6 +176,20 @@ module.exports = {
             callback && callback(event.data.err && JSON.parse(event.data.err), event.data.data);
         });
         worker.sender.emit("stat", { path: path, id: id });
+    },
+
+    /**
+     * Show an error popup in the IDE.
+     * @param {String} message
+     * @param {Number} [timeout]
+     */
+    showError: function(message, timeout) {
+        if (message.stack) {
+            // Can't pass error object to UI
+            console.error(message.stack);
+            message = message.message;
+        }
+        worker.sender.emit("showError", { message: message, timeout: timeout });
     },
     
     /**
@@ -202,6 +211,14 @@ module.exports = {
             results.push(set[e]);
         });
         return results;
+    },
+    
+    
+    /**
+     * Refresh all language markers in open editors.
+     */
+    refreshAllMarkers: function() {
+        worker.sender.emit("refreshAllMarkers");
     },
     
     /**

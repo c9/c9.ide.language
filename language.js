@@ -437,7 +437,7 @@ define(function(require, exports, module) {
             
             var focussedTab = tabs.focussedTab;
             activeTabs = activeTabs.filter(function(tab) {
-                return tab !== focussedTab
+                return tab !== focussedTab;
             }).concat(focussedTab);
             
             async.forEachSeries(activeTabs, function(tab, next){
@@ -633,6 +633,11 @@ define(function(require, exports, module) {
             
             /** @ignore */
             onCursorChange: onCursorChange,
+            
+            /**
+             * Refresh all language markers in open editors.
+             */
+            refreshAllMarkers: refreshAllMarkers,
 
             _events: []
         });
