@@ -6,7 +6,8 @@
  */
 define(function(require, exports, module) {
     main.consumes = [
-        "Plugin", "c9", "language", "proc", "fs", "tabManager", "save"
+        "Plugin", "c9", "language", "proc", "fs", "tabManager", "save",
+        "watcher", "tree"
     ];
     main.provides = ["language.worker_util_helper"];
     return main;
@@ -20,16 +21,30 @@ define(function(require, exports, module) {
         var fs = imports.fs;
         var tabs = imports.tabManager;
         var save = imports.save;
+        var watcher = imports.watcher;
+        var tree = imports.tree;
         var syntaxDetector = require("./syntax_detector");
+
+        var readFileQueue = [];
+        var readFileBusy = false;
+        var worker;
+        var watched = {};
         
         var loaded;
         function load() {
             if (loaded) return;
             loaded = true;
     
-            language.getWorker(function(err, worker) {
+            language.getWorker(function(err, _worker) {
                 if (err)
                     return console.error(err);
+                
+                worker = _worker;
+                worker.on("watchDir", watchDir);
+                worker.on("unwatchDir", unwatchDir);
+                watcher.on("unwatch", onWatchRemoved);
+                watcher.on("directory", onWatchChange);
+                
                 worker.on("execFile", function(e) {
                     ensureConnected(
                         proc.execFile.bind(proc, e.data.path, e.data.options),
@@ -44,15 +59,31 @@ define(function(require, exports, module) {
                     );
                 });
                 
-                worker.on("readFile", function(e) {
+                worker.on("readFile", function tryIt(e) {
                     readTabOrFile(e.data.path, {
                         encoding: e.data.encoding
                     }, function(err, value) {
+                        if (err && err.code === "EDISCONNECT")
+                            return ensureConnected(tryIt.bind(null, e));
                         worker.emit("readFileResult", { data: {
                             id: e.data.id,
                             err: err && JSON.stringify(err),
                             data: value
                         }});
+                    });
+                });
+                
+                worker.on("stat", function(e) {
+                    ensureConnected(function tryIt() {
+                        fs.stat(e.data.path, function(err, value) {
+                            if (err && err.code === "EDISCONNECT")
+                                return ensureConnected(tryIt);
+                            worker.emit("statResult", { data: {
+                                id: e.data.id,
+                                err: err && JSON.stringify(err),
+                                data: value
+                            }});
+                        });
                     });
                 });
                 
@@ -126,7 +157,7 @@ define(function(require, exports, module) {
             
             var tab = tabs.findTab(path);
             if (tab) {
-                if (options.unsaved) {
+                if (allowUnsaved) {
                     var unsavedValue = tab.value
                         || tab.document && tab.document.hasValue && tab.document.hasValue()
                            && tab.document.value;
@@ -134,7 +165,7 @@ define(function(require, exports, module) {
                         return callback(null, unsavedValue);
                 }
                 else {
-                    var saved = allowUnsaved || save.getSavingState(tab) === "saved";
+                    var saved = save.getSavingState(tab) === "saved";
                     var value = saved
                         ? tab.value || tab.document && tab.document.value
                         : tab.document.meta && typeof tab.document.meta.$savedValue === "string"
@@ -147,20 +178,61 @@ define(function(require, exports, module) {
             
             if (!options.encoding)
                 options.encoding = "utf8"; // TODO: get from c9?
+
+            if (readFileBusy)
+                return readFileQueue.push(startDownload);
             
-            ensureConnected(
-                function(next) {
-                    fs.exists(path, function(exists) {
-                        if (!exists) {
-                            var err = new Error("Does not exist: " + path);
-                            err.code = "ENOENT";
-                            return next(err);
-                        }
-                        fs.readFile(path, options, next);
-                    });
-                },
-                callback
-            );
+            readFileBusy = true;
+            startDownload();
+
+            function startDownload() {
+                ensureConnected(
+                    function(next) {
+                        fs.exists(path, function(exists) {
+                            if (!exists) {
+                                var err = new Error("Does not exist: " + path);
+                                err.code = "ENOENT";
+                                return next(err);
+                            }
+                            fs.readFile(path, options, next);
+                        });
+                    },
+                    function(err, result) {
+                        callback(err, result);
+                        
+                        if (!readFileQueue.length)
+                            return readFileBusy = false;
+                        var task = readFileQueue.pop();
+                        task();
+                    }
+                );
+            }
+        }
+    
+        function watchDir(e) {
+            var path = e.data.path;
+            watcher.watch(path);
+            watched[path] = true;
+        }
+        
+        function unwatchDir(e) {
+            var path = e.data.path;
+            watched[path] = false;
+            // HACK: don't unwatch if visible in tree
+            if (tree.getAllExpanded().indexOf(path) > -1)
+                return;
+            watcher.unwatch(path);
+        }
+        
+        function onWatchRemoved(e) {
+            // HACK: check if someone removed my watcher
+            if (watched[e.path])
+                watchDir({ data: { path: e.path } });
+        }
+        
+        function onWatchChange(e) {
+            if (watched[e.path])
+                worker.emit("watchDirResult", { data: e });
         }
         
         plugin.on("load", function() {

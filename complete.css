@@ -90,6 +90,10 @@
     color: @complete-dark-activeparam;
 }
 
+.language_type {
+    font-style: italic;
+}
+
 .language_activeparamhelp {
     margin-left: 5px;
     font-style: italic;

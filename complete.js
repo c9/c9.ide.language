@@ -254,7 +254,7 @@ define(function(require, exports, module) {
         }
         
         function isJavaScript(ace) {
-            return getSyntax(ace) === "javascript";
+            return ["javascript", "jsx"].indexOf(getSyntax(ace)) > -1;
         }
         
         function isHtml(ace) {
@@ -484,10 +484,11 @@ define(function(require, exports, module) {
                         matches.splice(i--, 1);
                         continue;
                     }
-                    m.icon = null;
+                    if (m.icon !== "package")
+                        m.icon = null;
                     var simpleName = m.replaceText.replace("^^", "").replace(/\(\)$/, "");
                     if (m.name.indexOf(simpleName) === 0)
-                        m.name = simpleName;
+                        m.name = m.replaceText = simpleName;
                     delete m.isContextual;
                     delete m.meta;
                 }
@@ -675,16 +676,16 @@ define(function(require, exports, module) {
                     break;
                 case 40: // Down
                     isDocShown = true;
-                    var time = new Date().getTime();
+                    var time = Date.now();
                     if (popup.getRow() == popup.matches.length - 1) {
-                        if ((popup.onLastLine && !(lastUpDownEvent + REPEAT_IGNORE_RATE > time))
+                        if (!(lastUpDownEvent + REPEAT_IGNORE_RATE > time)
                             || popup.matches.length === 1)
                             return closeCompletionBox();
-                        popup.onLastLine = true;
+                    }
+                    else {
+                        popup.setRow(popup.getRow() + 1);
                     }
                     lastUpDownEvent = time;
-                    if (!popup.onLastLine)
-                        popup.setRow(popup.getRow() + 1);
                     e.stopPropagation();
                     e.preventDefault();
                     break;

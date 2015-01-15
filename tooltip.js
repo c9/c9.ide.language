@@ -95,6 +95,38 @@ define(function(require, exports, module) {
             var pos = event.data.pos;
             var cursorPos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(cursorPos.row);
+
+            if (message && message.signatures) {
+                message = message.signatures.map(function(sig) {
+                    var activeParam;
+                    var doc = sig.name + "("
+                        + sig.parameters.map(function(p) {
+                            if (p.active)
+                                activeParam = p;
+                            return p.active
+                                ? '<span class="language_activeparam">'
+                                    + util.escapeXml(p.name)
+                                    + "</span>"
+                                : '<span class="language_param">' + util.escapeXml(p.name) + "</span>";
+                        }).join(", ")
+                        + ")";
+                    if (sig.returnType)
+                        doc += " : " + util.escapeXml(sig.returnType);
+                    if (activeParam && activeParam.type) {
+                         doc += '&nbsp;&mdash; <span class="language_type">'
+                            + util.escapeXml(activeParam.name)
+                            + ':&nbsp;' + util.escapeXml(activeParam.type)
+                            + "</span>";
+                    }
+                    if (activeParam && (activeParam.doc)) {
+                        doc += '<div class="language_paramhelp">'
+                            // + '<span class="language_activeparamindent">' + fnName + '(</span>'
+                            + '<span class="language_activeparam">' + util.escapeXml(activeParam.name) + '</span>:'
+                            + '<span class="language_activeparamhelp">' + util.escapeXml(activeParam.doc || activeParam.type) + '</span></div>';
+                    }
+                    return doc;
+                }).join("<br />");
+            }
             
             clearTimeout(onMouseDownTimeout);
             

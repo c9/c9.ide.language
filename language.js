@@ -180,14 +180,14 @@ define(function(require, exports, module) {
             }
             else  {
                 try {
-                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins"], id, "LanguageWorker", path);
+                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins", "acorn", "tern"], id, "LanguageWorker", path);
                 } catch (e) {
                     if (e.code === 18 && window.location && window.location.origin === "file://")
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
                     throw e;
                 }
                 worker.reportError = function(err) {
-                    console.error(err);
+                    console.error(err.stack || err);
                     imports.error_handler.reportError(err, {}, ["worker"]);
                 };
                 worker.$worker.onerror = function(e) {
@@ -196,6 +196,8 @@ define(function(require, exports, module) {
             }
             
             worker.call("setStaticPrefix", [options.staticPrefix || c9.staticUrl || "/static"]);
+            if (document.location.hostname.match(/c9.dev|cloud9beta.com|localhost|127.0.0.1/))
+                worker.call("setDebug", [true]);
 
             aceHandle.on("create", function(e) {
                 e.editor.on("createAce", function (ace) {
@@ -243,6 +245,7 @@ define(function(require, exports, module) {
                     ["warnLevel", "info"],
                     ["instanceHighlight", "true"],
                     ["undeclaredVars", "true"],
+                    ["semi", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
                 settings.on("user/language", updateSettings);
@@ -264,20 +267,20 @@ define(function(require, exports, module) {
                            ],
                            position: 5000
                         },
-                        "Highlight Variable Instances" : {
+                        "Mark Missing Optional Semicolons" : {
                             type: "checkbox",
-                            path: "user/language/@instanceHighlight",
-                            position: 6000
+                            path: "project/language/@semi",
+                            position: 7000
                         },
                         "Mark Undeclared Variables" : {
                             type: "checkbox",
-                            path: "user/language/@undeclaredVars",
-                            position: 7000
+                            path: "project/language/@undeclaredVars",
+                            position: 8000
                         },
                         "Mark Unused Function Arguments" : {
                             type: "checkbox",
-                            path: "user/language/@unusedFunctionArgs",
-                            position: 8000
+                            path: "project/language/@unusedFunctionArgs",
+                            position: 9000
                         }
                     }
                 }
@@ -297,6 +300,11 @@ define(function(require, exports, module) {
                             type: "checkbox",
                             path: "user/language/@enterCompletion",
                             position: 5000
+                        },
+                        "Highlight Variable Under Cursor" : {
+                            type: "checkbox",
+                            path: "user/language/@instanceHighlight",
+                            position: 6000
                         },
                     },
                     "Hints & Warnings" : {
@@ -543,7 +551,7 @@ define(function(require, exports, module) {
          *         var handler = module.exports = Object.create(baseHandler);
          *      
          *         handler.handlesLanguage = function(language) {
-         *             return language === "javascript";
+         *             return language === "javascript" || language === "jsx";
          *         };
          *      
          *         handler.analyze = function(value, ast, callback) {

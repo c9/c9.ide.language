@@ -31,9 +31,9 @@ var WARNING_LEVELS = {
     info: 1
 };
 
-var UPDATE_TIMEOUT_MIN = !isInWebWorker && window.c9Test ? 5 : 500;
+var UPDATE_TIMEOUT_MIN = !isInWebWorker && window.c9Test ? 5 : 200;
 var UPDATE_TIMEOUT_MAX = 15000;
-var DEBUG = !isInWebWorker;
+var DEBUG = !isInWebWorker; // set to true by setDebug() for c9.dev/cloud9beta.com
 var STATS = false;
 
 // Leaking into global namespace of worker, to allow handlers to have access
@@ -262,6 +262,10 @@ function endTime(t, message, indent) {
     
     this.setStaticPrefix = completeUtil.setStaticPrefix;
 
+    this.setDebug = function(value) {
+        DEBUG = value;
+    };
+
     /**
      * Registers a handler by loading its code and adding it the handler array
      */
@@ -359,7 +363,7 @@ function endTime(t, message, indent) {
         var docLength = ignoreSize ? null : part
             ? part.getValue().length
             : this.doc.$lines.reduce(function(t,l) { return t + l.length; }, 0);
-         return ignoreSize || docLength < handler.getMaxFileSizeSupported();
+        return ignoreSize || docLength < handler.getMaxFileSizeSupported();
     };
 
     this.parse = function(part, callback, allowCached, forceCached) {
@@ -537,6 +541,7 @@ function endTime(t, message, indent) {
                     function(handler, next) {
                         handler.language = part.language;
                         var t = startTime();
+                        _self.$lastAnalyzer = handler.$source;
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result) {
@@ -1118,7 +1123,7 @@ function endTime(t, message, indent) {
         if (!DEBUG) {
             updateWatchDog = setTimeout(function() {
                 _self.updateScheduled = updateRunning = null;
-                console.error("Warning: worker analysis taking too long or failed to call back, rescheduling");
+                console.error("Warning: worker analysis taking too long or failed to call back (" + this.$lastAnalyzer + "), rescheduling");
             }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         }
         
