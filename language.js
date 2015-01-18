@@ -18,6 +18,7 @@ define(function(require, exports, module) {
         var settings = imports.settings;
         var aceHandle = imports.ace;
         var tabs = imports.tabManager;
+        
         var prefs = imports.preferences;
         var browsers = imports.browsersupport;
         var commands = imports.commands;
@@ -38,6 +39,7 @@ define(function(require, exports, module) {
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
         var ignoredMarkers;
+        
         
         /***** Initialization *****/
         
@@ -468,7 +470,8 @@ define(function(require, exports, module) {
                     next();
                 });
             }, function() {
-                notifyWorker("switchFile", { tab: tabs.focussedTab });
+                tabs.focussedTab &&
+                    notifyWorker("switchFile", { tab: tabs.focussedTab });
             });
         }
         

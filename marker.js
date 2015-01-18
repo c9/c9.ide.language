@@ -151,7 +151,7 @@ define(function(require, exports, module) {
                 }
                 var gutterAnno = {
                     guttertext: anno.message,
-                    type: anno.level || "warning",
+                    type: anno.type || anno.level || "warning",
                     text: anno.message,
                     pos: anno.pos,
                     resolutions: anno.resolutions,

@@ -546,7 +546,6 @@ module.exports = {
      * 
      *     {
      *         pos: { sl: 1, el: 1, sc: 4, ec: 5 },
-     *         level: "warning",
      *         type: "warning",
      *         message: "Assigning to undeclared variable."
      *     }

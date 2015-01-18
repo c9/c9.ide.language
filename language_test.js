@@ -584,6 +584,28 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it("supports warnings for Cloud9's plugin unload event", function(done) {
+                    tabs.openFile("plugins/c9.dummy/architect_test.js", function(err, _tab) {
+                        var tab = _tab;
+                        tabs.focusTab(tab);
+                        var session = tab.document.getSession().session;
+                        
+                        session.on("changeAnnotation", testAnnos);
+                        testAnnos();
+                        
+                        function testAnnos() {
+                            var annos = session.getAnnotations();
+                            if (!annos.length)
+                                return;
+                            session.off("changeAnnotation", testAnnos);
+                            assert(annos.length === 3);
+                            assert(annos[0].text.match(/loaded.*unload/));
+                            assert(annos[1].text.match(/bar.*unload/));
+                            done();
+                        }
+                    });
+                });
+                
                 
             });
         });
