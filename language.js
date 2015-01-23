@@ -36,6 +36,7 @@ define(function(require, exports, module) {
 
         var delayedTransfer;
         var lastWorkerMessage = {};
+        var refreshAllPending = 0;
         var isContinuousCompletionEnabledSetting;
         var initedTabs;
         var ignoredMarkers;
@@ -446,20 +447,24 @@ define(function(require, exports, module) {
         }
         
         function refreshAllMarkers() {
-            var activeTabs = tabs.getPanes().map(function(pane){
+            refreshAllPending++;
+            if (refreshAllPending > 1)
+                return;
+            
+            var activeTabs = tabs.getPanes().map(function(pane) {
                 return pane.getTab();
             });
-            
-            lastWorkerMessage = {};
             
             var focussedTab = tabs.focussedTab;
             activeTabs = activeTabs.filter(function(tab) {
                 return tab !== focussedTab;
             }).concat(focussedTab);
             
-            async.forEachSeries(activeTabs, function(tab, next){
+            async.forEachSeries(activeTabs, function(tab, next) {
                 if (!isEditorSupported(tab) || tab === focussedTab)
                     return next();
+                
+                lastWorkerMessage = {};
                 
                 if (!notifyWorker("switchFile", { tab: tab, force: true }))
                     return next();
@@ -468,6 +473,15 @@ define(function(require, exports, module) {
                     next();
                 });
             }, function() {
+                if (refreshAllPending > 1) {
+                    refreshAllPending = 0;
+                    return setTimeout(function() {
+                        refreshAllPending = 0;
+                        refreshAllMarkers();
+                    }, 100);
+                }
+                refreshAllPending = 0;
+                lastWorkerMessage = {};
                 tabs.focussedTab &&
                     notifyWorker("switchFile", { tab: tabs.focussedTab });
             });
