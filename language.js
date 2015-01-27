@@ -40,7 +40,6 @@ define(function(require, exports, module) {
         var initedTabs;
         var ignoredMarkers;
         
-        
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
@@ -248,6 +247,7 @@ define(function(require, exports, module) {
                     ["warnLevel", "info"],
                     ["instanceHighlight", "true"],
                     ["undeclaredVars", "true"],
+                    ["eslintrc", "true"],
                     ["semi", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
@@ -285,11 +285,17 @@ define(function(require, exports, module) {
                             path: "project/language/@unusedFunctionArgs",
                             position: 9000
                         },
-                        "Ignore Messages Matching This <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                        // TODO: link to this file instead of having this silly setting here?
+                        "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>" : {
+                            type: "checkbox",
+                            path: "project/language/@eslintrc",
+                            position: 10000
+                        },
+                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
                             type: "textbox",
                             path: "project/language/@ignoredMarkers",
-                            position: 10000
-                        }
+                            position: 11000
+                        },
                     }
                 }
             }, plugin);
@@ -322,11 +328,11 @@ define(function(require, exports, module) {
                             path: "user/language/@hints",
                             position: 1000
                         },
-                        "Ignore Messages Matching This <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
                             type: "textbox",
                             path: "user/language/@ignoredMarkers",
-                            position: 2000
-                        }
+                            position: 3000
+                        },
                     }
                 }
             }, plugin);
@@ -417,7 +423,7 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", updateSettings);
             
-            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars"]
+            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc"]
             .forEach(function(s) {
                 worker.call(
                     "enableFeature",
