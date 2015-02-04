@@ -287,7 +287,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
                     afterCompleteDocOpen(function(el) {
-                        expect.html(el).text(/stdout/);
+                        expect.html(el).text(/Console/);
                         done();
                     });
                 });
