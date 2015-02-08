@@ -9,22 +9,20 @@
         "url": "http://github.com/c9/c9.ide.language.git"
     },
     "plugins": {
-        "plugin": {
-            "complete": {},
-            "jumptodef": {},
-            "keyhandler": {},
-            "language": {},
-            "marker": {},
-            "outline": {},
-            "refactor": {},
-            "tooltip": {},
-            "worker_util_helper": {}
-        }
+        "complete": {},
+        "jumptodef": {},
+        "keyhandler": {},
+        "language": {},
+        "marker": {},
+        "outline": {},
+        "refactor": {},
+        "tooltip": {},
+        "worker_util_helper": {}
     },
     "categories": [
         "core"
     ],
     "licenses": [
-        ""
+        "AGPL"
     ]
 }
