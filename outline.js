@@ -628,6 +628,33 @@ define(function(require, exports, module) {
             loaded = false;
             drawn = false;
             
+            fullOutline = [];
+            filteredOutline = [];
+            ignoreSelectOnce = false;
+            ignoreFocusOnce = false;
+            isKeyDownAfterDirty = false;
+            // staticPrefix = options.staticPrefix;
+            
+            tree = null;
+            tdOutline = null;
+            winOutline = null;
+            textbox = null;
+            treeParent = null;
+            originalLine = null;
+            originalColumn = null;
+            originalTab = null;
+            focussed = null;
+            isActive = null;
+            outline = null;
+            timer = null;
+            dirty = null;
+            scheduled = null;
+            scheduleWatcher = null;
+            isUnordered = null;
+            lastFilter = null;
+            hasNavigateOutline = null;
+            worker = null;
+            
             clearInterval(timer);
         });
         
