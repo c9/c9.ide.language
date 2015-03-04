@@ -45,6 +45,9 @@ define(function(require, exports, module) {
                 if (!tab) return;
                 
                 var editor = tab.editor;
+                // TODO for background tabs editor.ace.session is wrong
+                if (tab.document !== editor.ace.session.c9doc)
+                    return;
                 lastStaticMarkers = event.data;
                 lastStaticMarkersTab = tab;
                 var markers = lastHighlightMarkersTab === tab

@@ -125,6 +125,10 @@ define(function(require, exports, module) {
                     if (!tab || (tab.path || tab.name) !== event.data.path)
                         return;
                     
+                    // TODO for background tabs editor.ace.session is wrong
+                    if (tab.document !== tab.editor.ace.session.c9doc)
+                        return;
+                    
                     assert(tab.editor, "Could find a tab but no editor for " + event.data.path);
                     onComplete(event, tab.editor);
                 });

@@ -215,7 +215,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     // tab.close() isn't quite synchronous, wait for it :(
                     complete.closeCompletionBox();
                     setTimeout(function() {
-                        tabs.openFile("language.js", function(err, tab) {
+                        tabs.openFile("/language.js", function(err, tab) {
                             jsTab = tab;
                             jsSession = jsTab.document.getSession().session;
                             expect(jsSession).to.not.equal(null);
@@ -293,7 +293,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it('does continuous completion for CSS', function(done) {
-                    tabs.openFile("test.css", function(err, tab) {
+                    tabs.openFile("/test.css", function(err, tab) {
                         tabs.focusTab(tab);
                         // We get a tab, but it's not done yet, so we wait
                         setTimeout(function() {
@@ -541,7 +541,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("supports linting basic es6", function(done) {
-                    tabs.openFile("test_es6.js", function(err, _tab) {
+                    tabs.openFile("/test_es6.js", function(err, _tab) {
                         var tab = _tab;
                         tabs.focusTab(tab);
                         var session = tab.document.getSession().session;
@@ -585,7 +585,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("supports warnings for Cloud9's plugin unload event", function(done) {
-                    tabs.openFile("plugins/c9.dummy/architect_test.js", function(err, _tab) {
+                    tabs.openFile("/plugins/c9.dummy/architect_test.js", function(err, _tab) {
                         var tab = _tab;
                         tabs.focusTab(tab);
                         var session = tab.document.getSession().session;
