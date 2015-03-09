@@ -249,22 +249,7 @@ define(function(require, exports, module) {
                 tree.renderer.scrollCaretIntoView(null, 0.5);
             }
         }
-        
-        function onOffline(e) {
-            // Online
-            if (e.state & c9.STORAGE) {
-                textbox.enable();
-                //@Harutyun This doesn't work
-                // tree.enable();
-            }
-            // Offline
-            else {
-                textbox.disable();
-                //@Harutyun This doesn't work
-                // tree.disable();
-            }
-        }
-        
+
         function createProvider(){
             // Import CSS
             ui.insertCss(require("text!./outline.css"), staticPrefix, plugin);
@@ -392,10 +377,6 @@ define(function(require, exports, module) {
             
             textbox.ace.on("blur", onBlur);
             textbox.ace.on("focus", onFocus);
-            
-            // Offline
-            c9.on("stateChange", onOffline, plugin);
-            onOffline({ state: c9.status });
             
             language.getWorker(function(err, _worker) {
                 worker = _worker;
