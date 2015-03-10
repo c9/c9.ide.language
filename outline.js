@@ -34,7 +34,6 @@ define(function(require, exports, module) {
             index: options.index || 50,
             width: 250,
             caption: "Outline",
-            elementName: "winOutline",
             minWidth: 130,
             where: options.where || "right",
             autohide: true
@@ -286,7 +285,7 @@ define(function(require, exports, module) {
             
             treeParent = plugin.getElement("outlineTree");
             textbox = plugin.getElement("textbox");
-            winOutline = plugin.getElement("winOutline");
+            winOutline = options.aml;
             
             var key = commands.getHotkey("outline");
             if (commands.platform == "mac")
