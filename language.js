@@ -552,60 +552,7 @@ define(function(require, exports, module) {
          * handlers that implement features such as content completion
          * for various languages.
          * 
-         * Language handlers are executed inside a web worker.
-         * They can be registered using the {@link #registerLanguageHandler}
-         * function, and should be based on the {@link language.base_handler}
-         * base class. For examples, see {@link language.base_handler}.
-         * 
-         * Here's an example of a language worker plugin that
-         * loads one language worker:
-         *
-         *     define(function(require, exports, module) {
-         *         main.consumes = ["language"];
-         *         main.provides = [];
-         *         return main;
-         *     
-         *         function main(options, imports, register) {
-         *             var language = imports.language;
-         *     
-         *             language.registerLanguageHandler('plugins/my.plugin/foo_handler');
-         *             
-         *             register(null, {});
-         *         }
-         *     });
-         *
-         * The plugin to load a langauge worker tends to be quite small, like
-         * the above. The actual work is done in the handler itself, here
-         * called plugins/my.plugin/foo_handler. This plugin lives inside
-         * the worker and must implement the {@link language.base_handler}
-         * interface.
-         * 
-         * Here's an example of a language handler implementing base_handler:
-         * 
-         *     define(function(require, exports, module) {
-         *         var baseHandler = require('plugins/c9.ide.language/base_handler');
-         *         var handler = module.exports = Object.create(baseHandler);
-         *      
-         *         handler.handlesLanguage = function(language) {
-         *             return language === "javascript" || language === "jsx";
-         *         };
-         *      
-         *         handler.analyze = function(value, ast, callback) {
-         *             if (!ast)
-         *                 return;
-         *             callback([{
-         *                  pos: { sl: 0, el: 0, sc: 0, ec: 0 },
-         *                  type: 'info',
-         *                  level: 'info',
-         *                  message: 'Hey there! I'm an info marker'
-         *            }]);
-         *         };
-         *     });
-         * 
-         * Note how the above handler doesn't use the Architect plugin
-         * infrastructure, and can only acesss other plugins that exist
-         * inside the web worker, such as {@link language.worker_util}
-         * or {@link language.complete_util}.
+         * See the Cloud9 SDK documentation for more information.
          * 
          * @singleton
          **/

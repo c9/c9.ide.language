@@ -10,8 +10,6 @@
  * can be overridden by language handlers to implement
  * language services such as code completion.
  * 
- * See {@link language} for an example plugin.
- * 
  * @class language.base_handler
  */
 define(function(require, exports, module) {
