@@ -2,7 +2,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Panel", "c9", "settings", "ui", "menus", "panels", "tabManager", 
         "language", "util", "language.jumptodef", "navigate", "layout",
-        "commands"
+        "commands", "jsonalyzer"
     ];
     main.provides = ["outline"];
     return main;
@@ -20,6 +20,7 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var language = imports.language;
         var commands = imports.commands;
+        var jsonalyzer = imports.jsonalyzer;
         var jumptodef = imports["language.jumptodef"];
         
         var Range = require("ace/range").Range;
@@ -571,6 +572,21 @@ define(function(require, exports, module) {
             ace.scrollToLine(Math.round((line + lineEnd) / 2 - SAFETY), true);
         }
         
+        function addOutlinePlugin(path, contents, plugin){
+            var template = require("text!./outline_template.js");
+            
+            for (var prop in contents) {
+                template = template.replace("{{" + prop + "}}", 
+                    JSON.stringify(contents[prop]));
+            }
+            
+            jsonalyzer.registerWorkerHandler(path, template);
+            
+            plugin.addOther(function(){
+                // @lennartcl how to do cleanup?
+            });
+        }
+        
         /***** Lifecycle *****/
         
         plugin.on("load", function() {
@@ -597,12 +613,6 @@ define(function(require, exports, module) {
         plugin.on("hide", function(e) {
             // tree.clearSelection();
             isActive = false;
-        });
-        plugin.on("enable", function() {
-            
-        });
-        plugin.on("disable", function() {
-            
         });
         plugin.on("unload", function() {
             loaded = false;
@@ -660,7 +670,10 @@ define(function(require, exports, module) {
          * @member panels
          */
         plugin.freezePublicAPI({
-            
+            /**
+             * 
+             */
+            addOutlinePlugin: addOutlinePlugin
         });
         
         register(null, {
