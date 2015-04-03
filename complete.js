@@ -32,6 +32,7 @@ define(function(require, exports, module) {
         var assert = require("c9/assert");
         
         var snippetManager = require("ace/snippets").snippetManager;
+        
         /***** Initialization *****/
         
         var plugin = new Plugin("Ajax.org", main.consumes);
@@ -886,22 +887,66 @@ define(function(require, exports, module) {
         function inCommentOrString(ace, pos) {
             var token = ace.getSession().getTokenAt(pos.row, pos.column - 1);
             return token && token.type && token.type.match(/^comment|^string/);
-        } 
+        }
+        
+        function addSnippet(text, plugin) {
+            var snippet = { text: text };
+            var firstLine = text.split("\n", 1)[0].replace(/\#/g, "").trim();
+            firstLine.split(";").forEach(function(n){
+                if (!n) return;
+                var info = n.split(":");
+                snippet[info[0].trim()] = info[1].trim();
+            });
+            if (snippet.include)
+                snippet.include = snippet.include.split(",").map(function(n){
+                    return n.trim();
+                });
+            
+            snippet.snippets = snippetManager.parseSnippetFile(snippet.text);
+            snippetManager.register(snippet.snippets, snippet.scope);
+            
+            if (snippet.include) {
+                snippetManager.snippetMap[snippet.scope].includeScopes = snippet.include;
+                snippet.include.forEach(function(x) {
+                    // loadSnippetFile("ace/mode/" + x);
+                    // @nightwing help!
+                });
+            }
+            
+            plugin.addOther(function(){
+                snippetManager.unregister(snippet.snippets);
+                // if (snippet.include) 
+                    // @nightwing help!
+            });
+        }
         
         /***** Lifecycle *****/
         
         plugin.on("load", function() {
             load();
         });
-        plugin.on("enable", function() {
-            
-        });
-        plugin.on("disable", function() {
-            
-        });
         plugin.on("unload", function() {
             loaded = false;
             drawn = false;
+            theme = null;
+            isInvokeScheduled = null;
+            ignoreMouseOnce = null;
+            enterCompletion = null;
+            tooltipHeightAdjust = null;
+            commandKeyBeforePatch = null;
+            textInputBeforePatch = null;
+            aceBeforePatch = null;
+            isDocShown = null;
+            txtCompleterDoc = null;
+            docElement = null;
+            lastAce = null;
+            worker  = null;
+            matches = null;
+            eventMatches = null;
+            popup = null;
+            lastUpDownEvent = null;
+            forceOpen = null;
+            $closeTrigger = null;
         });
         
         /***** Register and define API *****/
@@ -962,7 +1007,12 @@ define(function(require, exports, module) {
                  * @event replaceText
                  */
                 "replaceText"
-            ]
+            ],
+            
+            /**
+             * 
+             */
+            addSnippet: addSnippet
         });
         
         register(null, {
