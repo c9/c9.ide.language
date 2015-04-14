@@ -890,31 +890,36 @@ define(function(require, exports, module) {
         }
         
         function addSnippet(text, plugin) {
-            var snippet = { text: text };
+            var snp = { text: text };
             var firstLine = text.split("\n", 1)[0].replace(/\#/g, "").trim();
             firstLine.split(";").forEach(function(n){
                 if (!n) return;
                 var info = n.split(":");
-                snippet[info[0].trim()] = info[1].trim();
+                snp[info[0].trim()] = info[1].trim();
             });
-            if (snippet.include)
-                snippet.include = snippet.include.split(",").map(function(n){
+            if (snp.include)
+                snp.include = snp.include.split(",").map(function(n){
                     return n.trim();
                 });
+            if (!snp.scope) throw new Error("Missing Snippet Scope")
             
-            snippet.snippets = snippetManager.parseSnippetFile(snippet.text);
-            snippetManager.register(snippet.snippets, snippet.scope);
+            snp.scope = snp.scope.split(",");
+            snp.snippets = snippetManager.parseSnippetFile(snp.text);
             
-            if (snippet.include) {
-                snippetManager.snippetMap[snippet.scope].includeScopes = snippet.include;
-                snippet.include.forEach(function(x) {
-                    // loadSnippetFile("ace/mode/" + x);
-                    // @nightwing help!
-                });
-            }
+            snp.scope.forEach(function(scope){
+                snippetManager.register(snp.snippets, scope);
+            });
+            
+            // if (snippet.include) {
+            //     snippetManager.snippetMap[snippet.scope].includeScopes = snippet.include;
+            //     snippet.include.forEach(function(x) {
+            //         // loadSnippetFile("ace/mode/" + x);
+            //         // @nightwing help!
+            //     });
+            // }
             
             plugin.addOther(function(){
-                snippetManager.unregister(snippet.snippets);
+                snippetManager.unregister(snp.snippets);
                 // if (snippet.include) 
                     // @nightwing help!
             });
