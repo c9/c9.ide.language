@@ -575,15 +575,15 @@ define(function(require, exports, module) {
         function addOutlinePlugin(path, contents, plugin){
             var template = require("text!./outline_template.js");
             
-            for (var prop in contents) {
-                template = template.replace("{{" + prop + "}}", 
-                    JSON.stringify(contents[prop]));
-            }
+            template = template.replace("{{CONFIG}}", function() {
+                return contents;
+            });
             
             jsonalyzer.registerWorkerHandler(path, template);
             
             plugin.addOther(function(){
-                // @lennartcl how to do cleanup?
+                if (jsonalyzer.unregisterWorkerHandler)
+                    jsonalyzer.unregisterWorkerHandler(path);
             });
         }
         

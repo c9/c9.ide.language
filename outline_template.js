@@ -4,15 +4,16 @@ var jsonalyzer = require("plugins/c9.ide.language.jsonalyzer/worker/jsonalyzer_w
 var PluginBase = require("plugins/c9.ide.language.jsonalyzer/worker/jsonalyzer_base_handler");
 var ctagsUtil = require("plugins/c9.ide.language.jsonalyzer/worker/ctags/ctags_util");
 
-var TAGS = {{tags}};
-var GUESS_FARGS = {{guess_fargs}};
-var EXTRACT_DOCS = {{extract_docs}};
+var CONFIG = {{CONFIG}};
+var TAGS = CONFIG.TAGS;
+var GUESS_FARGS = CONFIG.guess_fargs;
+var EXTRACT_DOCS = CONFIG.extract_docs;
 
 var handler = module.exports = Object.create(PluginBase);
 
-handler.languages = {{languages}};
+handler.languages = CONFIG.languages;
 
-handler.extensions = {{extensions}};
+handler.extensions = CONFIG.extensions;
 
 handler.analyzeCurrent = function(path, doc, ast, options, callback) {
     if (doc === "")
@@ -28,17 +29,7 @@ handler.analyzeCurrent = function(path, doc, ast, options, callback) {
         ctagsUtil.findMatchingTags(path, doc, tag, GUESS_FARGS, EXTRACT_DOCS, results);
     });
 
-    var serverHandler = jsonalyzer.getServerHandlerFor(path, "py");
-    if (options.service || !serverHandler)
-        return callback(null, { properties: results });
-    
-    serverHandler.analyzeCurrent(path, doc, ast, options, function(err, summary, markers) {
-        if (err && err.code === "ESUPERSEDED")
-            return callback(err);
-        if (err)
-            console.error(err.stack || err);
-        return callback(null, { properties: results }, markers);
-    });
+    callback(null, { properties: results });
 };
 
 handler.analyzeOthers = handler.analyzeCurrentAll;
