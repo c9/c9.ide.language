@@ -525,8 +525,20 @@ define(function(require, exports, module) {
                     worker.removeEventListener(reply);
                     callback && callback(e.data.err, worker);
                 });
+                if (modulePath)
+                    updateRequireConfig(modulePath, worker);
                 worker.call("register", [modulePath, contents]);
             });
+        }
+        
+        function updateRequireConfig(modulePath, worker) {
+            var path = window.requirejs.toUrl(modulePath, "", true);
+            var url = require.toUrl(path);
+            if (/^\w+:/.test(url)) {
+                var paths = {};
+                paths[path] = url;
+                worker.call("initBaseUrls", [paths]);
+            }
         }
         
         /***** Lifecycle *****/
