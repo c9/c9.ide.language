@@ -486,7 +486,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     afterNoCompleteOpen(done);
                 });
                 
-                it("shows word completion for 'function blie(param'", function(done) {
+                it.skip("shows word completion for 'function blie(param'", function(done) {
                     jsSession.setValue('function parametric() {}\nfunction blie(para');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("m");
