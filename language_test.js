@@ -140,7 +140,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 assert(!e.data.matches.length, "Completion opened")
                 callback();
             });
-        };
+        }
         
         function afterCompleteOpen(callback, delay) {
             clearTimeout(timer);
@@ -150,8 +150,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     return afterCompleteOpen(callback, 100);
                 timer = setTimeout(function() {
                     callback(el);
-                }, 5);
-            }, delay || 5);
+                }, 100);
+            }, delay || 100);
         }
         
         function afterCompleteDocOpen(callback, delay) {
