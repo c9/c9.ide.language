@@ -1145,7 +1145,7 @@ function endTime(t, message, indent) {
         
         function doUpdate(done) {
             updateRunning = true;
-            var startTime = new Date().getTime();
+            var beginUpdate = new Date().getTime();
             _self.asyncForEachHandler(
                 { method: "onUpdate" },
                 function(handler, next) {
@@ -1161,7 +1161,7 @@ function endTime(t, message, indent) {
                             _self.onCursorMoveAnalyzed(_self.postponedCursorMove);
                             _self.postponedCursorMove = null;
                         }
-                        _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - startTime;
+                        _self.lastUpdateTime = DEBUG ? 0 : new Date().getTime() - beginUpdate;
                         clearTimeout(updateWatchDog);
                         updateRunning = false;
                         done && done();
