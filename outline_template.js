@@ -5,7 +5,7 @@ var PluginBase = require("plugins/c9.ide.language.jsonalyzer/worker/jsonalyzer_b
 var ctagsUtil = require("plugins/c9.ide.language.jsonalyzer/worker/ctags/ctags_util");
 
 var CONFIG = {{CONFIG}};
-var TAGS = CONFIG.TAGS;
+var TAGS = CONFIG.tags;
 var GUESS_FARGS = CONFIG.guess_fargs;
 var EXTRACT_DOCS = CONFIG.extract_docs;
 
