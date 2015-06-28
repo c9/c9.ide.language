@@ -889,25 +889,30 @@ define(function(require, exports, module) {
             return token && token.type && token.type.match(/^comment|^string/);
         }
         
-        function addSnippet(text, plugin) {
-            var snp = { text: text };
-            var firstLine = text.split("\n", 1)[0].replace(/\#/g, "").trim();
-            firstLine.split(";").forEach(function(n){
-                if (!n) return;
-                var info = n.split(":");
-                snp[info[0].trim()] = info[1].trim();
-            });
-            if (snp.include)
-                snp.include = snp.include.split(",").map(function(n){
+        function addSnippet(data, plugin) {
+            if (typeof data == "string") {
+                data = { text: data };
+                var text = data.text;
+                var firstLine = text.split("\n", 1)[0].replace(/\#/g, "").trim();
+                firstLine.split(";").forEach(function(n){
+                    if (!n) return;
+                    var info = n.split(":");
+                    if (info.length != 2) return;
+                    data[info[0].trim()] = info[1].trim();
+                });
+            }
+            if (data.include)
+                data.include = data.include.split(",").map(function(n){
                     return n.trim();
                 });
-            if (!snp.scope) throw new Error("Missing Snippet Scope")
+            if (!data.scope) throw new Error("Missing Snippet Scope");
             
-            snp.scope = snp.scope.split(",");
-            snp.snippets = snippetManager.parseSnippetFile(snp.text);
+            data.scope = data.scope.split(",");
+            if (!data.snippets && data.text)
+                data.snippets = snippetManager.parseSnippetFile(data.text);
             
-            snp.scope.forEach(function(scope){
-                snippetManager.register(snp.snippets, scope);
+            data.scope.forEach(function(scope){
+                snippetManager.register(data.snippets, scope);
             });
             
             // if (snippet.include) {
@@ -919,9 +924,7 @@ define(function(require, exports, module) {
             // }
             
             plugin.addOther(function(){
-                snippetManager.unregister(snp.snippets);
-                // if (snippet.include) 
-                    // @nightwing help!
+                snippetManager.unregister(data.snippets);
             });
         }
         
