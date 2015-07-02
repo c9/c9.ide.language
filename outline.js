@@ -293,12 +293,6 @@ define(function(require, exports, module) {
             
             tree.textInput = textbox.ace.textInput;
             
-            // Scroll Styling
-            // tree.renderer.setScrollMargin(0, 10, 0, 0);
-            
-            // @Harutyun; is this the right way to do it?
-            function available() { return tree.isFocused() }
-            
             textbox.ace.commands.addCommands([
                 {
                     bindKey: "ESC",
