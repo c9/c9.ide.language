@@ -327,7 +327,7 @@ define(function(require, exports, module) {
             
             tooltip.setLastCompletion(match, pos);
 
-            if (deleteSuffix || newText.slice(-postfix.length) === postfix)
+            if (deleteSuffix || newText.slice(-postfix.length) === postfix || match.deleteSuffix)
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column + postfix.length);
             else
                 doc.removeInLine(pos.row, pos.column - prefix.length, pos.column);
