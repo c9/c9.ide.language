@@ -137,22 +137,17 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
 
         function afterNoCompleteOpen(callback) {
             worker.once("complete", function(e) {
-                assert(!e.data.matches.length, "Completion opened")
+                assert(!e.data.matches.length, "Completion opened");
                 callback();
             });
         }
         
         function afterCompleteOpen(callback, delay) {
-            clearTimeout(timer);
-            var el = document.querySelector(".ace_autocomplete");
-            if (el)
-                el.querySelector(".ace_text-layer").innerHTML = "";
-            timer = setTimeout(function() {
-                el = document.querySelector(".ace_autocomplete");
-                if (!el || el.style.display === "none" || !el.querySelector(".ace_text-layer").innerHTML)
-                    return afterCompleteOpen(callback, 5);
+            complete.once("showPopup", function(e) {
+                e.popup.resize(true);
+                var el = document.querySelector(".ace_autocomplete");
                 callback(el);
-            }, delay || 5);
+            });
         }
         
         function afterCompleteDocOpen(callback, delay) {
@@ -206,7 +201,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         worker = value;
                         done();
                     });
-                })
+                });
                 
                 // Setup
                 beforeEach(function(done) {
@@ -606,10 +601,11 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             var annos = session.getAnnotations();
                             if (!annos.length)
                                 return;
+                            annos.sort(function(a,b) {return a.row - b.row});
                             session.off("changeAnnotation", testAnnos);
                             assert(annos.length === 3);
-                            assert(annos[0].text.match(/loaded.*unload/));
                             assert(annos[1].text.match(/bar.*unload/));
+                            assert(annos[2].text.match(/loaded.*unload/));
                             done();
                         }
                     });

@@ -385,6 +385,7 @@ define(function(require, exports, module) {
             updateDoc(true);
             
             ignoreMouseOnce = !isPopupVisible();
+            emit("showPopup", {popup: popup});
         }
         
         function adjustToToolTipHeight(height) {
@@ -1014,7 +1015,15 @@ define(function(require, exports, module) {
                  * @param {Object} match
                  * @event replaceText
                  */
-                "replaceText"
+                "replaceText",
+                /**
+                 * @ignore
+                 */
+                "showPopup",
+                /**
+                 * @ignore
+                 */
+                "showDocPopup"
             ],
             
             /**
