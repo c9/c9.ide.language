@@ -144,14 +144,15 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         
         function afterCompleteOpen(callback, delay) {
             clearTimeout(timer);
+            var el = document.querySelector(".ace_autocomplete");
+            if (el)
+                el.querySelector(".ace_text-layer").innerHTML = "";
             timer = setTimeout(function() {
-                var el = document.getElementsByClassName("ace_autocomplete")[0];
-                if (!el || el.style.display === "none")
-                    return afterCompleteOpen(callback, 100);
-                timer = setTimeout(function() {
-                    callback(el);
-                }, 100);
-            }, delay || 100);
+                el = document.querySelector(".ace_autocomplete");
+                if (!el || el.style.display === "none" || !el.querySelector(".ace_text-layer").innerHTML)
+                    return afterCompleteOpen(callback, 5);
+                callback(el);
+            }, delay || 5);
         }
         
         function afterCompleteDocOpen(callback, delay) {
