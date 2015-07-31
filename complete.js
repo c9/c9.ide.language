@@ -977,6 +977,11 @@ define(function(require, exports, module) {
             deferredInvoke: deferredInvoke,
             
             /**
+             * Force-invoke the completer immediately.
+             */
+            invoke: invoke,
+            
+            /**
              * @ignore
              */
             getCompletionRegex: getCompletionRegex,
