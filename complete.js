@@ -72,10 +72,12 @@ define(function(require, exports, module) {
             var ace = deferredInvoker.ace;
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(pos.row);
-            var regex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
-            if (completeUtil.precededByIdentifier(line, pos.column, null, ace) ||
-               (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(regex))) ||
-               (line[pos.column - 1] && line[pos.column - 1].match(regex)
+            var identifierRegex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
+            var completionRegex = getCompletionRegex(null, ace);
+            if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
+               || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
+               || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex)
+               || (line[pos.column - 1] && line[pos.column - 1].match(completionRegex))
                ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
                (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke(true);
