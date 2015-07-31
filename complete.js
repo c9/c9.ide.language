@@ -427,6 +427,8 @@ define(function(require, exports, module) {
                     return;
             }
             
+            emit("hidePopup");
+            
             popup.hide();
             hideDocPopup();
             
@@ -1024,13 +1026,15 @@ define(function(require, exports, module) {
                  */
                 "replaceText",
                 /**
-                 * @ignore
+                 * Fires when a completion popup is shown.
+                 * @event showPopup
                  */
                 "showPopup",
                 /**
-                 * @ignore
+                 * Fires when a completion popup is hidden.
+                 * @event hidePopup
                  */
-                "showDocPopup"
+                "hidePopup"
             ],
             
             /**
