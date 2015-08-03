@@ -122,6 +122,7 @@ define(function(require, exports, module) {
                             };
                             if (region)
                                 result = syntaxDetector.posToRegion(region, result);
+                            result.type = t.type;
                             result.value = t.value;
                             results.push(result);
                         });
