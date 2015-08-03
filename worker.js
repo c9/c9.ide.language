@@ -325,6 +325,13 @@ function endTime(t, message, indent) {
         }
         onRegistered(handler);
     };
+    
+    this.unregister = function(modulePath, callback) {
+        this.handlers = this.handlers.filter(function(h) {
+            return h !== modulePath;
+        });
+        callback && callback();
+    };
 
     this.asyncForEachHandler = function(options, fn, callback) {
         var that = this;

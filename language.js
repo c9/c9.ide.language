@@ -530,6 +530,12 @@ define(function(require, exports, module) {
                 worker.call("register", [modulePath, contents]);
             });
         }
+    
+        function unregisterLanguageHandler(modulePath) {
+            getWorker(function(err, worker) {
+                worker.call("unregister", [modulePath]);
+            });
+        }
         
         function updateRequireConfig(modulePath, worker) {
             var path = window.requirejs.toUrl(modulePath, "", true);
@@ -609,6 +615,12 @@ define(function(require, exports, module) {
              * @param {Object} callback.worker The worker object (see {@link #getWorker})
              */
             registerLanguageHandler: registerLanguageHandler,
+            
+            /**
+             * Unregister a language handler
+             * @param {String} modulePath
+             */
+            unregisterLanguageHandler: unregisterLanguageHandler,
             
             /**
              * Gets the current worker, or waits for it to be ready and gets it.
