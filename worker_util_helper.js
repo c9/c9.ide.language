@@ -123,6 +123,8 @@ define(function(require, exports, module) {
                             if (region)
                                 result = syntaxDetector.posToRegion(region, result);
                             result.type = t.type;
+                            result.row = t.row;
+                            result.column = t.column;
                             result.value = t.value;
                             results.push(result);
                         });
