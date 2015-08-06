@@ -775,7 +775,7 @@ define(function(require, exports, module) {
     
             if (!completeUtil.canCompleteForChangedLine(event.data.line, line, event.data.pos, pos, getIdentifierRegex(null, editor.ace)))
                  return;
-            if (event.data.isUpdate && !isPopupVisible())
+            if (event.data.isUpdate && !isPopupVisible() && eventMatches && eventMatches.length)
                 return;
     
             var matches = eventMatches = event.data.matches;
