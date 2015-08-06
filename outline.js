@@ -42,7 +42,6 @@ define(function(require, exports, module) {
         
         var fullOutline = [];
         var filteredOutline = [];
-        var ignoreSelectOnce = false;
         var ignoreFocusOnce = false;
         var isKeyDownAfterDirty = false;
         var staticPrefix = options.staticPrefix;
@@ -240,7 +239,6 @@ define(function(require, exports, module) {
                 if (tdOutline.$selectedNode == selected)
                     return;
             
-                ignoreSelectOnce = true;
                 if (selected)
                     tree.selection.selectNode(selected);
                 else
@@ -330,9 +328,10 @@ define(function(require, exports, module) {
             
             textbox.ace.on("input", function(e) {
                 renderOutline();
+                onSelect();
             });
             
-            tree.on("changeSelection", function() {
+            tree.on("userSelect", function() {
                 if (tree.isFocused())
                     onSelect();
             });
@@ -496,7 +495,6 @@ define(function(require, exports, module) {
                     navigate.tree.select(navigate.tree.provider.getNodeAtIndex(0));
             }
             else if (selected) {
-                ignoreSelectOnce = true;
                 tdOutline.selection.selectNode(selected);
             }
             
@@ -515,11 +513,6 @@ define(function(require, exports, module) {
             if (!node)
                 return; // ok, there really is no node
                 
-            if (ignoreSelectOnce) {
-                ignoreSelectOnce = false;
-                return;
-            }
-            
             if (!originalTab.loaded) 
                 return clear();
             
@@ -614,7 +607,6 @@ define(function(require, exports, module) {
             
             fullOutline = [];
             filteredOutline = [];
-            ignoreSelectOnce = false;
             ignoreFocusOnce = false;
             isKeyDownAfterDirty = false;
             // staticPrefix = options.staticPrefix;
