@@ -92,7 +92,7 @@ define(function(require, exports, module) {
                     showError(e.data.message, e.data.timeout);
                 });
                 
-                worker.on("getTokens", function(e) {
+                worker.on("getTokens", function tryGetTokens(e) {
                     var path = e.data.path;
                     var identifiers = e.data.identifiers;
                     var region = e.data.region;
@@ -102,6 +102,9 @@ define(function(require, exports, module) {
                         return done("Tab is no longer open");
                     
                     var session = tab.editor.ace.getSession();
+                    if (session.bgTokenizer.running)
+                        return session.bgTokenizer.once("update", tryGetTokens.bind(null, e));
+                    
                     var results = [];
                     for (var i = 0, len = session.getLength(); i < len; i++) {
                         if (region && !(region.sl <= i && i <= region.el))
