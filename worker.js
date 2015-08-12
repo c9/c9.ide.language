@@ -539,6 +539,7 @@ function endTime(t, message, indent) {
         asyncForEach(parts, function analyzePart(part, nextPart) {
             var partMarkers = [];
             _self.part = part;
+            _self.$lastAnalyzer = "parse()";
             _self.parse(part, function analyzeParsed(ast) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
@@ -547,10 +548,11 @@ function endTime(t, message, indent) {
                     function(handler, next) {
                         handler.language = part.language;
                         var t = startTime();
-                        _self.$lastAnalyzer = handler.$source;
+                        _self.$lastAnalyzer = handler.$source + ".analyze()";
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result) {
+                                _self.$lastAnalyzer = handler.$source + ".getResolutions()";
                                 handler.getResolutions(part.getValue(), ast, result, function(result2) {
                                     if (result2) {
                                         partMarkers = partMarkers.concat(result2);
