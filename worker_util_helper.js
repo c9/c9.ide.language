@@ -103,7 +103,7 @@ define(function(require, exports, module) {
                     
                     var session = tab.editor.ace.getSession();
                     if (session.bgTokenizer.running)
-                        return session.bgTokenizer.once("update", tryGetTokens.bind(null, e));
+                        return setTimeout(tryGetTokens.bind(null, e), 20);
                     
                     var results = [];
                     for (var i = 0, len = session.getLength(); i < len; i++) {
