@@ -1128,9 +1128,9 @@ function endTime(t, message, indent) {
 
         updateWatchDog = setTimeout(function() {
             if (DEBUG)
-                return console.error("Warning: worker analysis taking too long or failed to call back (" + this.$lastAnalyzer + ")");
+                return console.error("Warning: worker analysis taking too long or failed to call back (" + _self.$lastAnalyzer + ")");
             _self.updateScheduled = updateRunning = null;
-            console.error("Warning: worker analysis taking too long or failed to call back (" + this.$lastAnalyzer + "), rescheduling");
+            console.error("Warning: worker analysis taking too long or failed to call back (" + _self.$lastAnalyzer + "), rescheduling");
         }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         
         if (now) {
