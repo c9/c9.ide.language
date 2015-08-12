@@ -539,6 +539,7 @@ function endTime(t, message, indent) {
         asyncForEach(parts, function analyzePart(part, nextPart) {
             var partMarkers = [];
             _self.part = part;
+            _self.$lastAnalyzer = "parse()";
             _self.parse(part, function analyzeParsed(ast) {
                 cachedAsts[part.index] = {part: part, ast: ast};
 
@@ -547,10 +548,11 @@ function endTime(t, message, indent) {
                     function(handler, next) {
                         handler.language = part.language;
                         var t = startTime();
-                        _self.$lastAnalyzer = handler.$source;
+                        _self.$lastAnalyzer = handler.$source + ".analyze()";
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result) {
+                                _self.$lastAnalyzer = handler.$source + ".getResolutions()";
                                 handler.getResolutions(part.getValue(), ast, result, function(result2) {
                                     if (result2) {
                                         partMarkers = partMarkers.concat(result2);
@@ -1126,12 +1128,12 @@ function endTime(t, message, indent) {
         clearTimeout(this.updateScheduled);
         this.updateScheduled = null;
 
-        if (!DEBUG) {
-            updateWatchDog = setTimeout(function() {
-                _self.updateScheduled = updateRunning = null;
-                console.error("Warning: worker analysis taking too long or failed to call back (" + this.$lastAnalyzer + "), rescheduling");
-            }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
-        }
+        updateWatchDog = setTimeout(function() {
+            if (DEBUG)
+                return console.error("Warning: worker analysis taking too long or failed to call back (" + _self.$lastAnalyzer + ")");
+            _self.updateScheduled = updateRunning = null;
+            console.error("Warning: worker analysis taking too long or failed to call back (" + _self.$lastAnalyzer + "), rescheduling");
+        }, UPDATE_TIMEOUT_MAX + this.lastUpdateTime);
         
         if (now) {
             doUpdate(function() {
