@@ -882,7 +882,8 @@ define(function(require, exports, module) {
         }
         
         function getCompletionRegex(language, ace) {
-            return completionRegexes[language || getSyntax(ace || lastAce)];
+            // Try getting a regex, or return null, with matches nothing (undefined matches anything)
+            return completionRegexes[language || getSyntax(ace || lastAce)] || null;
         }
         
         function getIdentifierRegex(language, ace) {
