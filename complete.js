@@ -336,6 +336,7 @@ define(function(require, exports, module) {
             
             snippetManager.insertSnippet(ace, snippet);
             
+            language.onCursorChange(null, null, true);
             emit("replaceText", {
                 pos: pos,
                 prefix: prefix,
