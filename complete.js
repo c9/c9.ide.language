@@ -77,7 +77,7 @@ define(function(require, exports, module) {
             if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
                || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
                || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex)
-               || (line[pos.column - 1] && line[pos.column - 1].match(completionRegex))
+               || matchCompletionRegex(completionRegex, line, pos)
                ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
                (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke(true);
@@ -887,6 +887,16 @@ define(function(require, exports, module) {
             return completionRegexes[language || getSyntax(ace || lastAce)] || null;
         }
         
+        function matchCompletionRegex(completionRegex, line, pos) {
+            if (!completionRegex)
+                return false;
+            var ch = line[pos.column - 1];
+            if (ch && completionRegex.test(ch))
+                return true;
+            if (completionRegex.source.match(/\$\)*$/))
+                return completionRegex.test(line.substr(0, pos.column));
+        }
+        
         function getIdentifierRegex(language, ace) {
             return idRegexes[language || getSyntax(ace || lastAce)];
         }
@@ -993,12 +1003,18 @@ define(function(require, exports, module) {
             /**
              * @ignore
              */
+            matchCompletionRegex: matchCompletionRegex,
+            
+            /**
+             * @ignore
+             */
             getIdentifierRegex: getIdentifierRegex,
             
             /**
              * Close the completion popup.
              */
             closeCompletionBox: closeCompletionBox,
+            
             
             /**
              * Determines whether a completion popup is currently visible.

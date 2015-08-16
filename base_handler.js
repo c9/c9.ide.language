@@ -188,7 +188,12 @@ module.exports = {
      * If a non-null value is returned, it is assumed continous completion
      * is supported for this language.
      * 
-     * As an example, Java-like languages might want to use: /^\.$/
+     * This regex may match the last character, e.g. for Java-like O.O. languages
+     * you might might want to use: /^\.$/
+     * 
+     * The regex may also match the whole preceding line, e.g.
+     * /console\.$/. Only when the regex ends with a $ will it be tried
+     * as a regex that matches against the whole line.
      * 
      * Should be overridden by inheritors that implement code completion.
      * Default implementation returns null.

@@ -135,7 +135,7 @@ define(function(require, exports, module) {
             var line = ace.getSession().getDocument().getLine(pos.row);
             var matchIdRegex = ch.match(idRegex || DEFAULT_ID_REGEX);
             
-            if (matchIdRegex || (completionRegex && ch.match(completionRegex))) { 
+            if (matchIdRegex || complete.matchCompletionRegex(completionRegex, line, pos)) { 
                 if (!complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
                 complete.deferredInvoke(ch === ".", ace);
