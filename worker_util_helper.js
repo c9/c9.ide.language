@@ -23,6 +23,7 @@ define(function(require, exports, module) {
         var watcher = imports.watcher;
         var tree = imports.tree;
         var showError = imports["dialog.error"].show;
+        var async = require("async");
         var syntaxDetector = require("./syntax_detector");
 
         var readFileQueue = [];
@@ -222,6 +223,28 @@ define(function(require, exports, module) {
             var path = e.data.path;
             watcher.watch(path);
             watched[path] = true;
+            
+            // Send initial directory listing
+            async.parallel([
+                fs.stat.bind(fs, path),
+                function(callback) {
+                    fs.readdir(path, function(err, results) {
+                        // We have to use the elaborate callback form here
+                        // because of argument-counting "magic" in the callback caller
+                        callback(err, results);
+                    });
+                }
+            ],
+                function(err, results) {
+                    worker.emit("watchDirResult", { data: {
+                        initial: true,
+                        path: path,
+                        err: err && { message: err.message },
+                        stat: results[0],
+                        files: results[1],
+                    }});
+                }
+            );
         }
         
         function unwatchDir(e) {
