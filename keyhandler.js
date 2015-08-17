@@ -146,6 +146,10 @@ define(function(require, exports, module) {
             }
         }
         
+        function setSkipInput(input) {
+            // TODO: skip characters in input
+        }
+        
         /***** Lifecycle *****/
         
         plugin.on("load", function() {
@@ -169,7 +173,16 @@ define(function(require, exports, module) {
             /**
              * 
              */
-            composeHandlers: composeHandlers
+            composeHandlers: composeHandlers,
+            
+            /**
+             * Set text to skip when typed in.
+             * Used when automatically inserting text, but tolerating
+             * users also typing it, e.g. when inserting a closing }.
+             * 
+             * @param {String} input
+             */
+            setSkipInput: setSkipInput
         });
         
         register(null, {
