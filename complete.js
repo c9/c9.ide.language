@@ -628,7 +628,7 @@ define(function(require, exports, module) {
                     var idRegex = matches[i].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
                     matched = idRegex.test(text);
                 }
-                var completionMatch = text.match(getCompletionRegex());
+                var completionMatch = matchCompletionRegex(getCompletionRegex(), text, { column: text.length });
                 if (matched || completionMatch)
                     deferredInvoke(completionMatch);
                 else
