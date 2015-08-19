@@ -559,10 +559,12 @@ define(function(require, exports, module) {
             else {
                 hideDocPopup();
             }
-            if (selected && selected.docUrl)
-                docElement.innerHTML += '<p><a' +
-                    ' onclick="require(\'ext/preview/preview\').preview(\'' + selected.docUrl + '\'); return false;"' +
-                    ' href="' + selected.docUrl + '" target="c9doc">(more)</a></p>';
+            var docUrl = selected && (selected.docUrl || selected.url);
+            if (docUrl) {
+                docElement.innerHTML += '<p><a class="docUrl"' +
+                    ' onclick="require(\'ext/preview/preview\').preview(\'' + docUrl + '\'); return false;"' +
+                    ' href="' + docUrl + '" target="c9doc">(more)</a></p>';
+            }
             docElement.innerHTML += '</span>';
         }
         
