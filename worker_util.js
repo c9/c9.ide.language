@@ -310,6 +310,15 @@ module.exports = {
      */
     $onWatchDirChange: function(listener) {
         worker.sender.on("watchDirResult", listener);
+    },
+    
+    /**
+     * Stop getting notified when a watched directory changes.
+     * @internal
+     * @ignore
+     */
+    $offWatchDirChange: function(listener) {
+        worker.sender.off("watchDirResult", listener);
     }
 };
 
