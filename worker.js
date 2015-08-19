@@ -1304,7 +1304,15 @@ function endTime(t, message, indent) {
             var b = matches[i + 1];
             if (a.name === b.name || (a.id || a.name) === (b.id || b.name)) {
                 // Duplicate!
-                if (a.priority < b.priority)
+                if (a.isContextual && !b.isContextual)
+                    matches.splice(i+1, 1);
+                else if (!a.isContextual && b.isContextual)
+                    matches.splice(i, 1);
+                else if (a.isGeneric && !b.isGeneric)
+                    matches.splice(i, 1);
+                else if (!a.isGeneric && b.isGeneric)
+                    matches.splice(i+1, 1);
+                else if (a.priority < b.priority)
                     matches.splice(i, 1);
                 else if (a.priority > b.priority)
                     matches.splice(i+1, 1);

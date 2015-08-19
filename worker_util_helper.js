@@ -241,7 +241,7 @@ define(function(require, exports, module) {
                         path: path,
                         err: err && { message: err.message },
                         stat: results[0],
-                        files: results[1],
+                        files: results[1] || [],
                     }});
                 }
             );
