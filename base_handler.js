@@ -680,7 +680,8 @@ module.exports = {
      *                                       The result row
      * @param {Number} [callback.results.column]
      *                                       The result column
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} [callback.results.icon] 
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}
+     *                 [callback.results.icon] 
      *                                       The icon to display (in case of multiple results)
      * @param {Boolean} [callback.results.isGeneric]
      *                                       Indicates that this is a generic, language-independent
