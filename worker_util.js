@@ -309,6 +309,7 @@ module.exports = {
      * @ignore
      */
     $onWatchDirChange: function(listener) {
+        // TODO: remove { data: ... } container when making this public
         worker.sender.on("watchDirResult", listener);
     },
     
