@@ -35,6 +35,8 @@ define(function(require, exports, module) {
             tooltipEl.className = "language_tooltip dark";
             
             language.getWorker(function(err, worker) {
+                if (err) return console.error(err);
+                
                 languageWorker = worker;
                 worker.on("hint", function(event) {
                     var tab = tabs.focussedTab;
@@ -49,7 +51,7 @@ define(function(require, exports, module) {
                 });
                 language.on("cursormove", function(e) {
                     clearTimeout(cursormoveTimeout);
-                    if (e.selection.rangeCount || !e.selection.isEmpty() || !tabs.focussedTab)
+                    if (e.selection.rangeCount || !tabs.focussedTab)
                         return hide();
                     if (lastPos && !inRange(lastPos, e.pos)) {
                         // Just walked outside of tooltip range
