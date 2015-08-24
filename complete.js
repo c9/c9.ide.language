@@ -893,7 +893,7 @@ define(function(require, exports, module) {
             var ch = line[pos.column - 1];
             if (ch && completionRegex.test(ch))
                 return true;
-            if (completionRegex.source.match(/\$\)*$/))
+            if (completionRegex.source.match(/[^\\]\$\)*$/))
                 return completionRegex.test(line.substr(0, pos.column));
         }
         
