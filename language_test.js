@@ -285,7 +285,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
                     afterCompleteDocOpen(function(el) {
-                        expect.html(el).text(/Console/);
+                        expect.html(el).text(/Prints to stdout/);
                         done();
                     });
                 });
@@ -603,9 +603,15 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                                 return;
                             annos.sort(function(a,b) {return a.row - b.row});
                             session.off("changeAnnotation", testAnnos);
-                            assert(annos.length === 3);
-                            assert(annos[1].text.match(/bar.*unload/));
-                            assert(annos[2].text.match(/loaded.*unload/));
+                            var foundBar;
+                            var foundLoaded;
+                            annos.forEach(function(anno) {
+                                if (anno.text.match(/bar.*unload/))
+                                    foundBar = true;
+                                if (anno.text.match(/loaded.*unload/))
+                                    foundLoaded = true;
+                            });
+                            assert(foundBar && foundLoaded);
                             done();
                         }
                     });
