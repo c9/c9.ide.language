@@ -587,7 +587,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("supports warnings for Cloud9's plugin unload event", function(done) {
-                    tabs.openFile("/plugins/c9.dummy/architect_test.js", function(err, _tab) {
+                    tabs.openFile("/plugins/c9.dummy/architect_test_dummy.js", function(err, _tab) {
                         if (err) return done(err);
                         
                         var tab = _tab;
