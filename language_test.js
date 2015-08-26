@@ -399,7 +399,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it.skip("completes following local dependencies", function(done) {
+                it("completes following local dependencies", function(done) {
                     jsSession.setValue('var test2 = require("./test2.js");\ntest2.');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("h");
@@ -409,7 +409,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it.skip("completes following local with absolute paths", function(done) {
+                it("completes following local with absolute paths", function(done) {
                     jsSession.setValue('var ext = require("plugins/c9.dummy/dep");\next.');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("e");
@@ -420,7 +420,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it.skip("completes following local dependencies with absolute paths and common js style exports", function(done) {
+                it("completes following local dependencies with absolute paths and common js style exports", function(done) {
                     jsSession.setValue('var ext = require("plugins/c9.dummy/dep-define");\next.');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
                     jsTab.editor.ace.onTextInput("e");
@@ -525,7 +525,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it.skip("extracts types from comments", function(done) {
+                it("extracts types from comments", function(done) {
                     jsSession.setValue('/**\ndocs be here\n@param {String} text\n*/\nfunction foo(text) {}\nf');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
                     jsTab.editor.ace.onTextInput("o");
@@ -586,7 +586,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it.skip("supports warnings for Cloud9's plugin unload event", function(done) {
+                it("supports warnings for Cloud9's plugin unload event", function(done) {
                     tabs.openFile("/plugins/c9.dummy/architect_test.js", function(err, _tab) {
                         if (err) return done(err);
                         
