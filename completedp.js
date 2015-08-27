@@ -1,4 +1,6 @@
 define(function(require, exports, module) {
+    var escapeHTML = require("ace/lib/lang").escapeHTML;
+    
     var guidToShortString = exports.guidToShortString = function(guid) {
         var result = guid && guid.replace(/^[^:]+:(([^\/]+)\/)*?([^\/]*?)(\[\d+[^\]]*\])?(\/prototype)?$|.*/, "$3");
         return result && result !== "Object" ? result : "";
@@ -52,31 +54,33 @@ define(function(require, exports, module) {
                 match.meta = shortType;
         }
         
+        var name = escapeHTML(match.name);
         var prefix = match.identifierRegex
             ? this.calcPrefix(match.identifierRegex)
-            : match.name.substr(0, this.prefix.length);
+            : name.substr(0, this.prefix.length);
         
         var trim = match.meta ? " maintrim" : "";
         if (!this.ignoreGenericMatches || !match.isGeneric) {
             var simpleName = match.replaceText.replace("^^", "").replace(/\(\)$/, "");
-            if (match.name.indexOf(simpleName) === 0) {
+            if (name.indexOf(simpleName) === 0) {
+                simpleName = escapeHTML(simpleName);
                 html += '<span class="main' + trim + '"><u>' 
                     + prefix + "</u>" + simpleName.substring(prefix.length) 
                     + '</span>'
                     + '<span class="deferred">'
-                    + match.name.substring(simpleName.length)
+                    + name.substring(simpleName.length)
                     + '</span>';
             }
             else {
                 html += '<span class="main' + trim + '"><u>' 
-                    + prefix + "</u>" + match.name.substring(prefix.length) 
+                    + prefix + "</u>" + name.substring(prefix.length) 
                     + '</span>';
             }
         }
         else {
             html += '<span class="main' + trim 
                 + '"><span class="deferred"><u>' + prefix + "</u>" 
-                + match.name.substring(prefix.length) + '</span></span>';
+                + name.substring(prefix.length) + '</span></span>';
         }
         
         if (match.meta)

@@ -360,7 +360,9 @@ module.exports = {
      * @param {Object|String} callback.result.hint         An object or HTML string with the tooltip to display
      * @param {Object[]} [callback.result.signatures]      One or more function signatures to show
      * @param {String} callback.result.signatures.name     Function name
-     * @param {String} [callback.result.signatures.doc]    Function documentation
+     * @param {String} [callback.result.signatures.doc]    Function documentation, as text
+     * @param {String} [callback.result.signatures.docHtml]
+     *                                                     Function documentation, as HTML
      * @param {Object[]} callback.result.signatures.parameters
      *                                                     Function parameters
      * @param {String} callback.result.signatures.parameters.name
@@ -368,7 +370,9 @@ module.exports = {
      * @param {String} [callback.result.signatures.parameters.type]
      *                                                     Parameter type
      * @param {String} [callback.result.signatures.parameters.doc]
-     *                                                     Parameter documentation
+     *                                                     Parameter documentation, as text
+     * @param {String} [callback.result.signatures.parameters.docHtml]
+     *                                                     Parameter documentation, as HTML
      * @param {String} [callback.result.signatures.returnType]
      *                                                     The function return type
      * @param {Object} callback.result.pos                 The position range for which this tooltip is valid

@@ -23,7 +23,7 @@ define(function(require, exports, module) {
         var language = imports.language;
         var tooltip = imports["language.tooltip"];
         var settings = imports.settings;
-        
+        var escapeHTML = require("ace/lib/lang").escapeHTML;
         var lang = require("ace/lib/lang");
         var SyntaxDetector = require("./syntax_detector");
         var completeUtil = require("plugins/c9.ide.language/complete_util");
@@ -527,23 +527,24 @@ define(function(require, exports, module) {
 
             if (!selected)
                 return;
-            var docHead;
+            var docHead = selected.docHeadHtml || selected.docHead && escapeHTML(selected.docHead);
             if (selected.type) {
                 var shortType = completedp.guidToShortString(selected.type);
                 if (shortType) {
-                    docHead = selected.name + " : " 
+                    docHead = docHead || selected.name + " : " 
                         + completedp.guidToLongString(selected.type) + "</div>";
                 }
             }
             
             selected.$doc = "";
             
-            if (selected.doc)
-                selected.$doc = '<p>' + selected.doc + '</p>';
+            // TODO: apply escapeHTML to selected.doc
+            if (selected.doc || selected.docHtml)
+                selected.$doc = '<p>' + (selected.doc || selected.docHtml) + '</p>';
                 
             if (selected.icon || selected.type)
                 selected.$doc = '<div class="code_complete_doc_head">' 
-                    + (selected.docHead || docHead || selected.name) + '</div>' 
+                    + (docHead || selected.name && escapeHTML(selected.name)) + '</div>' 
                     + (selected.$doc || "");
             
             if (selected && selected.$doc) {
