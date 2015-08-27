@@ -494,7 +494,7 @@ define(function(require, exports, module) {
                         matches.splice(i--, 1);
                         continue;
                     }
-                    if (m.icon !== "package" && m.icon !== "event")
+                    if (m.icon !== "package" && m.icon !== "event" && !m.isContextual)
                         m.icon = null;
                     var simpleName = m.replaceText.replace("^^", "").replace(/\(\)$/, "");
                     if (m.name.indexOf(simpleName) === 0)
