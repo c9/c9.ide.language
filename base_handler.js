@@ -700,21 +700,49 @@ module.exports = {
      * 
      * Must be overridden by inheritors that implement quick fixes.
      * 
-     * See {@link #hasResolution}.
+     * Example result:
+     * 
+     * ```
+     * var Range = new require("ace/range").Range;
+     * var result = {
+     *     label: "Insert missing semicolon",
+     *     image: "semicolon.png",
+     *     preview: ";",
+     *     deltas: [{
+     *         action: "insert",
+     *         range: new Range(row, column, row, column + 1),
+     *         text: ";"
+     *     }],
+     *     pos: { row: row, column: column + 1 }
+     * };
+     * ```
+     * 
+     * @ignore This feature is currently not supported.
      * 
      * @param {Document} doc                        The Document object representing the source
      * @param {Object} fullAst                      The entire AST of the current file (if any)
      * @param {Object} markers                      The markers to get resolutions for
      * @param {Function} callback                   The callback; must be called
-     * @param {Object} callback.result              The function's result
-     * @return {language.MarkerResolution[]} Resulting resolutions.
+     * @param {language.MarkerResolution[]} callback.result
+     *                                              The function's result
+     * @param {String} [callback.result.label]      Short description, to be displayed in the list of resolutions, as text
+     * @param {String} [callback.result.labelHtml]  Short description, to be displayed in the list of resolutions, as HTML
+     * @param {String} [callback.result.image]      Image to be displayed in the list of resolutions
+     * @param {String} [callback.result.preview]
+     * @param {String} [callback.result.previewHtml]
+     * @param {Object[]} callback.result.deltas     The changes to be applied
+     * @param {String} callback.result.deltas.action
+     *                                              The action, i.e. insert or remove.
+     * @param {ace.range.Range} callback.result.deltas.range
+     * @param {String} [callback.result.deltas.text]
+     * @param {Object} [callback.result.pos]        The position where the cursor should be after applying
      */
     getResolutions: function(doc, fullAst, markers, callback) {
         callback();
     },
     
-    /**
-     * Determines if there are marker resolutions for quick fixes.
+    /*
+     * UNDONE: Determines if there are marker resolutions for quick fixes.
      * 
      * Must be overridden by inheritors that implement quick fixes.
      * 
@@ -722,10 +750,11 @@ module.exports = {
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Boolean} callback.result      There is at least one resolution
-     */
+     *
     hasResolution: function(doc, fullAst, marker, callback) {
         callback();
     },
+    */
     
     /** 
      * Given the cursor position and the parsed node at that position,

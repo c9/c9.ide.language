@@ -12,6 +12,7 @@ var dom = require("ace/lib/dom");
 var code = require("ext/code/code");
 var editors = require("ext/editors/editors");
 var lang = require("ace/lib/lang");
+var escapeHtml = lang.escapeHtml;
 var menus = require("ext/menus/menus");
 
 var quickfix;
@@ -33,7 +34,8 @@ var isDocShown;
 var isDrawDocInvokeScheduled = false;
 
 var drawDocInvoke = lang.deferredCall(function() {
-    if (isPopupVisible() && quickfix.quickFixes[quickfix.selectedIdx].preview) {
+    if (isPopupVisible() && (quickfix.quickFixes[quickfix.selectedIdx].preview
+        || quickfix.quickFixes[quickfix.selectedIdx].previewHtml)) {
         isDocShown = true;
         txtQuickfixDoc.parentNode.show();
     }
@@ -286,7 +288,7 @@ module.exports = {
             if (qfix.image)
                 html = "<img src='" + ide.staticPrefix + qfix.image + "'/>";
 
-            html += '<span class="main">' + qfix.label + '</span>';
+            html += '<span class="main">' + (qfix.labelHtml || escapeHtml(qfix.label)) + '</span>';
 
             annoEl.innerHTML = html;     
             
@@ -324,7 +326,7 @@ module.exports = {
         this.docElement.innerHTML = '<span class="code_complete_doc_body">';
         var selected = this.quickFixes[this.selectedIdx];
 
-        if (selected && selected.preview) {
+        if (selected && (selected.preview || selected.previewHtml)) {
             if (isDocShown) {
                 txtQuickfixDoc.parentNode.show();
             }
@@ -334,7 +336,9 @@ module.exports = {
                     drawDocInvoke.schedule(SHOW_DOC_DELAY);
             }
             this.docElement.innerHTML += 
-                selected.preview.replace(/\n/g, '<br/>') + '</span>';
+                selected.previewHtml
+                || escapeHtml(selected.preview).replace(/\n/g, '<br/>');
+            this.docElement.innerHTML += '</span>';
         }
         else {
             txtQuickfixDoc.parentNode.hide();
@@ -359,12 +363,11 @@ module.exports = {
         doc.applyDeltas(qfix.deltas);
         amlEditor.focus();
     
-        if (qfix.cursorTarget) {
-            var cursorTarget = qfix.cursorTarget;
+        if (qfix.pos) {
+            var pos = qfix.pos;
             var selection = amlEditor.$editor.getSelection();
             selection.clearSelection();
-            selection.moveCursorTo(cursorTarget.line,
-            cursorTarget.column, false);
+            selection.moveCursorTo(pos.row, pos.column, false);
         }
     },
     

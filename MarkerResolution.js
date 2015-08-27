@@ -8,19 +8,19 @@ define(function(require, exports, module) {
 * 
 * @param {String} label short description, to be displayed in the list of resolutions
 * @param {String} image image to be displayed in the list of resolutions
-* @param {String} preview
+* @param {String} previewHtml
 * @param {Object[]} deltas the changes to be applied
-* @param {Object} cursorTarget the position where the cursor should be after applying
+* @param {Object} pos the position where the cursor should be after applying
 * 
 * @class language.MarkerResolution
 */
-var MarkerResolution = function(label, image, preview, deltas, cursorTarget) {
+var MarkerResolution = function(label, image, previewHtml, deltas, pos) {
     return {
         label: label,
         image: image,
-        preview: preview,
+        previewHtml: previewHtml,
         deltas: deltas,
-        cursorTarget: cursorTarget
+        pos: pos
     };
 }; 
 
