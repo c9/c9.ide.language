@@ -558,12 +558,18 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement analysis.
      * 
-     * @param {Document} doc                 The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
-     * @param {Function} callback            The callback; must be called
-     * @param {Object} callback.result       The function's result, an array of error and warning markers
-     * @param {Boolean} [minimalAnalysis]    Fast, minimal analysis is requested, e.g.
-     *                                       for code completion or tooltips.
+     * @param {Document} doc                       The Document object representing the source
+     * @param {Object} fullAst                     The entire AST of the current file (if any)
+     * @param {Function} callback                  The callback; must be called
+     * @param {Object[]} callback.result           The function's result, an array of error and warning markers
+     * @param {Object} callback.result.pos         The current cursor position
+     * @param {Number} callback.result.pos.row     The current cursor's row
+     * @param {Number} callback.result.pos.column  The current cursor's column
+     * @param {String} callback.result.type        The type of warning, i.e., "error", "warning", or "info"
+     * @param {String} callback.result.message     The message of the warning, i.e., "error", "warning", or "info"
+     * @param {Boolean} [callback.result.quickfix] Whether there is a quickfix available for this marker
+     * @param {Boolean} [minimalAnalysis]          Fast, minimal analysis is requested, e.g.
+     *                                             for code completion or tooltips.
      */
     analyze: function(value, fullAst, callback, minimalAnalysis) {
         callback();
@@ -677,7 +683,7 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Function} callback            The callback; must be called
-     * @param {Object[]} callback.results    The results
+     * @param {Object[]} callback.results    The resuluts
      * @param {String} [callback.results.path]
      *                                       The result path
      * @param {Number} [callback.results.row]
@@ -698,6 +704,9 @@ module.exports = {
     /**
      * Gets marker resolutions for quick fixes.
      * 
+     * Note that there is currently no UI for this feature,
+     * just a keyboard shortcut.
+     * 
      * Must be overridden by inheritors that implement quick fixes.
      * 
      * Example result:
@@ -710,51 +719,40 @@ module.exports = {
      *     preview: ";",
      *     deltas: [{
      *         action: "insert",
-     *         range: new Range(row, column, row, column + 1),
-     *         text: ";"
+     *         start: { row: row, column: column },
+     *         end: { row: row, column: column },
+     *         lines: [";"]
      *     }],
      *     pos: { row: row, column: column + 1 }
      * };
      * ```
      * 
-     * @ignore This feature is currently not supported.
-     * 
-     * @param {Document} doc                        The Document object representing the source
-     * @param {Object} fullAst                      The entire AST of the current file (if any)
-     * @param {Object} markers                      The markers to get resolutions for
-     * @param {Function} callback                   The callback; must be called
-     * @param {language.MarkerResolution[]} callback.result
-     *                                              The function's result
-     * @param {String} [callback.result.label]      Short description, to be displayed in the list of resolutions, as text
-     * @param {String} [callback.result.labelHtml]  Short description, to be displayed in the list of resolutions, as HTML
-     * @param {String} [callback.result.image]      Image to be displayed in the list of resolutions
+     * @param {Document} doc                          The Document object representing the source
+     * @param {Object} fullAst                        The entire AST of the current file (if any)
+     * @param {Object} pos                            The current cursor position
+     * @param {Number} pos.row                        The current cursor's row
+     * @param {Number} pos.column                     The current cursor's column
+     * @param {Function} callback                     The callback; must be called
+     * @param {Object[]} callback.result              
+     *                                                The function's result
+     * @param {String} [callback.result.message]      Short description, to be displayed in the list of resolutions, as text
+     * @param {String} [callback.result.messageHtml]  Short description, to be displayed in the list of resolutions, as HTML
+     * @param {String} [callback.result.image]        Image to be displayed in the list of resolutions
      * @param {String} [callback.result.preview]
      * @param {String} [callback.result.previewHtml]
-     * @param {Object[]} callback.result.deltas     The changes to be applied
-     * @param {String} callback.result.deltas.action
-     *                                              The action, i.e. insert or remove.
-     * @param {ace.range.Range} callback.result.deltas.range
-     * @param {String} [callback.result.deltas.text]
-     * @param {Object} [callback.result.pos]        The position where the cursor should be after applying
+     * @param {Object[]} callback.result.deltas       An array of Ace delta objects
+     * @param {String} callback.result.deltas.action  The action, i.e. insert or remove.
+     * @param {Object} callback.result.deltas.start.row
+     * @param {Object} callback.result.deltas.start.column
+     * @param {Object} callback.result.deltas.end.row
+     * @param {Object} callback.result.deltas.end.column
+     * @param {String} [callback.result.deltas.path]  The file path to apply this delta to
+     * @param {String[]} [callback.result.deltas.lines]
+     * @param {Object} [callback.result.pos]          The position where the cursor should be after applying
      */
-    getResolutions: function(doc, fullAst, markers, callback) {
+    getQuickfixes: function(doc, ast, pos, currentNode, callback) {
         callback();
     },
-    
-    /*
-     * UNDONE: Determines if there are marker resolutions for quick fixes.
-     * 
-     * Must be overridden by inheritors that implement quick fixes.
-     * 
-     * @param {Document} doc                 The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
-     * @param {Function} callback            The callback; must be called
-     * @param {Boolean} callback.result      There is at least one resolution
-     *
-    hasResolution: function(doc, fullAst, marker, callback) {
-        callback();
-    },
-    */
     
     /** 
      * Given the cursor position and the parsed node at that position,
@@ -784,7 +782,7 @@ module.exports = {
 };
 
 // Mark all abstract/builtin methods for later optimization
-for (f in module.exports) {
+for (var f in module.exports) {
     if (typeof module.exports[f] === "function")
         module.exports[f].base_handler = true;
 }

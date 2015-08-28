@@ -1,18 +1,3 @@
-/**
- * Cloud9 Language Foundation
- *
- * @copyright 2013, Ajax.org B.V.
- */
-define(function(require, exports, module) {
-    
-/*global barQuickfixCont sbQuickfix txtQuickfixHolder txtQuickfix txtQuickfixDoc mnuCtxEditor*/
-
-
-/**
- * Cloud9 Language Foundation
- *
- * @copyright 2013, Ajax.org B.V.
- */
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "ui", "tabManager", "ace", "language",
@@ -23,16 +8,111 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var ide = require("core/ide");
-        var dom = require("ace/lib/dom");
-        var code = require("ext/code/code");
-        var editors = require("ext/editors/editors");
-        var lang = require("ace/lib/lang");
-        var escapeHtml = lang.escapeHtml;
-        var menus = require("ext/menus/menus");
+        var Plugin = imports.Plugin;
+        var tabs = imports.tabManager;
+        var language = imports.language;
+        var commands = imports.commands;
+        var Range = require("ace/range").Range;
+        var plugin = new Plugin("Ajax.org", main.consumes);
         
-        var oldCommandKey, oldOnTextInput;
+        var CRASHED_JOB_TIMEOUT = 30000;
         
+        var worker;
+        
+        var loaded;
+        function load() {
+            if (loaded) return;
+            loaded = true;
+            
+            commands.addCommand({
+                name: "quickfix",
+                hint: "quickfix",
+                bindKey: {mac: "Command-F3", win: "Ctrl-F3"},
+                exec: function(editor) {
+                    invoke();
+                }
+            }, plugin);
+            
+            language.getWorker(function(err, result) {
+                if (err) console.error(err);
+                worker = result;
+                
+                worker.on("quickfixes_result", onResult);
+            });
+            
+            /*
+            menus.addItemByPath("Tools/Quickfix", new apf.item({
+                caption: "Quickfix",
+                command: "quickfix"
+            }), 20001, plugin)
+            */
+        }
+    
+        function invoke() {
+            if (!tabs.focussedTab || !tabs.focussedTab.editor || !tabs.focussedTab.editor.ace)
+                return;
+            
+            var tab = tabs.focussedTab;
+            var ace = tab.editor.ace;
+            var sel = ace.getSelection();
+            var pos = sel.getCursor();
+    
+            activateSpinner(tabs.focussedTab);
+    
+            worker.emit("quickfixes", {
+                data: pos
+            });
+        }
+        
+        function onResult(e) {
+            var tab = tabs.findTab(e.data.path);
+            if (!tab || tabs.focussedTab !== tab)
+                return;
+            
+            clearSpinners(tab);
+            var results = e.data.results;
+            
+            if (!results.length)
+                return;
+            
+            // HACK: don't show UI for now, assume there's only 1 result
+            if (results[0].deltas.length > 1 && results[0].delta.ssome(function(d) { return d.path }))
+                throw new Error("Multiple deltas with paths not allowed");
+                
+            applyQuickfix(results[0]);
+        }
+    
+        function activateSpinner(tab) {
+            tab.classList.add("loading");
+            clearTimeout(tab.$quickfixReset);
+            tab.$quickfixReset = setTimeout(function() {
+                clearSpinners(tab);
+            }, CRASHED_JOB_TIMEOUT);
+        }
+    
+        function clearSpinners(tab) {
+            clearTimeout(tab.$quickfixReset);
+            tab.classList.remove("loading");
+        }
+        
+        function applyQuickfix(fix) {
+            var tab = tabs.focussedTab;
+            if (fix.deltas[0].path)
+                tabs.findTab(fix.deltas[0].path);
+            var ace = tab.editor.ace;
+            var doc = ace.getSession().getDocument();
+    
+            doc.applyDeltas(fix.deltas);
+        
+            if (fix.pos) {
+                var pos = fix.pos;
+                var selection = ace.getSelection();
+                selection.clearSelection();
+                selection.moveCursorTo(pos.row, pos.column, false);
+            }
+        }
+        
+        /*
         var CLASS_SELECTED = "cc_complete_option selected";
         var CLASS_UNSELECTED = "cc_complete_option";
         var SHOW_DOC_DELAY = 1500;
@@ -46,7 +126,6 @@ define(function(require, exports, module) {
         var ignoreMouseOnce = false;
         var isDocShown;
         var isDrawDocInvokeScheduled = false;
-        var quickfix;
         var quickfixElement;
         var editor;
         var selectedIdx;
@@ -57,10 +136,16 @@ define(function(require, exports, module) {
         var lineHeight;
         var quickFixes;
         var popupTime;
+        var oldCommandKey;
+        var oldOnTextInput;
+        
+        function isPopupVisible() {
+            return barQuickfixCont.$ext.style.display !== "none";
+        }
         
         var drawDocInvoke = lang.deferredCall(function() {
-            if (isPopupVisible() && (quickfix.quickFixes[quickfix.selectedIdx].preview
-                || quickfix.quickFixes[quickfix.selectedIdx].previewHtml)) {
+            if (isPopupVisible() && (quickFixes[selectedIdx].preview
+                || quickFixes[selectedIdx].previewHtml)) {
                 isDocShown = true;
                 txtQuickfixDoc.parentNode.show();
             }
@@ -73,48 +158,6 @@ define(function(require, exports, module) {
                 txtQuickfixDoc.parentNode.hide();
             }
         });
-        
-        function isPopupVisible() {
-            return barQuickfixCont.$ext.style.display !== "none";
-        }
-        
-        var commands = require("ext/commands/commands");
-        
-        var loaded;
-        function load() {
-            if (loaded) return;
-            loaded = true;
-            
-            quickfix = this;
-                      
-            ide.addEventListener("paneAfterswitch", function(e) {
-                var tab = e.nextTab;
-                if (!tab || !tab.$editor || tab.$editor.path != "ext/code/code")
-                    return;
-                var ace = tab.$editor.amlEditor.$editor;
-                
-                if (!ace.$markerListener)
-                    initEditor(ace);           
-            });
-            
-            commands.addCommand({
-                name: "quickfix",
-                hint: "quickfix",
-                bindKey: {mac: "Ctrl-Shift-Q|Ctrl-Alt-Q|Ctrl-F3", win: "Ctrl-Shift-Q|Alt-Shift-Q|Ctrl-F3"},
-                isAvailable: function(editor) {
-                    return apf.activeElement.localName == "codeeditor";
-                },
-                exec: function(editor) {
-                    invoke();
-                }
-            });
-            
-            menus.addItemByPath("Tools/Quickfix", new apf.item({
-                caption: "Quickfix",
-                command: "quickfix"
-            }), 20001, plugin)
-
-        };
         
         function initEditor(editor) {
                    
@@ -148,7 +191,7 @@ define(function(require, exports, module) {
                 if (anno.row == row) {
                     res.push(anno);
                     
-                    /* Select the annotation in the editor */
+                    // Select the annotation in the editor
                     anno.select = function() {
                         if (!(anno.pos.sl && anno.pos.sc && anno.pos.el && anno.pos.ec)) {
                             return;
@@ -161,9 +204,7 @@ define(function(require, exports, module) {
                         }
                     };
                     
-                    /*
-                     * Returns the screen coordinates of the start of the annotation
-                     */
+                    // Returns the screen coordinates of the start of the annotation
                     anno.getScreenCoordinates = function() {
                         return editor.renderer.textToScreenCoordinates(anno.pos.sl,
                                                                        anno.pos.sc);  
@@ -176,9 +217,7 @@ define(function(require, exports, module) {
             return res;
         }
         
-        
-        
-      function showQuickfixBox(row, column) {
+        function showQuickfixBox(row, column) {
             // Get the annotation on this line that is containing or left of the 
             // position (row,column)
             var annos = getAnnos(row);
@@ -256,18 +295,18 @@ define(function(require, exports, module) {
             });
             
             popupTime = new Date().getTime();
-            document.addEventListener("click", quickfix.closeQuickfixBox, false);
-            ace.container.addEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
-            ace.container.addEventListener("mousewheel", quickfix.closeQuickfixBox, false);
+            document.addEventListener("click", closeQuickfixBox, false);
+            ace.container.addEventListener("DOMMouseScroll", closeQuickfixBox, false);
+            ace.container.addEventListener("mousewheel", closeQuickfixBox, false);
         }
     
         function closeQuickfixBox(event) {
-            var qfBoxTime = new Date().getTime() - quickfix.popupTime;
-            if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME) {
+            var qfBoxTime = new Date().getTime() - popupTime;
+            if (!forceClose && qfBoxTime < QFBOX_MINTIME) {
                 return;
             }
             
-            quickfix.forceClose = false;
+            forceClose = false;
         
             barQuickfixCont.$ext.style.display = "none";
             if (!editors.currentEditor.amlEditor) // no editor, try again later
@@ -275,9 +314,9 @@ define(function(require, exports, module) {
             var ace = editors.currentEditor.amlEditor.$editor;
             
             // TODO these calls don't work.
-            document.removeEventListener("click", quickfix.closeQuickfixBox, false);
-            ace.container.removeEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
-            ace.container.removeEventListener("mousewheel", quickfix.closeQuickfixBox, false);
+            document.removeEventListener("click", closeQuickfixBox, false);
+            ace.container.removeEventListener("DOMMouseScroll", closeQuickfixBox, false);
+            ace.container.removeEventListener("mousewheel", closeQuickfixBox, false);
             
             if (oldCommandKey) {
                 ace.keyBinding.onCommandKey = oldCommandKey;
@@ -286,7 +325,6 @@ define(function(require, exports, module) {
             oldCommandKey = oldOnTextInput = null;
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
         }
-        
         
         function populateQuickfixBox(quickFixes) {
             
@@ -303,7 +341,7 @@ define(function(require, exports, module) {
                 if (qfix.image)
                     html = "<img src='" + ide.staticPrefix + qfix.image + "'/>";
     
-                html += '<span class="main">' + (qfix.labelHtml || escapeHtml(qfix.label)) + '</span>';
+                html += '<span class="main">' + (qfix.messageHtml || escapeHtml(qfix.message)) + '</span>';
     
                 annoEl.innerHTML = html;     
                 
@@ -322,7 +360,7 @@ define(function(require, exports, module) {
                 
                 
                 annoEl.addEventListener("click", function() {
-                    quickfix.forceClose = true;
+                    forceClose = true;
                     applyQuickfix(qfix);
                 });
                 
@@ -362,21 +400,6 @@ define(function(require, exports, module) {
             docElement.innerHTML += '</span>';
         }
         
-        function applyQuickfix(qfix) {
-            var amlEditor = editors.currentEditor.amlEditor;
-            var doc = amlEditor.getSession().getDocument();
-    
-            doc.applyDeltas(qfix.deltas);
-            amlEditor.focus();
-        
-            if (qfix.pos) {
-                var pos = qfix.pos;
-                var selection = amlEditor.$editor.getSelection();
-                selection.clearSelection();
-                selection.moveCursorTo(pos.row, pos.column, false);
-            }
-        }
-        
         function onTextInput(text, pasted) {
             closeQuickfixBox();
         }
@@ -412,7 +435,7 @@ define(function(require, exports, module) {
                 case 13: // Enter
                 case 9: // Tab
                     applyQuickfix(quickFixes[selectedIdx]);
-                    quickfix.forceClose = true;
+                    forceClose = true;
                     closeQuickfixBox();
                     e.stopPropagation();
                     e.preventDefault();
@@ -467,9 +490,15 @@ define(function(require, exports, module) {
             
             showQuickfixBox(pos.row, pos.column);
         }
-     
+        */
+        
+        plugin.on("load", load);
+        
+        register(null, {
+            "language.quickfix": plugin.freezePublicAPI({
+                
+            })
+        });
     }
-
-});
 
 });
