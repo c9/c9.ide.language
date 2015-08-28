@@ -7,462 +7,469 @@ define(function(require, exports, module) {
     
 /*global barQuickfixCont sbQuickfix txtQuickfixHolder txtQuickfix txtQuickfixDoc mnuCtxEditor*/
 
-var ide = require("core/ide");
-var dom = require("ace/lib/dom");
-var code = require("ext/code/code");
-var editors = require("ext/editors/editors");
-var lang = require("ace/lib/lang");
-var escapeHtml = lang.escapeHtml;
-var menus = require("ext/menus/menus");
 
-var quickfix;
+/**
+ * Cloud9 Language Foundation
+ *
+ * @copyright 2013, Ajax.org B.V.
+ */
+define(function(require, exports, module) {
+    main.consumes = [
+        "Plugin", "ui", "tabManager", "ace", "language",
+        "menus", "commands", "c9", "tabManager", "browsersupport",
+        "settings"
+    ];
+    main.provides = ["language.quickfix"];
+    return main;
 
-var oldCommandKey, oldOnTextInput;
-
-var CLASS_SELECTED = "cc_complete_option selected";
-var CLASS_UNSELECTED = "cc_complete_option";
-var SHOW_DOC_DELAY = 1500;
-var SHOW_DOC_DELAY_MOUSE_OVER = 100;
-var HIDE_DOC_DELAY = 1000;
-var MENU_WIDTH = 400;
-var MENU_SHOWN_ITEMS = 9;
-var EXTRA_LINE_HEIGHT = 3;
-var QFBOX_MINTIME = 500;
-
-var ignoreMouseOnce = false;
-var isDocShown;
-var isDrawDocInvokeScheduled = false;
-
-var drawDocInvoke = lang.deferredCall(function() {
-    if (isPopupVisible() && (quickfix.quickFixes[quickfix.selectedIdx].preview
-        || quickfix.quickFixes[quickfix.selectedIdx].previewHtml)) {
-        isDocShown = true;
-        txtQuickfixDoc.parentNode.show();
-    }
-    isDrawDocInvokeScheduled = false;
-});
-
-var undrawDocInvoke = lang.deferredCall(function() {
-    if (!isPopupVisible()) {
-        isDocShown = false;
-        txtQuickfixDoc.parentNode.hide();
-    }
-});
-
-function isPopupVisible() {
-    return barQuickfixCont.$ext.style.display !== "none";
-}
-
-var commands = require("ext/commands/commands");
-
-module.exports = {
- 
-    hook: function(ext) {
-        var _self = this;
-        quickfix = this;
-                  
-        ide.addEventListener("paneAfterswitch", function(e) {
-            var tab = e.nextTab;
-            if (!tab || !tab.$editor || tab.$editor.path != "ext/code/code")
-                return;
-            var ace = tab.$editor.amlEditor.$editor;
-            
-            if (!ace.$markerListener)
-                _self.initEditor(ace);           
+    function main(options, imports, register) {
+        var ide = require("core/ide");
+        var dom = require("ace/lib/dom");
+        var code = require("ext/code/code");
+        var editors = require("ext/editors/editors");
+        var lang = require("ace/lib/lang");
+        var escapeHtml = lang.escapeHtml;
+        var menus = require("ext/menus/menus");
+        
+        var oldCommandKey, oldOnTextInput;
+        
+        var CLASS_SELECTED = "cc_complete_option selected";
+        var CLASS_UNSELECTED = "cc_complete_option";
+        var SHOW_DOC_DELAY = 1500;
+        var SHOW_DOC_DELAY_MOUSE_OVER = 100;
+        var HIDE_DOC_DELAY = 1000;
+        var MENU_WIDTH = 400;
+        var MENU_SHOWN_ITEMS = 9;
+        var EXTRA_LINE_HEIGHT = 3;
+        var QFBOX_MINTIME = 500;
+        
+        var ignoreMouseOnce = false;
+        var isDocShown;
+        var isDrawDocInvokeScheduled = false;
+        var quickfix;
+        var quickfixElement;
+        var editor;
+        var selectedIdx;
+        var scrollIdx;
+        var quickfixEls;
+        var docElement;
+        var cursorConfig;
+        var lineHeight;
+        var quickFixes;
+        var popupTime;
+        
+        var drawDocInvoke = lang.deferredCall(function() {
+            if (isPopupVisible() && (quickfix.quickFixes[quickfix.selectedIdx].preview
+                || quickfix.quickFixes[quickfix.selectedIdx].previewHtml)) {
+                isDocShown = true;
+                txtQuickfixDoc.parentNode.show();
+            }
+            isDrawDocInvokeScheduled = false;
         });
         
-        commands.addCommand({
-            name: "quickfix",
-            hint: "quickfix",
-            bindKey: {mac: "Ctrl-Shift-Q|Ctrl-Alt-Q", win: "Ctrl-Shift-Q|Alt-Shift-Q"},
-            isAvailable: function(editor) {
-                return apf.activeElement.localName == "codeeditor";
-            },
-            exec: function(editor) {
-                _self.invoke();
+        var undrawDocInvoke = lang.deferredCall(function() {
+            if (!isPopupVisible()) {
+                isDocShown = false;
+                txtQuickfixDoc.parentNode.hide();
             }
         });
         
-        ide.addEventListener("init.ext/code/code", function() {
-            ext.nodes.push(
-                menus.addItemByPath("Tools/Quickfix", new apf.item({
-                    caption: "Quickfix",
-                    command: "quickfix"
-                }), 20001)
-            );
-        });
-           
-    },
-    
-    init: function(amlNode) {
-    },
-    
-    initEditor: function(editor) {
-        var _self = this;
-               
-        editor.on("guttermousedown", editor.$markerListener = function(e) {
-             _self.editor = editor;
-            if (!e.getButton())
-                return;
-            apf.addListener(mnuCtxEditor, "prop.visible", hideContext);
-            function hideContext(ev) {
-                // only fire when visibility is set to true
-                if (ev.value) {
-                    apf.removeListener(mnuCtxEditor, "prop.visible", hideContext);
-                    mnuCtxEditor.hide();
-                }
-            }
-            var gutterRegion = editor.renderer.$gutterLayer.getRegion(e);
-            if (gutterRegion != "markers")
-                return;
-            
-            var row = e.getDocumentPosition().row;
-            _self.showQuickfixBox(row, 0);
-            
-        });
-    },
+        function isPopupVisible() {
+            return barQuickfixCont.$ext.style.display !== "none";
+        }
         
-    getAnnos: function(row) {
-        var editor = editors.currentEditor.amlEditor.$editor;
-        var res = [];
+        var commands = require("ext/commands/commands");
         
-        editor.getSession().languageAnnos.forEach(function(anno, idx) {
-            if (anno.row == row) {
-                res.push(anno);
+        var loaded;
+        function load() {
+            if (loaded) return;
+            loaded = true;
+            
+            quickfix = this;
+                      
+            ide.addEventListener("paneAfterswitch", function(e) {
+                var tab = e.nextTab;
+                if (!tab || !tab.$editor || tab.$editor.path != "ext/code/code")
+                    return;
+                var ace = tab.$editor.amlEditor.$editor;
                 
-                /* Select the annotation in the editor */
-                anno.select = function() {
-                    if (!(anno.pos.sl && anno.pos.sc && anno.pos.el && anno.pos.ec)) {
+                if (!ace.$markerListener)
+                    initEditor(ace);           
+            });
+            
+            commands.addCommand({
+                name: "quickfix",
+                hint: "quickfix",
+                bindKey: {mac: "Ctrl-Shift-Q|Ctrl-Alt-Q|Ctrl-F3", win: "Ctrl-Shift-Q|Alt-Shift-Q|Ctrl-F3"},
+                isAvailable: function(editor) {
+                    return apf.activeElement.localName == "codeeditor";
+                },
+                exec: function(editor) {
+                    invoke();
+                }
+            });
+            
+            menus.addItemByPath("Tools/Quickfix", new apf.item({
+                caption: "Quickfix",
+                command: "quickfix"
+            }), 20001, plugin)
+
+        };
+        
+        function initEditor(editor) {
+                   
+            editor.on("guttermousedown", editor.$markerListener = function(e) {
+                 editor = editor;
+                if (!e.getButton())
+                    return;
+                apf.addListener(mnuCtxEditor, "prop.visible", hideContext);
+                function hideContext(ev) {
+                    // only fire when visibility is set to true
+                    if (ev.value) {
+                        apf.removeListener(mnuCtxEditor, "prop.visible", hideContext);
+                        mnuCtxEditor.hide();
+                    }
+                }
+                var gutterRegion = editor.renderer.$gutterLayer.getRegion(e);
+                if (gutterRegion != "markers")
+                    return;
+                
+                var row = e.getDocumentPosition().row;
+                showQuickfixBox(row, 0);
+                
+            });
+        }
+            
+        function getAnnos(row) {
+            var editor = editors.currentEditor.amlEditor.$editor;
+            var res = [];
+            
+            editor.getSession().languageAnnos.forEach(function(anno, idx) {
+                if (anno.row == row) {
+                    res.push(anno);
+                    
+                    /* Select the annotation in the editor */
+                    anno.select = function() {
+                        if (!(anno.pos.sl && anno.pos.sc && anno.pos.el && anno.pos.ec)) {
+                            return;
+                        }
+                        var startPos = { row: anno.pos.sl, column: anno.pos.sc };
+                        var endPos = { row: anno.pos.el, column: anno.pos.ec };
+                        if (startPos.row < endPos.row || startPos.column < endPos.column) {
+                            editor.getSelection().setSelectionRange(
+                                {start: startPos, end: endPos});
+                        }
+                    };
+                    
+                    /*
+                     * Returns the screen coordinates of the start of the annotation
+                     */
+                    anno.getScreenCoordinates = function() {
+                        return editor.renderer.textToScreenCoordinates(anno.pos.sl,
+                                                                       anno.pos.sc);  
+                    };
+                }
+            });
+            
+            res.sort(function(a,b) { return a.pos.sc - b.pos.sc; });
+            
+            return res;
+        }
+        
+        
+        
+      function showQuickfixBox(row, column) {
+            // Get the annotation on this line that is containing or left of the 
+            // position (row,column)
+            var annos = getAnnos(row);
+            if (!annos.length) {
+                return;
+            }
+            for (var i = 0; i < annos.length - 1; i++) {
+                if (annos[i+1].pos.sc > column) { break; }
+            }
+            var anno = annos[i];
+            if (!anno.resolutions.length) {
+                // TODO If some other annotation on this line has resolutions, 
+                // quickfix that one instead
+                return;
+            }
+    
+            editor = editors.currentEditor;
+            var ace = editor.amlEditor.$editor;
+            selectedIdx = 0;
+            scrollIdx = 0;
+            quickfixEls = [];
+            // annos = annos;
+            quickFixes = [];
+            quickfixElement = txtQuickfix.$ext;
+            docElement = txtQuickfixDoc.$ext;
+            cursorConfig = ace.renderer.$cursorLayer.config;
+            lineHeight = cursorConfig.lineHeight + EXTRA_LINE_HEIGHT;
+            var style = dom.computedStyle(editor.amlEditor.$ext);
+            quickfixElement.style.fontSize = style.fontSize;
+            
+            barQuickfixCont.setAttribute('visible', true);
+    
+    
+            // Monkey patch
+            if (!oldCommandKey) {
+                oldCommandKey = ace.keyBinding.onCommandKey;
+                ace.keyBinding.onCommandKey = onKeyPress.bind(this);
+                oldOnTextInput = ace.keyBinding.onTextInput;
+                ace.keyBinding.onTextInput = onTextInput.bind(this);
+            }
+            
+            // Collect all quickfixes for the given annotation
+            quickFixes = anno.resolutions;
+            
+            // Select it in the editor
+            anno.select();
+            
+            populateQuickfixBox(quickFixes);
+    
+            apf.popup.setContent("quickfixBox", barQuickfixCont.$ext);
+            var boxLength = quickFixes.length || 1;
+            var quickfixBoxHeight = 11 + Math.min(10 * lineHeight, boxLength * (lineHeight));
+            
+            var innerBoxLength = quickFixes.length || 1;
+            var innerQuickfixBoxHeight = Math.min(10 * lineHeight, innerBoxLength * (lineHeight));
+            txtQuickfixHolder.$ext.style.height = innerQuickfixBoxHeight + "px";
+            
+            ignoreMouseOnce = !isPopupVisible();
+            
+            var pos = anno.getScreenCoordinates();
+            apf.popup.show("quickfixBox", {
+                x: pos.pageX, 
+                y: pos.pageY + cursorConfig.lineHeight, 
+                height: quickfixBoxHeight,
+                width: MENU_WIDTH,
+                animate: false,
+                callback: function() {
+                    barQuickfixCont.setHeight(quickfixBoxHeight);
+                    barQuickfixCont.$ext.style.height = quickfixBoxHeight + "px";
+                    sbQuickfix.$resize();
+                    // HACK: Need to set with non-falsy value first
+                    quickfixElement.scrollTop = 1;
+                    quickfixElement.scrollTop = 0;
+                }
+            });
+            
+            popupTime = new Date().getTime();
+            document.addEventListener("click", quickfix.closeQuickfixBox, false);
+            ace.container.addEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
+            ace.container.addEventListener("mousewheel", quickfix.closeQuickfixBox, false);
+        }
+    
+        function closeQuickfixBox(event) {
+            var qfBoxTime = new Date().getTime() - quickfix.popupTime;
+            if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME) {
+                return;
+            }
+            
+            quickfix.forceClose = false;
+        
+            barQuickfixCont.$ext.style.display = "none";
+            if (!editors.currentEditor.amlEditor) // no editor, try again later
+                return;
+            var ace = editors.currentEditor.amlEditor.$editor;
+            
+            // TODO these calls don't work.
+            document.removeEventListener("click", quickfix.closeQuickfixBox, false);
+            ace.container.removeEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
+            ace.container.removeEventListener("mousewheel", quickfix.closeQuickfixBox, false);
+            
+            if (oldCommandKey) {
+                ace.keyBinding.onCommandKey = oldCommandKey;
+                ace.keyBinding.onTextInput = oldOnTextInput;
+            }
+            oldCommandKey = oldOnTextInput = null;
+            undrawDocInvoke.schedule(HIDE_DOC_DELAY);
+        }
+        
+        
+        function populateQuickfixBox(quickFixes) {
+            
+            quickfixElement.innerHTML = "";
+            var cursorConfig = code.amlEditor.$editor.renderer.$cursorLayer.config;
+    
+            // For each quickfix, create a list entry
+            quickFixes.forEach(function(qfix, qfidx) {
+    
+                var annoEl = dom.createElement("div");
+                annoEl.className = qfidx === selectedIdx ? CLASS_SELECTED : CLASS_UNSELECTED;
+                var html = "";
+    
+                if (qfix.image)
+                    html = "<img src='" + ide.staticPrefix + qfix.image + "'/>";
+    
+                html += '<span class="main">' + (qfix.labelHtml || escapeHtml(qfix.label)) + '</span>';
+    
+                annoEl.innerHTML = html;     
+                
+                annoEl.addEventListener("mouseover", function() {
+                    if (ignoreMouseOnce) {
+                        ignoreMouseOnce = false;
                         return;
                     }
-                    var startPos = { row: anno.pos.sl, column: anno.pos.sc };
-                    var endPos = { row: anno.pos.el, column: anno.pos.ec };
-                    if (startPos.row < endPos.row || startPos.column < endPos.column) {
-                        editor.getSelection().setSelectionRange(
-                            {start: startPos, end: endPos});
-                    }
-                };
+                    quickfixEls[selectedIdx].className = CLASS_UNSELECTED;
+                    selectedIdx = qfidx;
+                    quickfixEls[selectedIdx].className = CLASS_SELECTED;
+                    updateDoc();
+                    if (!isDrawDocInvokeScheduled)
+                        drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
+                });
                 
-                /*
-                 * Returns the screen coordinates of the start of the annotation
-                 */
-                anno.getScreenCoordinates = function() {
-                    return editor.renderer.textToScreenCoordinates(anno.pos.sl,
-                                                                   anno.pos.sc);  
-                };
-            }
-        });
-        
-        res.sort(function(a,b) { return a.pos.sc - b.pos.sc; });
-        
-        return res;
-    },
+                
+                annoEl.addEventListener("click", function() {
+                    quickfix.forceClose = true;
+                    applyQuickfix(qfix);
+                });
+                
+                
+                annoEl.style.height = cursorConfig.lineHeight + EXTRA_LINE_HEIGHT +  "px";
+                annoEl.style.width = (MENU_WIDTH - 10) + "px";
+                quickfixElement.appendChild(annoEl);
+                quickfixEls.push(annoEl);
+            });
     
-    
-    
-  showQuickfixBox: function(row, column) {
-        var _self = this;
-
-        // Get the annotation on this line that is containing or left of the 
-        // position (row,column)
-        var annos = _self.getAnnos(row);
-        if (!annos.length) {
-            return;
-        }
-        for (var i = 0; i < annos.length - 1; i++) {
-            if (annos[i+1].pos.sc > column) { break; }
-        }
-        var anno = annos[i];
-        if (!anno.resolutions.length) {
-            // TODO If some other annotation on this line has resolutions, 
-            // quickfix that one instead
-            return;
-        }
-
-        this.editor = editors.currentEditor;
-        var ace = this.editor.amlEditor.$editor;
-        this.selectedIdx = 0;
-        this.scrollIdx = 0;
-        this.quickfixEls = [];
-        //this.annos = annos;
-        this.quickFixes = [];
-        this.quickfixElement = txtQuickfix.$ext;
-        this.docElement = txtQuickfixDoc.$ext;
-        this.cursorConfig = ace.renderer.$cursorLayer.config;
-        this.lineHeight = this.cursorConfig.lineHeight + EXTRA_LINE_HEIGHT;
-        var style = dom.computedStyle(this.editor.amlEditor.$ext);
-        this.quickfixElement.style.fontSize = style.fontSize;
-        
-        barQuickfixCont.setAttribute('visible', true);
-
-
-        // Monkey patch
-        if (!oldCommandKey) {
-            oldCommandKey = ace.keyBinding.onCommandKey;
-            ace.keyBinding.onCommandKey = this.onKeyPress.bind(this);
-            oldOnTextInput = ace.keyBinding.onTextInput;
-            ace.keyBinding.onTextInput = this.onTextInput.bind(this);
-        }
-        
-        // Collect all quickfixes for the given annotation
-        _self.quickFixes = anno.resolutions;
-        
-        // Select it in the editor
-        anno.select();
-        
-        this.populateQuickfixBox(this.quickFixes);
-
-        apf.popup.setContent("quickfixBox", barQuickfixCont.$ext);
-        var boxLength = this.quickFixes.length || 1;
-        var quickfixBoxHeight = 11 + Math.min(10 * this.lineHeight, boxLength * (this.lineHeight));
-        
-        var innerBoxLength = this.quickFixes.length || 1;
-        var innerQuickfixBoxHeight = Math.min(10 * this.lineHeight, innerBoxLength * (this.lineHeight));
-        txtQuickfixHolder.$ext.style.height = innerQuickfixBoxHeight + "px";
-        
-        ignoreMouseOnce = !isPopupVisible();
-        
-        var pos = anno.getScreenCoordinates();
-        apf.popup.show("quickfixBox", {
-            x: pos.pageX, 
-            y: pos.pageY + _self.cursorConfig.lineHeight, 
-            height: quickfixBoxHeight,
-            width: MENU_WIDTH,
-            animate: false,
-            callback: function() {
-                barQuickfixCont.setHeight(quickfixBoxHeight);
-                barQuickfixCont.$ext.style.height = quickfixBoxHeight + "px";
-                sbQuickfix.$resize();
-                // HACK: Need to set with non-falsy value first
-                _self.quickfixElement.scrollTop = 1;
-                _self.quickfixElement.scrollTop = 0;
-            }
-        });
-        
-        this.popupTime = new Date().getTime();
-        document.addEventListener("click", quickfix.closeQuickfixBox, false);
-        ace.container.addEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
-        ace.container.addEventListener("mousewheel", quickfix.closeQuickfixBox, false);
-    },
-
-    closeQuickfixBox: function(event) {
-        var qfBoxTime = new Date().getTime() - quickfix.popupTime;
-        if (!quickfix.forceClose && qfBoxTime < QFBOX_MINTIME) {
-            return;
-        }
-        
-        quickfix.forceClose = false;
-    
-        barQuickfixCont.$ext.style.display = "none";
-        if (!editors.currentEditor.amlEditor) // no editor, try again later
-            return;
-        var ace = editors.currentEditor.amlEditor.$editor;
-        
-        // TODO these calls don't work.
-        document.removeEventListener("click", quickfix.closeQuickfixBox, false);
-        ace.container.removeEventListener("DOMMouseScroll", quickfix.closeQuickfixBox, false);
-        ace.container.removeEventListener("mousewheel", quickfix.closeQuickfixBox, false);
-        
-        if (oldCommandKey) {
-            ace.keyBinding.onCommandKey = oldCommandKey;
-            ace.keyBinding.onTextInput = oldOnTextInput;
-        }
-        oldCommandKey = oldOnTextInput = null;
-        undrawDocInvoke.schedule(HIDE_DOC_DELAY);
-    },
-    
-    
-    populateQuickfixBox: function(quickFixes) {
-        
-        var _self = this;
-        _self.quickfixElement.innerHTML = "";
-        var cursorConfig = code.amlEditor.$editor.renderer.$cursorLayer.config;
-
-        // For each quickfix, create a list entry
-        quickFixes.forEach(function(qfix, qfidx) {
-
-            var annoEl = dom.createElement("div");
-            annoEl.className = qfidx === _self.selectedIdx ? CLASS_SELECTED : CLASS_UNSELECTED;
-            var html = "";
-
-            if (qfix.image)
-                html = "<img src='" + ide.staticPrefix + qfix.image + "'/>";
-
-            html += '<span class="main">' + (qfix.labelHtml || escapeHtml(qfix.label)) + '</span>';
-
-            annoEl.innerHTML = html;     
+            updateDoc(true);
             
-            annoEl.addEventListener("mouseover", function() {
-                if (ignoreMouseOnce) {
-                    ignoreMouseOnce = false;
-                    return;
+        }
+        
+        function updateDoc(delayPopup) {
+            docElement.innerHTML = '<span class="code_complete_doc_body">';
+            var selected = quickFixes[selectedIdx];
+    
+            if (selected && (selected.preview || selected.previewHtml)) {
+                if (isDocShown) {
+                    txtQuickfixDoc.parentNode.show();
                 }
-                _self.quickfixEls[_self.selectedIdx].className = CLASS_UNSELECTED;
-                _self.selectedIdx = qfidx;
-                _self.quickfixEls[_self.selectedIdx].className = CLASS_SELECTED;
-                _self.updateDoc();
-                if (!isDrawDocInvokeScheduled)
-                    drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
-            });
-            
-            
-            annoEl.addEventListener("click", function() {
-                quickfix.forceClose = true;
-                _self.applyQuickfix(qfix);
-            });
-            
-            
-            annoEl.style.height = cursorConfig.lineHeight + EXTRA_LINE_HEIGHT +  "px";
-            annoEl.style.width = (MENU_WIDTH - 10) + "px";
-            _self.quickfixElement.appendChild(annoEl);
-            _self.quickfixEls.push(annoEl);
-        });
-
-        _self.updateDoc(true);
-        
-    },
-    
-    updateDoc: function(delayPopup) {
-        this.docElement.innerHTML = '<span class="code_complete_doc_body">';
-        var selected = this.quickFixes[this.selectedIdx];
-
-        if (selected && (selected.preview || selected.previewHtml)) {
-            if (isDocShown) {
-                txtQuickfixDoc.parentNode.show();
+                else {
+                    txtQuickfixDoc.parentNode.hide();
+                    if (!isDrawDocInvokeScheduled || delayPopup)
+                        drawDocInvoke.schedule(SHOW_DOC_DELAY);
+                }
+                docElement.innerHTML += 
+                    selected.previewHtml
+                    || escapeHtml(selected.preview).replace(/\n/g, '<br/>');
+                docElement.innerHTML += '</span>';
             }
             else {
                 txtQuickfixDoc.parentNode.hide();
-                if (!isDrawDocInvokeScheduled || delayPopup)
-                    drawDocInvoke.schedule(SHOW_DOC_DELAY);
             }
-            this.docElement.innerHTML += 
-                selected.previewHtml
-                || escapeHtml(selected.preview).replace(/\n/g, '<br/>');
-            this.docElement.innerHTML += '</span>';
-        }
-        else {
-            txtQuickfixDoc.parentNode.hide();
-        }
-
-        this.docElement.innerHTML += '</span>';
-    },
-
-    enable: function() {
-    },
-
-    disable: function() {
-    },
-
-    destroy: function() {
-    },
     
-    applyQuickfix: function(qfix) {
-        var amlEditor = editors.currentEditor.amlEditor;
-        var doc = amlEditor.getSession().getDocument();
-
-        doc.applyDeltas(qfix.deltas);
-        amlEditor.focus();
-    
-        if (qfix.pos) {
-            var pos = qfix.pos;
-            var selection = amlEditor.$editor.getSelection();
-            selection.clearSelection();
-            selection.moveCursorTo(pos.row, pos.column, false);
-        }
-    },
-    
-    onTextInput: function(text, pasted) {
-        this.closeQuickfixBox();
-    },
-
-    onKeyPress: function(e, hashKey, keyCode) {
-        
-        if (e.metaKey || e.ctrlKey || e.altKey) {
-            this.closeQuickfixBox();
-            return;
+            docElement.innerHTML += '</span>';
         }
         
-        var keyBinding = editors.currentEditor.amlEditor.$editor.keyBinding;
-
-        switch(keyCode) {
-            case 0: break;
-            case 32: // Space
-                this.closeQuickfixBox();
-                break;
-            case 27: // Esc
-                this.closeQuickfixBox();
-                e.preventDefault();
-                break;
-            case 8: // Backspace
-                this.closeQuickfixBox();
-                e.preventDefault();
-                break;
-            case 37:
-            case 39:
-                oldCommandKey.apply(keyBinding, arguments);
-                this.closeQuickfixBox();
-                e.preventDefault();
-                break;
-            case 13: // Enter
-            case 9: // Tab
-                this.applyQuickfix(this.quickFixes[this.selectedIdx]);
-                quickfix.forceClose = true;
-                this.closeQuickfixBox();
-                e.stopPropagation();
-                e.preventDefault();
-                break;
-            case 40: // Down
-                if (this.quickfixEls.length === 1) {
-                    this.closeQuickfixBox();
+        function applyQuickfix(qfix) {
+            var amlEditor = editors.currentEditor.amlEditor;
+            var doc = amlEditor.getSession().getDocument();
+    
+            doc.applyDeltas(qfix.deltas);
+            amlEditor.focus();
+        
+            if (qfix.pos) {
+                var pos = qfix.pos;
+                var selection = amlEditor.$editor.getSelection();
+                selection.clearSelection();
+                selection.moveCursorTo(pos.row, pos.column, false);
+            }
+        }
+        
+        function onTextInput(text, pasted) {
+            closeQuickfixBox();
+        }
+    
+        function onKeyPress(e, hashKey, keyCode) {
+            
+            if (e.metaKey || e.ctrlKey || e.altKey) {
+                closeQuickfixBox();
+                return;
+            }
+            
+            var keyBinding = editors.currentEditor.amlEditor.$editor.keyBinding;
+    
+            switch (keyCode) {
+                case 0: break;
+                case 32: // Space
+                    closeQuickfixBox();
                     break;
-                }
-                e.stopPropagation();
-                e.preventDefault();
-                this.quickfixEls[this.selectedIdx].className = CLASS_UNSELECTED;
-                if (this.selectedIdx < this.quickFixes.length-1)
-                    this.selectedIdx++;
-                this.quickfixEls[this.selectedIdx].className = CLASS_SELECTED;
-                if (this.selectedIdx - this.scrollIdx > MENU_SHOWN_ITEMS) {
-                    this.scrollIdx++;
-                    this.quickfixEls[this.scrollIdx].scrollIntoView(true);
-                }
-                this.updateDoc();
-                break;
-            case 38: // Up
-                if (this.quickfixEls.length === 1) {
-                this.closeQuickfixBox();
+                case 27: // Esc
+                    closeQuickfixBox();
+                    e.preventDefault();
                     break;
-                }
-                e.stopPropagation();
-                e.preventDefault();
-                if (this.selectedIdx <= 0)
-                    return;
-                this.quickfixEls[this.selectedIdx].className = CLASS_UNSELECTED;
-                this.selectedIdx--;
-                this.quickfixEls[this.selectedIdx].className = CLASS_SELECTED;
-                if (this.selectedIdx < this.scrollIdx) {
-                    this.scrollIdx--;
-                    this.quickfixEls[this.scrollIdx].scrollIntoView(true);
-                }
-                this.updateDoc();
-                break;
+                case 8: // Backspace
+                    closeQuickfixBox();
+                    e.preventDefault();
+                    break;
+                case 37:
+                case 39:
+                    oldCommandKey.apply(keyBinding, arguments);
+                    closeQuickfixBox();
+                    e.preventDefault();
+                    break;
+                case 13: // Enter
+                case 9: // Tab
+                    applyQuickfix(quickFixes[selectedIdx]);
+                    quickfix.forceClose = true;
+                    closeQuickfixBox();
+                    e.stopPropagation();
+                    e.preventDefault();
+                    break;
+                case 40: // Down
+                    if (quickfixEls.length === 1) {
+                        closeQuickfixBox();
+                        break;
+                    }
+                    e.stopPropagation();
+                    e.preventDefault();
+                    quickfixEls[selectedIdx].className = CLASS_UNSELECTED;
+                    if (selectedIdx < quickFixes.length-1)
+                        selectedIdx++;
+                    quickfixEls[selectedIdx].className = CLASS_SELECTED;
+                    if (selectedIdx - scrollIdx > MENU_SHOWN_ITEMS) {
+                        scrollIdx++;
+                        quickfixEls[scrollIdx].scrollIntoView(true);
+                    }
+                    updateDoc();
+                    break;
+                case 38: // Up
+                    if (quickfixEls.length === 1) {
+                    closeQuickfixBox();
+                        break;
+                    }
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (selectedIdx <= 0)
+                        return;
+                    quickfixEls[selectedIdx].className = CLASS_UNSELECTED;
+                    selectedIdx--;
+                    quickfixEls[selectedIdx].className = CLASS_SELECTED;
+                    if (selectedIdx < scrollIdx) {
+                        scrollIdx--;
+                        quickfixEls[scrollIdx].scrollIntoView(true);
+                    }
+                    updateDoc();
+                    break;
+            }
         }
-    },
-    
-    invoke: function(forceBox) {
-        var _self = this;
-        var editor = editors.currentEditor.amlEditor.$editor;
-        if (editor.inMultiSelectMode) {
-            _self.closeQuickfixBox();
-            return;
+        
+        function invoke(forceBox) {
+            var editor = editors.currentEditor.amlEditor.$editor;
+            if (editor.inMultiSelectMode) {
+                closeQuickfixBox();
+                return;
+            }
+            forceBox = forceBox;
+            
+            var pos = editor.getCursorPosition();
+            
+            showQuickfixBox(pos.row, pos.column);
         }
-        _self.forceBox = forceBox;
-        
-        var pos = editor.getCursorPosition();
-        
-        _self.showQuickfixBox(pos.row, pos.column);
+     
     }
- 
-};
+
+});
 
 });
