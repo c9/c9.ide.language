@@ -702,19 +702,20 @@ module.exports = {
     },
     
     /**
-     * Gets marker resolutions for quick fixes.
+     * Gets quickfixes for a position (also referred to "quick assists" when
+     * there is no error).
      * 
      * Note that there is currently no UI for this feature,
-     * just a keyboard shortcut.
+     * we just have a keyboard shortcut.
      * 
-     * Must be overridden by inheritors that implement quick fixes.
+     * Must be overridden by inheritors that implement quickfixes.
      * 
      * Example result:
      * 
      * ```
      * var Range = new require("ace/range").Range;
      * var result = {
-     *     label: "Insert missing semicolon",
+     *     message: "Insert missing semicolon",
      *     image: "semicolon.png",
      *     preview: ";",
      *     deltas: [{

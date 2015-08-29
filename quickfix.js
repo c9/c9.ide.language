@@ -2,7 +2,7 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "ui", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager", "browsersupport",
-        "settings"
+        "settings", "language.jumptodef"
     ];
     main.provides = ["language.quickfix"];
     return main;
@@ -12,7 +12,7 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         var language = imports.language;
         var commands = imports.commands;
-        var Range = require("ace/range").Range;
+        var jumptodef = imports["language.jumptodef"];
         var plugin = new Plugin("Ajax.org", main.consumes);
         
         var CRASHED_JOB_TIMEOUT = 30000;
@@ -79,7 +79,7 @@ define(function(require, exports, module) {
             if (results[0].deltas.length > 1 && results[0].delta.ssome(function(d) { return d.path }))
                 throw new Error("Multiple deltas with paths not allowed");
                 
-            applyQuickfix(results[0]);
+            applyQuickfix(e.data.path, results[0]);
         }
     
         function activateSpinner(tab) {
@@ -95,10 +95,20 @@ define(function(require, exports, module) {
             tab.classList.remove("loading");
         }
         
-        function applyQuickfix(fix) {
-            var tab = tabs.focussedTab;
-            if (fix.deltas[0].path)
-                tabs.findTab(fix.deltas[0].path);
+        function applyQuickfix(sourcePath, fix) {
+            var tab = fix.deltas[0].path
+                ? tabs.findTab(fix.deltas[0].path)
+                : tabs.focussedTab;
+            if (!tab)
+                return;
+            if (tab !== tabs.focussedTab) {
+                var sourcePos = tabs.focussedTab.editor.ace.getCursorPosition();
+                return jumptodef.jumpToPos(fix.deltas[0].path, fix.pos, sourcePath, sourcePos, function(err) {
+                    if (err) return console.error(err);
+                    applyQuickfix(sourcePath, fix);
+                });
+            }
+            
             var ace = tab.editor.ace;
             var doc = ace.getSession().getDocument();
     
