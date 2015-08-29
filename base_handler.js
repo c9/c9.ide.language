@@ -683,7 +683,7 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Function} callback            The callback; must be called
-     * @param {Object[]} callback.results    The resuluts
+     * @param {Object[]} callback.results    The results
      * @param {String} [callback.results.path]
      *                                       The result path
      * @param {Number} [callback.results.row]

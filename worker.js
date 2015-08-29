@@ -554,6 +554,8 @@ function endTime(t, message, indent) {
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
+                            if (result)
+                                partMarkers = partMarkers.concat(result);
                             next();
                         }, minimalAnalysis);
                     },
