@@ -24,6 +24,18 @@ define(function(require, exports, module) {
             if (loaded) return;
             loaded = true;
             
+            commands.on("update", function() {
+                var key = commands.getHotkey("quickfix");
+                if (commands.platform == "mac")
+                    key = apf.hotkeys.toMacNotation(key);
+                
+                language.getWorker(function(err, result) {
+                    if (err) return console.error(err);
+                    
+                    worker.emit("quickfix_key", { data: key });
+                });
+            });
+            
             commands.addCommand({
                 name: "quickfix",
                 hint: "quickfix",

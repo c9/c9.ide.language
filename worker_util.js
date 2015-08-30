@@ -285,6 +285,10 @@ module.exports = {
         });
     },
     
+    getQuickfixKey: function() {
+        return worker.$lastWorker.$keys.quickfix;
+    },
+    
     /**
      * Watch a directory for changes.
      * @internal

@@ -115,6 +115,7 @@ exports.createUIWorkerClient = function() {
 
 var LanguageWorker = exports.LanguageWorker = function(sender) {
     var _self = this;
+    this.$keys = {};
     this.handlers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
@@ -177,6 +178,9 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     });
     sender.on("serverProxy", function(event) {
         _self.serverProxy.onMessage(event.data);
+    });
+    sender.on("quickfix_key", function(e) {
+        _self.$keys.quickfix = e.data;
     });
 };
 
