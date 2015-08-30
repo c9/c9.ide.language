@@ -52,7 +52,7 @@ define(function(require, exports, module) {
             var value = escapeHTML(node.name);
             
             if (this.filter) {
-                var re = new RegExp("(" + escapeHTML(this.reFilter) + ")", 'i');
+                var re = new RegExp("(" + this.reFilter + ")", 'i');
                 value = value.replace(re, "<strong>$1</strong>");
             }
             
