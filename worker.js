@@ -459,19 +459,33 @@ function endTime(t, message, indent) {
         var _self = this;
         var result;
         var isUnordered = false;
+        var applySort = false;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler, null, "outline")) {
                     handler.outline(_self.doc, ast, function(outline) {
-                        if (outline && (!result || result.isGeneric))
+                        if (!outline)
+                            return next();
+                        if (!result || (!outline.isGeneric && result.isGeneric)) {
                             result = outline;
-                        isUnordered = isUnordered || outline && outline.isUnordered;
+                            isUnordered = outline.isUnordered;
+                            return next();
+                        }
+                        
+                        // Merging multiple outlines; need to sort them later
+                        applySort = true;
+                        [].push.apply(result.items, outline.items);
                         next();
                     });
                 }
                 else
                     next();
             }, function() {
+                if (applySort && result)
+                    result.items = result.items.sort(function(a, b) {
+                        return a.pos.sl - b.pos.sl;
+                    });
+                
                 callback(result, isUnordered);
             });
         });
