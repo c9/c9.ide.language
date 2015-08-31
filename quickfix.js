@@ -88,7 +88,7 @@ define(function(require, exports, module) {
                 return;
             
             // HACK: don't show UI for now, assume there's only 1 result
-            if (results[0].deltas.length > 1 && results[0].delta.ssome(function(d) { return d.path }))
+            if (results[0].deltas.length > 1 && results[0].delta.some(function(d) { return d.path }))
                 throw new Error("Multiple deltas with paths not allowed");
                 
             applyQuickfix(e.data.path, results[0]);
@@ -111,8 +111,6 @@ define(function(require, exports, module) {
             var tab = fix.deltas[0].path
                 ? tabs.findTab(fix.deltas[0].path)
                 : tabs.focussedTab;
-            if (!tab)
-                return;
             if (tab !== tabs.focussedTab) {
                 var sourcePos = tabs.focussedTab.editor.ace.getCursorPosition();
                 return jumptodef.jumpToPos(fix.deltas[0].path, fix.pos, sourcePath, sourcePos, function(err) {
