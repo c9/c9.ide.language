@@ -240,10 +240,10 @@ define(function(require, exports, module) {
     
             var path = lastResult && lastResult.path || tab.path;
             
-            jumpToPos(path, lastResult, e.data.path, e.data.pos, e.data.identifier);
+            jumpToPos(path, lastResult, e.data.path, e.data.pos);
         }
         
-        function jumpToPos(path, pos, sourcePath, sourcePos, identifier) {
+        function jumpToPos(path, pos, sourcePath, sourcePos, callback) {
             tabs.open(
                 {
                     path: path,
@@ -270,7 +270,8 @@ define(function(require, exports, module) {
                     }
                     delete state.value;
                     tab.document.setState(state);
-                    tabs.focusTab(tab)
+                    tabs.focusTab(tab);
+                    callback && callback();
                 }
             );
         }
@@ -339,7 +340,9 @@ define(function(require, exports, module) {
         register(null, {
             "language.jumptodef": plugin.freezePublicAPI({
                 /** @ignore */
-                addUnknownColumn: addUnknownColumn
+                addUnknownColumn: addUnknownColumn,
+                /** @ignore */
+                jumpToPos: jumpToPos
             })
         });
     }

@@ -8,7 +8,6 @@ define(function(require, exports, module) {
     return main;
 
     function main(options, imports, register) {
-        var c9 = imports.c9;
         var Panel = imports.Panel;
         var settings = imports.settings;
         var ui = imports.ui;
@@ -22,7 +21,7 @@ define(function(require, exports, module) {
         var commands = imports.commands;
         var jsonalyzer = imports.jsonalyzer;
         var jumptodef = imports["language.jumptodef"];
-        
+        var escapeHTML = require("ace/lib/lang").escapeHTML;
         var Range = require("ace/range").Range;
         var search = require("../c9.ide.navigate/search");
         var markup = require("text!./outline.xml");
@@ -487,7 +486,7 @@ define(function(require, exports, module) {
             tdOutline.setRoot(outline);
             tdOutline.selected = selected;
             tdOutline.filter = filter;
-            tdOutline.reFilter = util.escapeRegExp(filter);
+            tdOutline.reFilter = escapeHTML(util.escapeRegExp(filter));
             
             if (filter) {
                 tree && tree.select(tree.provider.getNodeAtIndex(0));

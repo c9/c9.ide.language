@@ -119,11 +119,11 @@ define(function(require, exports, module) {
                             + ':&nbsp;' + util.escapeXml(activeParam.type)
                             + "</span>";
                     }
-                    if (activeParam && (activeParam.doc)) {
+                    if (activeParam && (activeParam.doc || activeParam.docHtml)) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
                             + '<span class="language_activeparam">' + util.escapeXml(activeParam.name) + '</span>:'
-                            + '<span class="language_activeparamhelp">' + util.escapeXml(activeParam.doc || activeParam.type) + '</span></div>';
+                            + '<span class="language_activeparamhelp">' + (activeParam.docHtml || util.escapeXml(activeParam.doc || activeParam.type)) + '</span></div>';
                     }
                     return doc;
                 }).join("<br />");

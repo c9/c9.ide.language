@@ -1,5 +1,6 @@
 define(function(require, exports, module) {
     var oop = require("ace/lib/oop");
+    var escapeHTML = require("ace/lib/lang").escapeHTML;
     var BaseClass = require("ace_tree/data_provider");
     
     var CLASS_SELECTED = "item selected";
@@ -48,7 +49,7 @@ define(function(require, exports, module) {
         };
         
         this.getCaptionHTML = function(node) {
-            var value = node.name;
+            var value = escapeHTML(node.name);
             
             if (this.filter) {
                 var re = new RegExp("(" + this.reFilter + ")", 'i');

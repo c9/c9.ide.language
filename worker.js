@@ -115,6 +115,7 @@ exports.createUIWorkerClient = function() {
 
 var LanguageWorker = exports.LanguageWorker = function(sender) {
     var _self = this;
+    this.$keys = {};
     this.handlers = [];
     this.$warningLevel = "info";
     this.$openDocuments = {};
@@ -154,6 +155,9 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     sender.on("jumpToDefinition", applyEventOnce(function(event) {
         _self.jumpToDefinition(event);
     }));
+    sender.on("quickfixes", applyEventOnce(function(event) {
+        _self.quickfix(event);
+    }));
     sender.on("isJumpToDefinitionAvailable", applyEventOnce(function(event) {
         _self.isJumpToDefinitionAvailable(event);
     }));
@@ -174,6 +178,9 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     });
     sender.on("serverProxy", function(event) {
         _self.serverProxy.onMessage(event.data);
+    });
+    sender.on("quickfix_key", function(e) {
+        _self.$keys.quickfix = e.data;
     });
 };
 
@@ -452,19 +459,33 @@ function endTime(t, message, indent) {
         var _self = this;
         var result;
         var isUnordered = false;
+        var applySort = false;
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler, null, "outline")) {
                     handler.outline(_self.doc, ast, function(outline) {
-                        if (outline && (!result || result.isGeneric))
+                        if (!outline)
+                            return next();
+                        if (!result || (!outline.isGeneric && result.isGeneric)) {
                             result = outline;
-                        isUnordered = isUnordered || outline && outline.isUnordered;
+                            isUnordered = outline.isUnordered;
+                            return next();
+                        }
+                        
+                        // Merging multiple outlines; need to sort them later
+                        applySort = true;
+                        [].push.apply(result.items, outline.items);
                         next();
                     });
                 }
                 else
                     next();
             }, function() {
+                if (applySort && result)
+                    result.items = result.items.sort(function(a, b) {
+                        return a.pos.sl - b.pos.sl;
+                    });
+                
                 callback(result, isUnordered);
             });
         });
@@ -551,26 +572,15 @@ function endTime(t, message, indent) {
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
                         handler.analyze(part.getValue(), ast, function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
-                            if (result) {
-                                _self.$lastAnalyzer = handler.$source + ".getResolutions()";
-                                handler.getResolutions(part.getValue(), ast, result, function(result2) {
-                                    if (result2) {
-                                        partMarkers = partMarkers.concat(result2);
-                                    } else {
-                                        partMarkers = partMarkers.concat(result);
-                                    }
-                                    next();
-                                });
-                            }
-                            else {
-                                next();
-                            }
+                            if (result)
+                                partMarkers = partMarkers.concat(result);
+                            next();
                         }, minimalAnalysis);
                     },
-                    function () {
+                    function() {
                         filterMarkersAroundError(ast, partMarkers);
                         var region = part.region;
-                        partMarkers.forEach(function (marker) {
+                        partMarkers.forEach(function(marker) {
                             if (marker.skipMixed)
                                 return;
                             var pos = marker.pos;
@@ -963,6 +973,38 @@ function endTime(t, message, indent) {
                     identifier: identifier
                 }
             );
+        });
+    };
+    
+    this.quickfix = function(event) {
+        var _self = this;
+        var pos = event.data;
+        var part = this.getPart(pos);
+        if (!part)
+            return; // cursor position no longer current
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
+        var allResults = [];
+        
+        this.parse(part, function(ast) {
+            _self.findNode(ast, pos, function(currentNode) {
+                asyncForEach(_self.handlers, function(handler, next) {
+                    if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
+                        handler.getQuickfixes(part, ast, partPos, currentNode, function(results) {
+                            if (results)
+                                allResults = allResults.concat(results);
+                            next();
+                        });
+                    }
+                    else {
+                        next();
+                    }
+                }, function() {
+                    _self.sender.emit("quickfixes_result", {
+                        path: _self.$path,
+                        results: allResults
+                    });
+                });
+            });
         });
     };
 
