@@ -44,7 +44,7 @@ define(function(require, exports, module) {
                 worker.on("watchDir", watchDir);
                 worker.on("unwatchDir", unwatchDir);
                 watcher.on("unwatch", onWatchRemoved);
-                watcher.on("directory", onWatchChange);
+                watcher.on("directory.all", onWatchChange);
                 worker.on("refreshAllMarkers", language.refreshAllMarkers.bind(language));
                 
                 worker.on("execFile", function(e) {
