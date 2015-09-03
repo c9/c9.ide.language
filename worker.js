@@ -475,6 +475,7 @@ function endTime(t, message, indent) {
                         // Merging multiple outlines; need to sort them later
                         applySort = true;
                         [].push.apply(result.items, outline.items);
+                        result.isGeneric = outline.isGeneric;
                         next();
                     });
                 }
