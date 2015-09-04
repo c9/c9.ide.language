@@ -467,8 +467,13 @@ function endTime(t, message, indent) {
                         if (!outline)
                             return next();
                         if (!result || (!outline.isGeneric && result.isGeneric)) {
+                            // Overwrite generic outline
                             result = outline;
                             isUnordered = outline.isUnordered;
+                            return next();
+                        }
+                        if (result && outline.isGeneric && !result.isGeneric) {
+                            // Ignore generic outline
                             return next();
                         }
                         
