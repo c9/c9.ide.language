@@ -62,9 +62,7 @@ define(function(require, exports, module) {
                 });
                 
                 worker.on("readFile", function tryIt(e) {
-                    readTabOrFile(e.data.path, {
-                        encoding: e.data.encoding
-                    }, function(err, value) {
+                    readTabOrFile(e.data.path, e.data.options, function(err, value) {
                         if (err && err.code === "EDISCONNECT")
                             return ensureConnected(tryIt.bind(null, e));
                         worker.emit("readFileResult", { data: {
@@ -162,6 +160,8 @@ define(function(require, exports, module) {
         }
         
         function readTabOrFile(path, options, callback) {
+            if (typeof options === "string")
+                options = { encoding: options };
             var allowUnsaved = options.allowUnsaved;
             delete options.allowUnsaved;
             
