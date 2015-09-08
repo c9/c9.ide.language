@@ -68,7 +68,7 @@ define(function(require, exports, module) {
                     + prefix + "</u>" + simpleName.substring(prefix.length) 
                     + '</span>'
                     + '<span class="deferred">'
-                    + name.substring(simpleName.length)
+                    + name.substring(Math.max(simpleName.length, prefix.length))
                     + '</span>';
             }
             else {
