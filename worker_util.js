@@ -118,10 +118,10 @@ module.exports = {
      * @fires error
      * @fires downloadProgress
      */
-    readFile: function(path, encoding, callback) {
+    readFile: function(path, options, callback) {
         if (!callback) { // fix arguments
-            callback = encoding;
-            encoding = null;
+            callback = options;
+            options = null;
         }
         
         if (worker.$lastWorker.$path === path) {
@@ -142,7 +142,7 @@ module.exports = {
             worker.sender.off("readFileResult", onReadFileResult);
             callback && callback(event.data.err && JSON.parse(event.data.err), event.data.data);
         });
-        worker.sender.emit("readFile", { path: path, encoding: encoding, id: id });
+        worker.sender.emit("readFile", { path: path, options: options, id: id });
     },
     
     /**
