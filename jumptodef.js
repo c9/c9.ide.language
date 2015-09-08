@@ -244,6 +244,8 @@ define(function(require, exports, module) {
         }
         
         function jumpToPos(path, pos, sourcePath, sourcePos, callback) {
+            if (path[0] !== "/")
+                path = "/" + path;
             tabs.open(
                 {
                     path: path,
