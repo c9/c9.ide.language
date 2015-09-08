@@ -31,6 +31,7 @@ define(function(require, exports, module) {
                 
                 language.getWorker(function(err, result) {
                     if (err) return console.error(err);
+                    worker = result;
                     
                     worker.emit("quickfix_key", { data: key });
                 });
