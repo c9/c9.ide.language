@@ -120,6 +120,7 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
     this.$warningLevel = "info";
     this.$openDocuments = {};
     this.$initedRegexes = {};
+    this.lastUpdateTime = 0;
     sender.once = EventEmitter.once;
     this.serverProxy = new ServerProxy(sender);
 
