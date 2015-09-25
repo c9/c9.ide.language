@@ -278,6 +278,7 @@ define(function(require, exports, module) {
             // Create the Ace Tree
             tree = new Tree(treeParent.$int);
             tree.renderer.setScrollMargin(0, 10);
+            tree.renderer.scrollBarV.$minWidth = 10;
             
             if (!tdOutline)
                 createProvider();
