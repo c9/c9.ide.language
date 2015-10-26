@@ -224,7 +224,8 @@ define(function(require, exports, module) {
         }
     
         function cleanup() {
-            placeHolder.detach();
+            if (placeHolder)
+                placeHolder.detach();
             language.setContinuousCompletionEnabled(oldContinuousCompletion);
             marker.enableMarkerType('occurrence_main');
             marker.enableMarkerType('occurrence_other');
@@ -241,8 +242,10 @@ define(function(require, exports, module) {
             var selection = placeHolder.session.selection;
             var col = 0;
             
-            switch(keyCode) {
+            switch (keyCode) {
                 case 32: // Space can't be accepted as it will ruin the logic of retrieveFullIdentifier
+                    if (e.ctrlKey || e.metaKey || e.altKey)
+                        return oldCommandKey.apply(keyBinding, arguments);
                     col = selection.lead.column;
                     var start = placeHolder.pos.column;
                     var end = start + placeHolder.length;
@@ -275,10 +278,6 @@ define(function(require, exports, module) {
             
             e.preventDefault();
             e.stopPropagation();
-        }
-    
-        function destroy() {
-            commands.removeCommand("renameVar");
         }
     
         function getFullIdentifier(line, pos, ace) {
