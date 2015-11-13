@@ -588,7 +588,8 @@ define(function(require, exports, module) {
         }
         
         function hideDocPopup() {
-            txtCompleterDoc.style.display = "none";
+            if (txtCompleterDoc)
+                txtCompleterDoc.style.display = "none";
         }
         
         /**
