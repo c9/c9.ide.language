@@ -259,7 +259,7 @@ define(function(require, exports, module) {
             prefs.add({
                 "Project" : {
                     "Hints & Warnings" : {
-                        position: 200,
+                        position: 600,
                         "Warning Level" : {
                            type: "dropdown",
                            path: "project/language/@warnLevel",
