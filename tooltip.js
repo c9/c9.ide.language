@@ -160,9 +160,7 @@ define(function(require, exports, module) {
         }
         
         function inRange(pos, cursorPos) {
-            // We only consider the cursor in range if it's on the first row
-            // of the tooltip area
-            return pos.sl === cursorPos.row && tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
+            return tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
         } 
         
         var drawn = false;
