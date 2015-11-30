@@ -40,9 +40,7 @@ define(function(require, exports, module) {
         });
         
         var fullOutline = [];
-        var filteredOutline = [];
         var ignoreFocusOnce = false;
-        var isKeyDownAfterDirty = false;
         var staticPrefix = options.staticPrefix;
         
         var tree, tdOutline, winOutline, textbox, treeParent; // UI Elements
@@ -475,10 +473,8 @@ define(function(require, exports, module) {
             
             if (!filter)
                 filter = ignoreFilter ? "" : (textbox ? textbox.getValue() : lastFilter);
-            isKeyDownAfterDirty = false;
             
             outline = search.treeSearch(fullOutline, filter, true);
-            filteredOutline = outline;
             lastFilter = filter;
     
             var ace = editor.ace;
@@ -606,9 +602,7 @@ define(function(require, exports, module) {
             drawn = false;
             
             fullOutline = [];
-            filteredOutline = [];
             ignoreFocusOnce = false;
-            isKeyDownAfterDirty = false;
             // staticPrefix = options.staticPrefix;
             
             tree = null;
