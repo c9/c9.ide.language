@@ -160,7 +160,9 @@ define(function(require, exports, module) {
         }
         
         function inRange(pos, cursorPos) {
-            return tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
+            // We only consider the cursor in range if it's on the first row
+            // of the tooltip area
+            return pos.sl === cursorPos.row && tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
         } 
         
         var drawn = false;
@@ -174,7 +176,6 @@ define(function(require, exports, module) {
         function show(row, column, html, _ace) {
             draw();
             ace = _ace;
-            var cursorPos = ace.getCursorPosition();
             
             if (!isVisible) {
                 isVisible = true;
@@ -194,9 +195,6 @@ define(function(require, exports, module) {
                     isTopdown = true;
                 else if (position.pageY + labelHeight > window.innerHeight)
                     isTopdown = false;
-                if (cursorPos.row + (isTopdown ? -1 : 1) === row)
-                    row += isTopdown ? 1 : -1;
-                    
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)
                     tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
