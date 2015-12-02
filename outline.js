@@ -124,6 +124,7 @@ define(function(require, exports, module) {
                 }, 100);
             });
             
+            // TODO also in scm.commit - move to panel?
             panels.on("showPanelOutline", function(e) {
                 plugin.autohide = !e.button;
             }, plugin);
