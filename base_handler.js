@@ -349,6 +349,9 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement tooltips.
      * 
+     * See {@link #getTooltipRegex} for setting a regular expression to trigger
+     * tooltips early.
+     * 
      * @param {Document} doc                               Document object representing the source
      * @param {Object} fullAst                             The entire AST of the current file (if any)
      * @param {Object} cursorPos                           The current cursor position
