@@ -248,9 +248,9 @@ define(function(require, exports, module) {
         }
         
         function setLastCompletion(completion, pos) {
-            // Here we store information about generic completions
+            // Here we store information about completions
             // that may be usable as tooltips
-            if (!completion.isGeneric || !completion)
+            if (!completion.guessTooltip)
                 return lastCompletionTooltip = {};
             var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
             if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)

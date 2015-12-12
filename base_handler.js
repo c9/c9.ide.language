@@ -524,23 +524,26 @@ module.exports = {
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Object} callback.result       The function's result, an array of completion matches
-     * @param {String} [callback.result.name] The full name to show in the completion popup
-     * @param {String} [callback.result.id]  The short name that identifies this completion
      * @param {String} callback.result.replaceText
      *                                       The text to replace the selection with
+     * @param {String} [callback.result.name]
+     *                                       The full name to show in the completion popup
+     * @param {String} [callback.result.id]  The short name that identifies this completion
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}
      *        [callback.result.icon]
      *                                       The icon to use
      * @param {String} callback.result.meta  Additional information to show
-     * @param {String} callback.result.doc   Documentation to display
-     * @param {String} callback.result.docHead
+     * @param {String} [callback.result.doc] Documentation to display
+     * @param {String} [callback.result.docHead]
      *                                       Documentation heading to display
-     * @param {Number} callback.result.priority
+     * @param {Boolean} [callback.result.guessTooltip]
+     *                                       Try to guess a tooltip based on this completion.
+     * @param {Number} [callback.result.priority]
      *                                       Priority of this completion suggestion
-     * @param {Boolean} callback.result.isGeneric
+     * @param {Boolean} [callback.result.isGeneric]
      *                                       Indicates that this is a generic, language-independent
      *                                       suggestion
-     * @param {Boolean} callback.result.isContextual
+     * @param {Boolean} [callback.result.isContextual]
      *                                       Indicates that this is a contextual completion,
      *                                       and that any generic completions should not be shown
      */
