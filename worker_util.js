@@ -105,13 +105,35 @@ module.exports = {
      * unsaved contents of the current file via stdin or using
      * a temporary file.
      * 
+     * Using stdin generally performs best and is used by default.
+     * To use a temporary file instead, use the `useTempFile` option
+     * and use `$FILE` in `options.args` to get the name of
+     * the temporary file.
+     * 
+     * Example:
+     * 
+     * ```
+     * execAnalysis(
+     *     "bash",
+     *     {
+     *         args: ["-n", "$FILE"],
+     *         useTempFile: true
+     *     },
+     *     function(err, stdout, stderr) {
+     *         console.log("Bash linting results:", stderr);
+     *     }
+     * )
+     * ```
+     * 
      * This function uses collab to efficiently pass any unsaved contents
      * of the current file to the server.
      * 
      * @param {String} command                  The path to the file to execute.
      * @param {Object} [options]
      * @param {String[]} [options.args]         An array of args to pass to the executable.
-     * @param {Boolean} [options.useStdin]      Pass the unsaved contents of the current file using stdin.
+     * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
+     *                                          file. The path of this file will be determined on the fly;
+     *                                          use "$FILE" in args to access it.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
      * @param {Function} [callback]
      * @param {Error}    callback.error         The error object if an error occurred.
