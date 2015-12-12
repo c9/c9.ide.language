@@ -185,31 +185,30 @@ define(function(require, exports, module) {
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
-            //setTimeout(function() {
-                var position = ace.renderer.textToScreenCoordinates(row, column);
-                var cursorConfig = ace.renderer.$cursorLayer.config;
-                labelHeight = dom.getInnerHeight(tooltipEl);
+            
+            var position = ace.renderer.textToScreenCoordinates(row, column);
+            var cursorConfig = ace.renderer.$cursorLayer.config;
+            labelHeight = dom.getInnerHeight(tooltipEl);
+            isTopdown = true;
+            if (row > cursorPos.row) // don't obscure cursor
                 isTopdown = true;
-                if (row > cursorPos.row) // don't obscure cursor
-                    isTopdown = true;
-                else if (row < cursorPos.row) // don't obscure cursor
-                    isTopdown = false;
-                else if (position.pageY < labelHeight) // not enough space above us
-                    isTopdown = true;
-                else if (position.pageY + labelHeight > window.innerHeight)
-                    isTopdown = false;
+            else if (row < cursorPos.row) // don't obscure cursor
+                isTopdown = false;
+            else if (position.pageY < labelHeight) // not enough space above us
+                isTopdown = true;
+            else if (position.pageY + labelHeight > window.innerHeight)
+                isTopdown = false;
+            
+            var editorBottom = ace.renderer.scroller.getBoundingClientRect().bottom;
+            if (isTopdown && position.pageY > editorBottom)
+                return hide();
                 
-                var editorBottom = ace.renderer.scroller.getBoundingClientRect().bottom;
-                if (isTopdown && position.pageY > editorBottom)
-                    return hide();
-                    
-                tooltipEl.style.left = (position.pageX - 22) + "px";
-                if (!isTopdown)
-                    tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
-                else
-                    tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
-                adjustCompleterTop && adjustCompleterTop(labelHeight);
-            //});
+            tooltipEl.style.left = (position.pageX - 22) + "px";
+            if (!isTopdown)
+                tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
+            else
+                tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
+            adjustCompleterTop && adjustCompleterTop(labelHeight);
         }
         
         function onMouseDown() {
