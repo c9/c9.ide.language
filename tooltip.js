@@ -190,12 +190,14 @@ define(function(require, exports, module) {
                 var cursorConfig = ace.renderer.$cursorLayer.config;
                 labelHeight = dom.getInnerHeight(tooltipEl);
                 isTopdown = true;
-                if (position.pageY < labelHeight)
+                if (row > cursorPos.row) // don't obscure cursor
+                    isTopdown = true;
+                else if (row < cursorPos.row) // don't obscure cursor
+                    isTopdown = false;
+                else if (position.pageY < labelHeight) // not enough space above us
                     isTopdown = true;
                 else if (position.pageY + labelHeight > window.innerHeight)
                     isTopdown = false;
-                if (cursorPos.row + (isTopdown ? -1 : 1) === row)
-                    row += isTopdown ? 1 : -1;
                     
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)
