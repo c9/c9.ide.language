@@ -61,11 +61,14 @@ module.exports = {
     },
     
     /**
-     * Calls {@link proc#execFile} from the worker.
+     * Calls {@link proc#execFile} from the worker, invoking an executable
+     * on the current user's workspace.
      * 
-     * @param {String}   path                             the path to the file to execute
+     * See {@link language.worker_util#execAnalysis} for invoking tools like linters and code completers.
+     * 
+     * @param {String}   path                             The path to the file to execute
      * @param {Object}   [options]
-     * @param {Array}    [options.args]                   An array of args to pass to the executable.
+     * @param {String[]} [options.args]                An array of args to pass to the executable.
      * @param {String}   [options.stdoutEncoding="utf8"]  The encoding to use on the stdout stream. Defaults to .
      * @param {String}   [options.stderrEncoding="utf8"]  The encoding to use on the stderr stream. Defaults to "utf8".
      * @param {String}   [options.cwd]                    Current working directory of the child process
@@ -83,12 +86,54 @@ module.exports = {
      * @param {String}   callback.stderr                  The stderr buffer
      */
     execFile: function(path, options, callback) {
+        if (typeof options === "function")
+            return this.execFile(path, {}, arguments[1]);
+        
         var id = msgId++;
         worker.sender.emit("execFile", { path: path, options: options, id: id });
         worker.sender.on("execFileResult", function onExecFileResult(event) {
             if (event.data.id !== id)
                 return;
             worker.sender.off("execFileResult", onExecFileResult);
+            callback && callback(event.data.err, event.data.stdout, event.data.stderr);
+        });
+    },
+    
+    /**
+     * Invoke an analysis tool on the current user's workspace,
+     * such as a linter or code completion tool. Passes the
+     * unsaved contents of the current file via stdin or using
+     * a temporary file.
+     * 
+     * This function uses collab to efficiently pass any unsaved contents
+     * of the current file to the server.
+     * 
+     * @param {String} command                  The path to the file to execute.
+     * @param {Object} [options]
+     * @param {String[]} [options.args]         An array of args to pass to the executable.
+     * @param {Boolean} [options.useStdin]      Pass the unsaved contents of the current file using stdin.
+     * @param {Function} [callback]
+     * @param {Error}    callback.error         The error object if an error occurred.
+     * @param {String}   callback.stdout        The stdout buffer.
+     * @param {String}   callback.stderr        The stderr buffer.
+     */
+    execAnalysis: function(command, options, callback) {
+        if (typeof options === "function")
+            return this.execAnalysis(command, {}, arguments[1]);
+        
+        // The jsonalyzer has a nice pipeline for invoking tools like this;
+        // let's use that to pass the unsaved contents via the collab bus.
+        var id = msgId++;
+        worker.sender.emit("jsonalyzerCallServer", {
+            id: id,
+            handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
+            method: "invoke",
+            args: [this.path, null, null, options]
+        });
+        worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("jsonalyzerCallServerResult", onResult);
             callback && callback(event.data.err, event.data.stdout, event.data.stderr);
         });
     },
