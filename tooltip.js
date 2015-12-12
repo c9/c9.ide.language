@@ -198,6 +198,10 @@ define(function(require, exports, module) {
                     isTopdown = true;
                 else if (position.pageY + labelHeight > window.innerHeight)
                     isTopdown = false;
+                
+                var editorBottom = ace.renderer.scroller.getBoundingClientRect().bottom;
+                if (isTopdown && position.pageY > editorBottom)
+                    return hide();
                     
                 tooltipEl.style.left = (position.pageX - 22) + "px";
                 if (!isTopdown)
