@@ -112,6 +112,7 @@ module.exports = {
      * @param {Object} [options]
      * @param {String[]} [options.args]         An array of args to pass to the executable.
      * @param {Boolean} [options.useStdin]      Pass the unsaved contents of the current file using stdin.
+     * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
      * @param {Function} [callback]
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
@@ -120,6 +121,9 @@ module.exports = {
     execAnalysis: function(command, options, callback) {
         if (typeof options === "function")
             return this.execAnalysis(command, {}, arguments[1]);
+            
+        options.command = command;
+        options.path = options.path || worker.$lastWorker.$path;
         
         // The jsonalyzer has a nice pipeline for invoking tools like this;
         // let's use that to pass the unsaved contents via the collab bus.
@@ -128,7 +132,8 @@ module.exports = {
             id: id,
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
-            args: [this.path, null, null, options]
+            filePath: options.path,
+            args: [options.path, null, null, options]
         });
         worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
             if (event.data.id !== id)
