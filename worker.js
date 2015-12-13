@@ -396,11 +396,11 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "parse" },
             function parseNext(handler, next) {
-                handler.parse(value, function onParse(ast) {
+                handler.parse(value, handleCallbackError(function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
-                });
+                }));
             },
             function() {
                 callback(resultAst);
@@ -432,11 +432,11 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "findNode" },
             function(handler, next) {
-                handler.findNode(ast, posInPart, function(node) {
+                handler.findNode(ast, posInPart, handleCallbackError(function(node) {
                     if (node)
                         result = node;
                     next();
-                });
+                }));
             },
             function() { callback(result); }
         );
@@ -464,7 +464,7 @@ function endTime(t, message, indent) {
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler, null, "outline")) {
-                    handler.outline(_self.doc, ast, function(outline) {
+                    handler.outline(_self.doc, ast, handleCallbackError(function(outline) {
                         if (!outline)
                             return next();
                         if (!result || (!outline.isGeneric && result.isGeneric)) {
@@ -483,7 +483,7 @@ function endTime(t, message, indent) {
                         [].push.apply(result.items, outline.items);
                         result.isGeneric = outline.isGeneric;
                         next();
-                    });
+                    }));
                 }
                 else
                     next();
@@ -503,12 +503,12 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "hierarchy")) {
-                handler.hierarchy(_self.doc, data.pos, function(hierarchy) {
+                handler.hierarchy(_self.doc, data.pos, handleCallbackError(function(hierarchy) {
                     if (hierarchy)
                         return _self.sender.emit("hierarchy", hierarchy);
                     else
                         next();
-                });
+                }));
             }
             else
                 next();
@@ -519,12 +519,12 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(_self.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
-                handler.codeFormat(_self.doc, function(newSource) {
+                handler.codeFormat(_self.doc, handleCallbackError(function(newSource) {
                     if (newSource)
                         return _self.sender.emit("code_format", newSource);
                     else
                         next();
-                });
+                }));
             }
             else
                 next();
@@ -577,12 +577,12 @@ function endTime(t, message, indent) {
                         handler.language = part.language;
                         var t = startTime();
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
-                        handler.analyze(part.getValue(), ast, function(result) {
+                        handler.analyze(part.getValue(), ast, handleCallbackError(function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result)
                                 partMarkers = partMarkers.concat(result);
                             next();
-                        }, minimalAnalysis);
+                        }, minimalAnalysis));
                     },
                     function() {
                         filterMarkersAroundError(ast, partMarkers);
@@ -659,7 +659,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, node, function(result) {
+                                handler.getInspectExpression(part, ast, partPos, node, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
@@ -669,7 +669,7 @@ function endTime(t, message, indent) {
                                         rejected = true;
                                     }
                                     next();
-                                });
+                                }));
                             }
                             else {
                                 next();
@@ -780,10 +780,10 @@ function endTime(t, message, indent) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
                     if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
-                        handler.onCursorMove(part, ast, posInPart, currentNode, function(response) {
+                        handler.onCursorMove(part, ast, posInPart, currentNode, handleCallbackError(function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -940,12 +940,12 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, currentNode, function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, currentNode, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -996,11 +996,11 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
-                        handler.getQuickfixes(part, ast, partPos, currentNode, function(results) {
+                        handler.getQuickfixes(part, ast, partPos, currentNode, handleCallbackError(function(results) {
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1040,14 +1040,14 @@ function endTime(t, message, indent) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
-                        handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
+                        handler.getRefactorings(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
                                 if (!result || result.isGeneric)
                                     result = response;
                             }
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1077,13 +1077,13 @@ function endTime(t, message, indent) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
-                        handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
+                        handler.getRenamePositions(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
                                     result = response;
                             }
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1121,7 +1121,7 @@ function endTime(t, message, indent) {
 
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "commitRename")) {
-                handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
+                handler.commitRename(_self.doc, oldId, newName, isGeneric, handleCallbackError(function(response) {
                     if (response) {
                         commited = true;
                         _self.sender.emit("commitRenameResult", { err: response, oldName: oldId.value, newName: newName });
@@ -1129,7 +1129,7 @@ function endTime(t, message, indent) {
                     } else {
                         next();
                     }
-                });
+                }));
             }
             else
                 next();
@@ -1145,9 +1145,9 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "onRenameCancel")) {
-                handler.onRenameCancel(function() {
+                handler.onRenameCancel(handleCallbackError(function() {
                     next();
-                });
+                }));
             }
             else {
                 next();
@@ -1208,10 +1208,10 @@ function endTime(t, message, indent) {
                 { method: "onUpdate" },
                 function(handler, next) {
                     var t = startTime();
-                    handler.onUpdate(_self.doc, function() {
+                    handler.onUpdate(_self.doc, handleCallbackError(function() {
                         endTime(t, "Update: " + handler.$source);
                         next();
-                    });
+                    }));
                 },
                 function() {
                     _self.analyze(now, function() {
@@ -1279,13 +1279,13 @@ function endTime(t, message, indent) {
         this.initRegexes(handler, this.$language);
         if (!handler.$isInited) {
             handler.$isInited = true;
-            handler.init(function() {
+            handler.init(handleCallbackError(function() {
                 // Note: may not return for a while for asynchronous workers,
                 //       don't use this for queueing other tasks
                 handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
                 handler.$isInitCompleted = true;
                 callback();
-            });
+            }));
         }
         else if (onDocumentOpen) {
             // Note: may not return for a while for asynchronous workers,
@@ -1401,12 +1401,12 @@ function endTime(t, message, indent) {
                             handler.workspaceDir = _self.$workspaceDir;
                             handler.path = _self.$path;
                             var t = startTime();
-                            handler.complete(part, ast, partPos, currentNode, function(completions) {
+                            handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                                 endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                                 if (completions && completions.length)
                                     matches = matches.concat(completions);
                                 next();
-                            });
+                            }));
                         }
                         else {
                             next();
@@ -1526,6 +1526,20 @@ function endTime(t, message, indent) {
         setTimeout(function() {
             throw exception; // throw bare exception so it gets reported
         });
+    }
+    
+    function handleCallbackError(callback) {
+        return function(optionalErr, result) {
+            if (optionalErr instanceof Error || typeof optionalErr === "string") {
+                console.error(optionalErr.stack || optionalErr);
+                callback();
+            }
+            
+            // We only support Error and string errors; 
+            // anything else is treated as a result since legacy
+            // handlers didn't have an error argument.
+            callback(optionalErr || result);
+        };
     }
 
 }).call(LanguageWorker.prototype);

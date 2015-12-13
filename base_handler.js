@@ -245,6 +245,7 @@ module.exports = {
      * @param {Number} pos.row            The position's row
      * @param {Number} pos.column         The position's column
      * @param {Function} callback         The callback for the result
+     * @param {Error|String} callback.err Any resulting error
      * @param {Object} [callback.result]  The found node
      */
     findNode: function(ast, pos, callback) {
@@ -259,6 +260,7 @@ module.exports = {
      * 
      * @param {Object} node                The node to look up
      * @param {Function} callback          The callback for the result
+     * @param {Error|String} callback.err  Any resulting error
      * @param {Object} [callback.result]   The resulting position
      * @param {Number} callback.result.sl  The starting line
      * @param {Number} callback.result.el  The ending line
@@ -336,6 +338,7 @@ module.exports = {
      * @param {Number} cursorPos.column           The current cursor's column
      * @param {Object} currentNode                The AST node the cursor is currently at (if parsed alreadty, and if any)
      * @param {Function} callback                 The callback; must be called
+     * @param {Error|String} callback.err         Any resulting error
      * @paran {Object} callback.result            An optional result. Supports the same result objects as
      *                                            {@link #tooltip} and {@link #highlightOccurrences}
      */
@@ -359,6 +362,7 @@ module.exports = {
      * @param {Number} cursorPos.column                    The current cursor's column
      * @param {Object} currentNode                         The AST node the cursor is currently at (if any)
      * @param {Function} callback                          The callback; must be called
+     * @param {Error|String} callback.err                  Any resulting error
      * @param {Object} callback.result                     The function's result
      * @param {Object|String} callback.result.hint         An object or HTML string with the tooltip to display
      * @param {Object[]} [callback.result.signatures]      One or more function signatures to show
@@ -403,6 +407,7 @@ module.exports = {
      * @param {Number} cursorPos.column                The current cursor's column
      * @param {Object} currentNode                     The AST node the cursor is currently at (if any)
      * @param {Function} callback                      The callback; must be called
+     * @param {Error|String} callback.err              Any resulting error
      * @param {Object} callback.result                 The function's result
      * @param {Object[]} [callback.result.markers]     The occurrences to highlight
      * @param {Object} callback.result.markers.pos     The marker's position
@@ -430,6 +435,7 @@ module.exports = {
      * @param {Number} cursorPos.column      The current cursor's column
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
+     * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result
      * @param {String[]} callback.result.refactorings
      *                                       The refactorings to enable, such as "rename"
@@ -459,6 +465,7 @@ module.exports = {
      * @param {Document} doc                           The Document object representing the source
      * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Function} callback                      The callback; must be called
+     * @param {Error|String} callback.err              Any resulting error
      * @param {Object} callback.result                 The function's result, a JSON outline structure or null if not supported
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} callback.result.icon
      *                                                 The icon to display for the first outline item
@@ -489,12 +496,13 @@ module.exports = {
      * 
      * Not supported right now.
      * 
-     * @param {Document} doc             The Document object representing the source
-     * @param {Object} cursorPos         The current cursor position
-     * @param {Number} cursorPos.row     The current cursor's row
-     * @param {Number} cursorPos.column  The current cursor's column
-     * @param {Function} callback        The callback; must be called
-     * @param {Object} callback.result   A JSON hierarchy structure or null if not supported
+     * @param {Document} doc               The Document object representing the source
+     * @param {Object} cursorPos           The current cursor position
+     * @param {Number} cursorPos.row       The current cursor's row
+     * @param {Number} cursorPos.column    The current cursor's column
+     * @param {Function} callback          The callback; must be called
+     * @param {Error|String} callback.err  Any resulting error
+     * @param {Object} callback.result     A JSON hierarchy structure or null if not supported
      */
     hierarchy: function(doc, cursorPos, callback) {
         callback();
@@ -523,6 +531,7 @@ module.exports = {
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
+     * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result, an array of completion matches
      * @param {String} callback.result.replaceText
      *                                       The text to replace the selection with
@@ -567,6 +576,7 @@ module.exports = {
      * @param {Document} doc                       The Document object representing the source
      * @param {Object} fullAst                     The entire AST of the current file (if any)
      * @param {Function} callback                  The callback; must be called
+     * @param {Error|String} callback.err          Any resulting error
      * @param {Object[]} callback.result           The function's result, an array of error and warning markers
      * @param {Object} callback.result.pos         The current cursor position
      * @param {Number} callback.result.pos.row     The current cursor's row
@@ -608,6 +618,7 @@ module.exports = {
      * @param {Number} pos.column                     The current cursor's column
      * @param {Object} currentNode                    The AST node the cursor is currently at (if any)
      * @param {Function} callback                     The callback; must be called
+     * @param {Error|String} callback.err             Any resulting error
      * @param {Object} callback.result                The function's result (see function description).
      * @param {Boolean} callback.result.isGeneric     Indicates this is a generic refactoring and should be deferred.
      * @param {Boolean} callback.result.length        The lenght of the rename identifier
@@ -647,7 +658,7 @@ module.exports = {
      * @param {String} newName               The new name of the element after refactoring
      * @param {Boolean} isGeneric            True if this was a refactoring marked with 'isGeneric' (see {@link #getRenamePositions})
      * @param {Function} callback            The callback; must be called
-     * @param {String} callback.err          Null if the refactoring can be committed, or an error message if refactoring failed
+     * @param {Error|String} callback.err    Null if the refactoring can be committed, or an error message if refactoring failed
      */
     commitRename: function(doc, oldName, newName, isGeneric, callback) {
         callback();
@@ -671,6 +682,7 @@ module.exports = {
      * 
      * @param {Document} doc the Document object representing the source
      * @param {Function} callback            The callback; must be called
+     * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result
      * @return a string value representing the new source code after formatting or null if not supported
      */
@@ -689,6 +701,7 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Function} callback            The callback; must be called
+     * @param {Error|String} callback.err    Any resulting error
      * @param {Object[]} callback.results    The results
      * @param {String} [callback.results.path]
      *                                       The result path
@@ -740,8 +753,8 @@ module.exports = {
      * @param {Number} pos.row                        The current cursor's row
      * @param {Number} pos.column                     The current cursor's column
      * @param {Function} callback                     The callback; must be called
-     * @param {Object[]} callback.result              
-     *                                                The function's result
+     * @param {Error|String} callback.err             Any resulting error
+     * @param {Object[]} callback.result              The function's result
      * @param {String} [callback.result.message]      Short description, to be displayed in the list of resolutions, as text
      * @param {String} [callback.result.messageHtml]  Short description, to be displayed in the list of resolutions, as HTML
      * @param {String} [callback.result.image]        Image to be displayed in the list of resolutions
@@ -775,6 +788,7 @@ module.exports = {
      * @param {Number} pos.row                  The current cursor's row
      * @param {Number} pos.column               The current cursor's column
      * @param {Function} callback               The callback; must be called
+     * @param {Error|String} callback.err       Any resulting error
      * @param {Object} callback.result          The resulting expression
      * @param {String} callback.result.value    The string representation of the expression to inspect
      * @param {Object} callback.result.pos      The expression's position
