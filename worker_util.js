@@ -131,9 +131,10 @@ module.exports = {
      * @param {String} command                  The path to the file to execute.
      * @param {Object} [options]
      * @param {String[]} [options.args]         An array of args to pass to the executable.
+     *                                          Use "$FILE" anywhere to get the path of the temporary file,
+     *                                          if applicable.
      * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
-     *                                          file. The path of this file will be determined on the fly;
-     *                                          use "$FILE" in args to access it.
+     *                                          file.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
      * @param {Function} [callback]
      * @param {Error}    callback.error         The error object if an error occurred.
@@ -161,7 +162,7 @@ module.exports = {
             if (event.data.id !== id)
                 return;
             worker.sender.off("jsonalyzerCallServerResult", onResult);
-            callback && callback(event.data.err, event.data.stdout, event.data.stderr);
+            callback && callback(event.data.result[0], event.data.result[1], event.data.result[2]);
         });
     },
     
