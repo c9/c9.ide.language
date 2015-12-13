@@ -1383,6 +1383,9 @@ function endTime(t, message, indent) {
         var line = _self.doc.getLine(pos.row);
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
+            if (_self.tryCachedComplete(pos, identifierRegex))
+                return;
+            
             var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
             if (!part)
                 return; // cursor position not current
@@ -1451,7 +1454,7 @@ function endTime(t, message, indent) {
                             else
                                 return 0;
                         });
-                        _self.sender.emit("complete", {
+                        var result = {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
@@ -1459,12 +1462,63 @@ function endTime(t, message, indent) {
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
-                        });
+                        };
+                        _self.storeCachedComplete(result);
+                        _self.sender.emit("complete", result);
                         endTime(tStart, "COMPLETED!");
                     });
                 });
             });
         });
+    };
+    
+    /**
+     * Try to use a cached completion.
+     */
+    this.tryCachedComplete = function(pos, identifierRegex) {
+        var doc = this.doc;
+        var path = this.$path;
+        var line = doc.getLine(pos.row);
+        
+        // Prepare caching keys, omitting the current identifier from the input
+        // (which may change as the user types)
+        var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
+        var suffix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
+        var completeLine = line.substr(0, pos.row - prefix.length) + line.substr(pos.row + suffix.length);
+        doc.$lines[pos.row] = "";
+        var completeValue = doc.getValue();
+        doc.$lines[pos.row] = line;
+        var completePos = { row: pos.row, column: pos.column - prefix.length };
+        doc.$completionCache = {
+            line: completeLine,
+            value: completeValue,
+            pos: completePos,
+            prefix: prefix,
+            path: path,
+        };
+    
+        if (!this.completionCache
+            || this.completionCache.path !== path
+            || this.completionCache.line !== completeLine
+            || this.completionCache.pos.row !== completePos.row
+            || this.completionCache.pos.column !== completePos.column
+            || this.completionCache.prefix !== prefix
+            || this.completionCache.value !== completeValue) {
+            return;
+        }
+        
+        // Cache hit!
+        this.sender.emit("complete", this.completionCache.result);
+        return true;
+    };
+    
+    /**
+     * Store cached completion.
+     */
+    this.storeCachedComplete = function(result) {
+        this.completionCache = this.doc.$completionCache;
+        this.completionCache.result = result;
+        this.doc.$completionCache = null;
     };
     
     /**
