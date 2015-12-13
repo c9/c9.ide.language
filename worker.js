@@ -1540,7 +1540,7 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
             function parseNext(handler, next) {
-                var options = { predictedMatches: result.matches, path: _self.$path, language: _self.$language };
+                var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
                 handler.predictNextCompletion(this.doc, null, pos, options, handleCallbackError(function(result) {
                     if (result)
                         predictedString = result.predicted;
@@ -1566,6 +1566,18 @@ function endTime(t, message, indent) {
                 });
             }
         );
+        
+        var filteredMatches;
+        function getFilteredMatches() {
+            if (filteredMatches)
+                return filteredMatches;
+            var line = _self.doc.getLine(pos.row);
+            var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
+            filteredMatches = result.matches.filter(function(m) {
+                return m.replaceText.indexOf(prefix) === 0;
+            });
+            return filteredMatches;
+        }
     };
     
     /**

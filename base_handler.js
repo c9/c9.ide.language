@@ -573,7 +573,7 @@ module.exports = {
      * ```
      * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
      *     // Ignore any keyword predictions
-     *     var predicted = options.predictedMatches.filter(function(m) {
+     *     var predicted = options.matches.filter(function(m) {
      *         return !m.replaceText.match(KEYWORD_REGEX);
      *     });
      *     // Don't predict anything unless we have exactly one identifier
