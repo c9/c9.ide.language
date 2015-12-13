@@ -524,6 +524,9 @@ module.exports = {
      *    priority    : 1
      *  };
      * 
+     * See also {@link #getCompletionRegex}.
+     * See also {@link #predictNextCompletion}.
+     * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
@@ -557,6 +560,77 @@ module.exports = {
      *                                       and that any generic completions should not be shown
      */
     complete: function(doc, fullAst, pos, currentNode, callback) {
+        callback();
+    },
+
+    /**
+     * Adds pre-caching to code completion, by predicting how to do the next
+     * completion after the current one as the user keeps typing.
+     *
+     * An example implementation for JavaScript returns the current
+     * completion plus a dot:
+     * 
+     * ```
+     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
+     *     // Ignore any keyword predictions
+     *     var predicted = options.predictedMatches.filter(function(m) {
+     *         return !m.replaceText.match(KEYWORD_REGEX);
+     *     });
+     *     // Don't predict anything unless we have exactly one identifier
+     *     // for which to make a prediction.
+     *     if (predicted.length !== 1)
+     *         return callback();
+     *     // Predict that the current user is going to type this identifier
+     *     // followed by a dot.
+     *     callback(null, { predicted: predicted[0] + "." });
+     * };
+     * ```
+     * 
+     * To understand how the above works, consider the following scenario:
+     * 
+     * ```
+     * var foo = { bar: 2 };
+     * fo
+     * ```
+     * 
+     * So we can predict that the current identifier `fo` will expand to `foo`.
+     * That means that the next interesting code completion may relate to `foo.`.
+     * Predicting this allows us to precompute those completions rather than
+     * wait until the user types the next character(s).
+     * 
+     * For the above scenario, our function is called with the following arguments:
+     * 
+     * ```
+     * predictNextCompletion(doc, fullAst, pos, {
+     *     matches: [{
+     *        name: "foo",
+     *        replaceText: "foo"
+     *     }]
+     * })
+     * ```
+     * 
+     * So all our function has to do is return "foo." and we're on
+     * our way to predict the future!
+     * 
+     * May be overridden by inheritors that implement code completion.
+     * 
+     * @param {Document} doc                 The Document object representing the source
+     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} pos                   The current cursor position
+     * @param {Number} pos.row               The current cursor's row
+     * @param {Number} pos.column            The current cursor's column
+     * @param {Object} options               Options
+     * @param {Object} options.matches       The most recent completion matches
+     * @param {String} options.path          The current path
+     * @param {String} options.language      The current language
+     * @param {Function} callback            The callback; must be called
+     * @param {Error|String} callback.err    Any resulting error
+     * @param {Object} callback.result       The function's result, an array of completion matches
+     * @param {String} callback.result.predicted
+     *                                       The predicted text for which to try completion
+     */
+    // TODO: change all similar signatures to this form?
+    predictNextCompletion: function(doc, fullAst, pos, options, callback) {
         callback();
     },
 

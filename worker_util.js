@@ -156,6 +156,7 @@ module.exports = {
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
             filePath: options.path,
+            overrideLine: worker.$lastWorker.$overrideLine,
             args: [options.path, null, null, options]
         });
         worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
