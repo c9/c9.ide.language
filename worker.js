@@ -1383,7 +1383,7 @@ function endTime(t, message, indent) {
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
             if (_self.tryCachedCompletion(pos, identifierRegex)) {
-                _self.predictNextCompletion(event, pos, identifierRegex, _self.cachedCompletion.result);
+                _self.predictNextCompletion(event, pos, identifierRegex, _self.completionCache.result);
                 return;
             }
             
@@ -1422,6 +1422,7 @@ function endTime(t, message, indent) {
                         if (overrideLine)
                             _self.doc.$lines[pos.row] = overrideLine;
                         _self.$overrideLine = overrideLine;
+                        _self.$overrideLineRow = pos.row;
                         
                         handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
@@ -1495,29 +1496,33 @@ function endTime(t, message, indent) {
      * Try to use a cached completion.
      */
     this.tryCachedCompletion = function(pos, identifierRegex) {
-        // Prepare caching keys, used by us and storeCompleteCache()
         var doc = this.doc;
-        doc.$completionCache = this.getCompleteCacheKey(pos, identifierRegex);
+        var cacheKey = this.getCompleteCacheKey(pos, identifierRegex);
     
-        if (doc.$completionCache.equals(this.completionCache)) {
+        if (cacheKey.matches(this.completionCache)) {
             // Cache hit!
             this.sender.emit("complete", this.completionCache.result);
             return true;
         }
     
         if (this.completionPrediction && this.completionPrediction.result
-            && doc.$completionCache.equals(this.completionPrediction)) {
+            && cacheKey.matches(this.completionPrediction)) {
             // Cache hit!
-            this.completionCache = this.predictionCache;
+            this.completionCache = this.completionPrediction;
             this.sender.emit("complete", this.completionCache.result);
             return true;
         }
+        
+        // Save caching key for use by storeCachedCompletion()
+        doc.$completionCache = cacheKey;
     };
     
     /**
      * Store cached completion.
      */
     this.storeCachedCompletion = function(result) {
+        if (!this.doc.$completionCache)
+            return;
         this.completionCache = this.doc.$completionCache;
         this.completionCache.result = result;
         this.doc.$completionCache = null;
@@ -1546,9 +1551,11 @@ function endTime(t, message, indent) {
                 if (!predictedString)
                     return;
                 
-                var predictedLine = _self.completionCache.line.substr(0, _self.completionCache.pos.column)
+                var line = _self.completionCache.line;
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
+                var predictedLine = line.substr(0, _self.completionCache.pos.column)
                     + predictedString
-                    + _self.completionCache.line.substr(_self.completionCache.pos.column);
+                    + line.substr(_self.completionCache.pos.column + prefix.length);
                 var predictedPos = { row: pos.row, column: _self.completionCache.pos.column + predictedString.length };
                 if (_self.completionPrediction && _self.completionPrediction.line === predictedLine)
                     return;
@@ -1576,7 +1583,8 @@ function endTime(t, message, indent) {
         var line = doc.getLine(pos.row);
         var prefix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.row, identifierRegex);
         var suffix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.row, identifierRegex);
-        var completeLine = (overrideLine || line).substr(0, pos.row - prefix.length) + line.substr(pos.row + suffix.length);
+        var completeLine = (overrideLine || line).substr(0, pos.column - prefix.length)
+            + (overrideLine || line).substr(pos.column + suffix.length);
         doc.$lines[pos.row] = "";
         var completeValue = doc.getValue();
         doc.$lines[pos.row] = line;
@@ -1587,14 +1595,14 @@ function endTime(t, message, indent) {
             pos: completePos,
             prefix: prefix,
             path: path,
-            equals: function(other) {
+            matches: function(other) {
                 return other
                     && other.path === this.path
                     && other.line === this.line
-                    && other.pos.row === this.row
+                    && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
-                    && other.prefix === this.prefix
-                    && other.value === this.value;
+                    && other.value === this.value
+                    && this.prefix.indexOf(other.prefix) === 0; // match if they're like foo and we're fooo
             }
         };
     };

@@ -136,6 +136,11 @@ module.exports = {
      * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
      *                                          file.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
+     * @param {Number} [options.maxCallInterval]
+     *                                          The maximum interval between calls for server-side handlers,
+     *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
+     *                                          two calls. Lower numbers put heavier load on the workspace.
+     *                                          Default 500.
      * @param {Function} [callback]
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
@@ -147,7 +152,14 @@ module.exports = {
             
         options.command = command;
         options.path = options.path || worker.$lastWorker.$path;
-        
+        var maxCallInterval = options.maxCallInterval || 500;
+        if (worker.$lastWorker.$overrideLine) {
+            // Special handling for completion predictions
+            maxCallInterval = 0;
+            options.overrideLine = worker.$lastWorker.$overrideLine;
+            options.overrideLineRow = worker.$lastWorker.$overrideLineRow;
+        }
+            
         // The jsonalyzer has a nice pipeline for invoking tools like this;
         // let's use that to pass the unsaved contents via the collab bus.
         var id = msgId++;
@@ -156,7 +168,7 @@ module.exports = {
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
             filePath: options.path,
-            overrideLine: worker.$lastWorker.$overrideLine,
+            maxCallInterval: maxCallInterval,
             args: [options.path, null, null, options]
         });
         worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
