@@ -153,9 +153,8 @@ define(function(require, exports, module) {
                 allowImmediateEmit = true;
                 lastCompletionTooltip.active = false;
             }
-            else if (!(lastPos && inRange(lastPos, cursorPos))) {
-                if (!lastCompletionTooltip.active)
-                    hide();
+            else if (!lastCompletionTooltip.active) {
+                hide();
             }
         }
         
