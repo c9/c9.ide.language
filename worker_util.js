@@ -145,7 +145,7 @@ module.exports = {
      *                                          The maximum interval between calls for server-side handlers,
      *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
      *                                          two calls. Lower numbers put heavier load on the workspace.
-     *                                          Default 500.
+     *                                          Default 50.
      * @param {Function} [callback]
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
@@ -157,7 +157,7 @@ module.exports = {
             
         options.command = command;
         options.path = options.path || worker.$lastWorker.$path;
-        var maxCallInterval = options.maxCallInterval || 500;
+        var maxCallInterval = options.maxCallInterval || 50;
         if (worker.$lastWorker.$overrideLine) {
             // Special handling for completion predictions
             maxCallInterval = 0;
