@@ -136,6 +136,11 @@ module.exports = {
      * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
      *                                          file.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
+     * @param {Number} [options.timeout]        Timeout in milliseconds for requests. Default 30000.
+     * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
+     *                                          instance runs at a time. Defaults to a concatenation of 'command'
+     *                                          and the current language name . Can be null to allow multiple
+     *                                          instances in parallel.
      * @param {Number} [options.maxCallInterval]
      *                                          The maximum interval between calls for server-side handlers,
      *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
@@ -169,6 +174,10 @@ module.exports = {
             method: "invoke",
             filePath: options.path,
             maxCallInterval: maxCallInterval,
+            timeout: options.timeout || 30000,
+            semaphore: "semaphore" in options
+                ? options.semaphore
+                : command + "|" + worker.$lastWorker.$language,
             args: [options.path, null, null, options]
         });
         worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
