@@ -1382,7 +1382,7 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
-            var newCache = _self.tryCachedCompletion(pos, identifierRegex);
+            var newCache = _self.tryCachedCompletion(pos, identifierRegex, event.data.isUpdate);
             if (!newCache) {
                 // Use existing cache
                 if (_self.completionCache.result)
@@ -1393,7 +1393,7 @@ function endTime(t, message, indent) {
             _self.getCompleteHandlerResult(event, pos, identifierRegex, null, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
-                _self.storeCachedCompletion(newCache, result);
+                _self.storeCachedCompletion(newCache, identifierRegex, result);
                 _self.predictNextCompletion(event, pos, identifierRegex, result);
             });
         });
@@ -1405,7 +1405,7 @@ function endTime(t, message, indent) {
     this.getCompleteHandlerResult = function(event, pos, identifierRegex, overrideLine, callback) {
         var _self = this;
         var matches = [];
-        var line = _self.doc.getLine(pos.row);
+        var originalLine = _self.doc.getLine(pos.row);
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         if (!part)
             return callback(); // cursor position not current
@@ -1435,7 +1435,7 @@ function endTime(t, message, indent) {
                         }));
                         
                         _self.$overrideLine = null;
-                        _self.doc.$lines[pos.row] = line;
+                        _self.doc.$lines[pos.row] = originalLine;
                     }
                     else {
                         next();
@@ -1444,7 +1444,7 @@ function endTime(t, message, indent) {
                     removeDuplicateMatches(matches);
                     
                     // Always prefer current identifier (similar to complete.js)
-                    var prefixLine = (overrideLine || line).substr(0, pos.column);
+                    var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
                     matches.forEach(function(m) {
                         if (m.isGeneric && m.$source !== "local")
                             return;
@@ -1453,7 +1453,7 @@ function endTime(t, message, indent) {
                         var match = prefixLine.lastIndexOf(m.replaceText);
                         if (match > -1
                             && match === pos.column - m.replaceText.length
-                            && completeUtil.retrievePrecedingIdentifier((overrideLine || line), pos.column, m.identifierRegex || identifierRegex))
+                            && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
                             m.priority = 99;
                     });
                     
@@ -1485,7 +1485,7 @@ function endTime(t, message, indent) {
                         pos: pos,
                         matches: matches,
                         isUpdate: event.data.isUpdate,
-                        line: overrideLine || line,
+                        line: overrideLine || originalLine,
                         path: _self.$path,
                         forceBox: event.data.forceBox,
                         deleteSuffix: event.data.deleteSuffix
@@ -1501,9 +1501,17 @@ function endTime(t, message, indent) {
      * @return {Object} a caching key if a new cache needs to be prepared,
      *                  or null in case the previous cache could be used (cache hit)
      */
-    this.tryCachedCompletion = function(pos, identifierRegex) {
+    this.tryCachedCompletion = function(pos, identifierRegex, isUpdate) {
         var that = this;
         var cacheKey = this.getCompleteCacheKey(pos, identifierRegex);
+        
+        if (isUpdate) {
+            // Updating our cache; return previous cache to update it
+            if (cacheKey.matches(this.completionCache))
+                return this.completionCache;
+            if (cacheKey.matches(this.completionPrediction))
+                return this.completionPrediction;
+        }
     
         if (cacheKey.matches(this.completionCache)) {
             if (this.completionCache.result)
@@ -1529,8 +1537,10 @@ function endTime(t, message, indent) {
     /**
      * Store cached completion.
      */
-    this.storeCachedCompletion = function(cache, result) {
-        if (this.completionCache !== cache)
+    this.storeCachedCompletion = function(cache, identifierRegex, result) {
+        if (this.completionCache !== cache && this.predictionCache !== cache)
+            return;
+        if (!completeUtil.canCompleteForChangedLine(cache.line, result.line, cache.pos, result.pos, identifierRegex))
             return;
         cache.result = result;
         cache.resultCallbacks.forEach(function(c) {
