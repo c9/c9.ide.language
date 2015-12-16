@@ -135,8 +135,12 @@ module.exports = {
      *                                          if applicable.
      * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
      *                                          file.
-     * @param {String} [options.path]           The path to the file to analyze (defaults to the current file)
+     * @param {String} [options.path]           The path to the file to analyze (defaults to the current file),
+     *                                          relative to the workspace.
+     * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
+     *                                          either relative to the root (when starting with a /) or to the workspace.
      * @param {Number} [options.timeout]        Timeout in milliseconds for requests. Default 30000.
+     * @param {Number} [options.maxBuffer=200*1024]
      * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
      *                                          instance runs at a time. Defaults to a concatenation of 'command'
      *                                          and the current language name . Can be null to allow multiple
@@ -156,7 +160,9 @@ module.exports = {
             return this.execAnalysis(command, {}, arguments[1]);
             
         options.command = command;
-        options.path = options.path || worker.$lastWorker.$path;
+        options.path = options.path || worker.$lastWorker.$path.substr(1);
+        options.cwd = options.cwd || getRelativeDirname(options.path);
+        options.maxBuffer = options.maxBuffer || 200 * 1024;
         var maxCallInterval = options.maxCallInterval || 50;
         if (worker.$lastWorker.$overrideLine) {
             // Special handling for completion predictions
@@ -164,6 +170,8 @@ module.exports = {
             options.overrideLine = worker.$lastWorker.$overrideLine;
             options.overrideLineRow = worker.$lastWorker.$overrideLineRow;
         }
+        if (options.path && !options.path[0] === "/")
+            return callback(new Error("Only workspace-relative paths are supported"));
             
         // The jsonalyzer has a nice pipeline for invoking tools like this;
         // let's use that to pass the unsaved contents via the collab bus.
@@ -172,7 +180,7 @@ module.exports = {
             id: id,
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
-            filePath: options.path,
+            filePath: "/" + options.path,
             maxCallInterval: maxCallInterval,
             timeout: options.timeout || 30000,
             semaphore: "semaphore" in options
@@ -186,6 +194,10 @@ module.exports = {
             worker.sender.off("jsonalyzerCallServerResult", onResult);
             callback && callback(event.data.result[0], event.data.result[1], event.data.result[2]);
         });
+        
+        function getRelativeDirname(file) {
+            return file.replace(/^\//, "").replace(/[\/\\].*?$/, "");
+        }
     },
     
     /**
