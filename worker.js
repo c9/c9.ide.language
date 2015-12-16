@@ -1675,6 +1675,7 @@ function endTime(t, message, indent) {
      */
     this.completeUpdate = function(pos, line) {
         assert(line !== undefined);
+        this.completionCache = null;
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {
