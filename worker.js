@@ -1382,15 +1382,18 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
-            if (_self.tryCachedCompletion(pos, identifierRegex)) {
-                _self.predictNextCompletion(event, pos, identifierRegex, _self.completionCache.result);
+            var newCache = _self.tryCachedCompletion(pos, identifierRegex);
+            if (!newCache) {
+                // Use existing cache
+                if (_self.completionCache.result)
+                    _self.predictNextCompletion(event, pos, identifierRegex, _self.completionCache.result);
                 return;
             }
             
             _self.getCompleteHandlerResult(event, pos, identifierRegex, null, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
-                _self.storeCachedCompletion(result);
+                _self.storeCachedCompletion(newCache, result);
                 _self.predictNextCompletion(event, pos, identifierRegex, result);
             });
         });
@@ -1494,38 +1497,45 @@ function endTime(t, message, indent) {
     
     /**
      * Try to use a cached completion.
+     * 
+     * @return {Object} a caching key if a new cache needs to be prepared,
+     *                  or null in case the previous cache could be used (cache hit)
      */
     this.tryCachedCompletion = function(pos, identifierRegex) {
-        var doc = this.doc;
+        var that = this;
         var cacheKey = this.getCompleteCacheKey(pos, identifierRegex);
     
         if (cacheKey.matches(this.completionCache)) {
-            // Cache hit!
-            this.sender.emit("complete", this.completionCache.result);
-            return true;
+            if (this.completionCache.result)
+                cacheHit();
+            else
+                this.completionCache.resultCallbacks.push(cacheHit);
+            return;
         }
     
         if (this.completionPrediction && this.completionPrediction.result
             && cacheKey.matches(this.completionPrediction)) {
-            // Cache hit!
             this.completionCache = this.completionPrediction;
-            this.sender.emit("complete", this.completionCache.result);
-            return true;
+            return cacheHit();
         }
         
-        // Save caching key for use by storeCachedCompletion()
-        doc.$completionCache = cacheKey;
+        return this.completionCache = cacheKey;
+            
+        function cacheHit() {
+            that.sender.emit("complete", that.completionCache.result);
+        }
     };
     
     /**
      * Store cached completion.
      */
-    this.storeCachedCompletion = function(result) {
-        if (!this.doc.$completionCache)
+    this.storeCachedCompletion = function(cache, result) {
+        if (this.completionCache !== cache)
             return;
-        this.completionCache = this.doc.$completionCache;
-        this.completionCache.result = result;
-        this.doc.$completionCache = null;
+        cache.result = result;
+        cache.resultCallbacks.forEach(function(c) {
+            c();
+        });
     };
     
     /**
@@ -1602,6 +1612,8 @@ function endTime(t, message, indent) {
         doc.$lines[pos.row] = line;
         var completePos = { row: pos.row, column: pos.column - prefix.length };
         return {
+            result: null,
+            resultCallbacks: [],
             line: completeLine,
             value: completeValue,
             pos: completePos,
