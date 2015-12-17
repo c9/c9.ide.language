@@ -22,7 +22,7 @@ var worker = require("./worker");
 var completeUtil = require("./complete_util");
 
 var msgId = 0;
-var docCache = { row: null, entries: new Map() };
+var docCache = { row: null, entries: {} };
 
 module.exports = {
 
@@ -299,13 +299,13 @@ module.exports = {
         // system for it elsewhere that does it on demand.
         // For now this kinda works and is pretty fast.
         
-        if (docCache.entries.has(doc))
-            return docCache.entries.get(doc);
+        if (docCache.entries["_" + doc])
+            return docCache.entries["_" + doc];
             
         // Garbage collect cache
         var lastRow = worker.$lastWorker.$lastCompleteRow;
         if (docCache.row !== lastRow)
-            docCache.entries.clear();
+            docCache.entries = {};
         docCache.row = lastRow;
         
         var result = escapeHtml(doc)
@@ -321,7 +321,7 @@ module.exports = {
             .replace(/&lt;(\/?)code&gt;/g, "<$1tt>")
             .replace(/&lt;(\/?)(b|i|em|br|a) ?\/?&gt;/g, "<$1$2>")
             .replace(/&lt;(a\s+(target=('|&quot;)[^"'&]*('|&quot;)\s+)?href=('|&quot;)(https?:\/\/|#)[^"'&]*('|&quot;)\s*(target=('|&quot;)[^"'&]*('|&quot;)\s*)?)&gt;/g, '<$1 target="_docs">');
-        docCache.set(doc, result);
+        docCache.entries["_" + doc] = result;
         return result;
 
         function escapeHtml(str) {
