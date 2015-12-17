@@ -1572,10 +1572,10 @@ function endTime(t, message, indent) {
                     return;
                 
                 var line = _self.completionCache.line;
-                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
-                var predictedLine = line.substr(0, _self.completionCache.pos.column)
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+                var predictedLine = line.substr(0, _self.completionCache.pos.column - prefix.length)
                     + predictedString
-                    + line.substr(_self.completionCache.pos.column + prefix.length);
+                    + line.substr(_self.completionCache.pos.column);
                 var predictedPos = { row: pos.row, column: _self.completionCache.pos.column + predictedString.length };
                 if (_self.completionPrediction && _self.completionPrediction.line === predictedLine)
                     return;
@@ -1592,7 +1592,7 @@ function endTime(t, message, indent) {
             if (filteredMatches)
                 return filteredMatches;
             var line = _self.doc.getLine(pos.row);
-            var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.row, identifierRegex);
+            var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             filteredMatches = result.matches.filter(function(m) {
                 return m.replaceText.indexOf(prefix) === 0;
             });
@@ -1613,8 +1613,8 @@ function endTime(t, message, indent) {
         var doc = this.doc;
         var path = this.$path;
         var line = doc.getLine(pos.row);
-        var prefix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.row, identifierRegex);
-        var suffix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.row, identifierRegex);
+        var prefix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
+        var suffix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
         var completeLine = (overrideLine || line).substr(0, pos.column - prefix.length)
             + (overrideLine || line).substr(pos.column + suffix.length);
         doc.$lines[pos.row] = "";
