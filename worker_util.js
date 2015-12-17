@@ -158,17 +158,23 @@ module.exports = {
     execAnalysis: function(command, options, callback) {
         if (typeof options === "function")
             return this.execAnalysis(command, {}, arguments[1]);
-            
+        
+        var myWorker = worker.$lastWorker;
         options.command = command;
-        options.path = options.path || worker.$lastWorker.$path.substr(1);
+        options.path = options.path || myWorker.$path.substr(1);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
         var maxCallInterval = options.maxCallInterval || 50;
-        if (worker.$lastWorker.$overrideLine) {
+        if (myWorker.$overrideLine) {
             // Special handling for completion predictions
             maxCallInterval = 0;
-            options.overrideLine = worker.$lastWorker.$overrideLine;
-            options.overrideLineRow = worker.$lastWorker.$overrideLineRow;
+            options.overrideLineRow = myWorker.$lastCompleteRow;
+            options.overrideLine = myWorker.$overrideLine;
+        }
+        else {
+            // Ensure high fidelity for current line, which may have changed in the UI
+            options.overrideLineRow = myWorker.$lastCompleteRow;
+            options.overrideLine = myWorker.doc.getLine(options.overrideLineRow);
         }
         if (options.path && !options.path[0] === "/")
             return callback(new Error("Only workspace-relative paths are supported"));
@@ -185,7 +191,7 @@ module.exports = {
             timeout: options.timeout || 30000,
             semaphore: "semaphore" in options
                 ? options.semaphore
-                : command + "|" + worker.$lastWorker.$language,
+                : command + "|" + myWorker.$language,
             args: [options.path, null, null, options]
         });
         worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {

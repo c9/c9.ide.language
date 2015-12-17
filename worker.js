@@ -1425,7 +1425,7 @@ function endTime(t, message, indent) {
                         if (overrideLine)
                             _self.doc.$lines[pos.row] = overrideLine;
                         _self.$overrideLine = overrideLine;
-                        _self.$overrideLineRow = pos.row;
+                        _self.$lastCompleteRow = pos.row;
                         
                         handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
