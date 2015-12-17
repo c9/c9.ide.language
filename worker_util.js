@@ -289,6 +289,36 @@ module.exports = {
         });
         worker.sender.emit("stat", { path: path, id: id });
     },
+    
+    /**
+     * Prettify JavaDoc/JSDoc-like documentation strings to HTML.
+     */
+    filterDocumentation: function(doc) {
+        // We prettify doc strings here since we don't have a nice
+        // system for it elsewhere that does it on demand.
+        // For now this kinda works and is pretty fast.
+        return escapeHtml(doc)
+            .replace(/(\n|^)[ \t]*\*+[ \t]*/g, "\n")
+            .trim()
+            // Initial newline before first parameter
+            .replace(/@(param|public|private|platform|event|method|function|class|constructor|fires?|throws?|returns?|internal|ignore)/, "<br/>@$1")
+            // .replace(/\n@(\w+)/, "<br/>\n@$1")
+            // Paragraphs
+            .replace(/\n\n(?!@)/g, "<br/><br/>")
+            .replace(/@(param|public|private|platform|event|method|function|class|constructor|fires?|throws?|returns?|internal|ignore) ({[\w\.]+} )?(\[?[\w\.]+\]?)/g, "<br><b>@$1</b> <i>$2$3</i>&nbsp;")
+            .replace(/\n@(\w+)/g, "<br/>\n<b>@$1</b>")
+            .replace(/&lt;(\/?)code&gt;/g, "<$1tt>")
+            .replace(/&lt;(\/?)(b|i|em|br|a) ?\/?&gt;/g, "<$1$2>")
+            .replace(/&lt;(a\s+(target=('|&quot;)[^"'&]*('|&quot;)\s+)?href=('|&quot;)(https?:\/\/|#)[^"'&]*('|&quot;)\s*(target=('|&quot;)[^"'&]*('|&quot;)\s*)?)&gt;/g, '<$1 target="_docs">');
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+    },
 
     /**
      * Show an error popup in the IDE.
