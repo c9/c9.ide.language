@@ -283,6 +283,7 @@ function endTime(t, message, indent) {
             handler.proxy = _self.serverProxy;
             handler.sender = _self.sender;
             handler.$isInited = false;
+            _self.completionCache = _self.predictionCache = null;
             _self.handlers.push(handler);
             _self.$initHandler(handler, null, true, function() {
                 // Note: may not return for a while for asynchronous workers,
