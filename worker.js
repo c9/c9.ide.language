@@ -1560,7 +1560,7 @@ function endTime(t, message, indent) {
         var _self = this;
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
-            function parseNext(handler, next) {
+            function(handler, next) {
                 var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
                 handler.predictNextCompletion(this.doc, null, pos, options, handleCallbackError(function(result) {
                     if (result)
@@ -1572,12 +1572,12 @@ function endTime(t, message, indent) {
                 if (!predictedString)
                     return;
                 
-                var line = _self.completionCache.line;
+                var line = _self.doc.getLine(pos.row);
                 var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-                var predictedLine = line.substr(0, _self.completionCache.pos.column - prefix.length)
+                var predictedLine = line.substr(0, pos.column - prefix.length)
                     + predictedString
-                    + line.substr(_self.completionCache.pos.column);
-                var predictedPos = { row: pos.row, column: _self.completionCache.pos.column + predictedString.length };
+                    + line.substr(pos.column);
+                var predictedPos = { row: pos.row, column: pos.column - prefix.length + predictedString.length };
                 if (_self.completionPrediction && _self.completionPrediction.line === predictedLine)
                     return;
                 
