@@ -572,16 +572,17 @@ module.exports = {
      * 
      * ```
      * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
-     *     // Only look at contextual conmpletions and ignore any keyword predictions
+     *     // We look at all current completion proposals, but first filter for
+     *     // contextual completions and ignore any keyword predictions
      *     var predicted = options.matches.filter(function(m) {
      *         return m.isContextual && !m.replaceText.match(KEYWORD_REGEX);
      *     });
-     *     // Continue only if we have exactly one identifier left over to
+     *     // Let's predict only if we have exactly one proposal left over to
      *     // make a prediction for (e.g., we know the user is going to type "foo")
      *     if (predicted.length !== 1)
      *         return callback();
      *     // Predict that the current user is going to type this identifier
-     *     // followed by a dot.
+     *     // followed by a dot (e.g., "foo.")
      *     callback(null, { predicted: predicted[0] + "." });
      * };
      * ```
