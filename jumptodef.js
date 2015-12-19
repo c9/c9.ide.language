@@ -8,7 +8,8 @@ define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "tabManager", "ace", "language",
         "menus", "commands", "c9", "tabManager",
-        "ui", "settings", "preferences"
+        "ui", "settings", "preferences", "proc",
+        "dialog.error"
     ];
     main.provides = ["language.jumptodef"];
     return main;
@@ -22,6 +23,9 @@ define(function(require, exports, module) {
         var prefs = imports.preferences;
         var tabs = imports.tabManager;
         var ui = imports.ui;
+        var proc = imports.proc;
+        var showError = imports["dialog.error"].show;
+        var c9 = imports.c9;
         var util = require("plugins/c9.ide.language/complete_util");
         var HoverLink = require("./hover_link").HoverLink;
         var MouseHandler = require("ace/mouse/mouse_handler").MouseHandler;
@@ -244,40 +248,74 @@ define(function(require, exports, module) {
         }
         
         function jumpToPos(path, pos, sourcePath, sourcePos, callback) {
-            if (path[0] !== "/" && path[0] !== "~")
-                path = "/" + path;
             pos.row = pos.row || 0;
             pos.column = pos.column || 0;
-            tabs.open(
-                {
-                    path: path,
-                    active: true
-                },
-                function(err, tab) {
-                    if (err)
-                        return;
-                    var state = tab.document && tab.document.getState();
-                    if (state && state.ace) {
-                        pos = addUnknownColumn(tab.editor.ace, pos);
-                        lastJump = sourcePos && {
-                            ace: tab.editor.ace,
-                            row: pos.row,
-                            column: pos.column,
-                            path: path,
-                            sourcePos: sourcePos,
-                            sourcePath: sourcePath
-                        };
-                        state.ace.jump = {
-                            row: pos.row,
-                            column: pos.column
-                        };
+            if (path.substr(0, 2) === "//") {
+                // HACK: read file outside of vfs
+                return proc.execFile("cat", { args: [path.substr(1)] }, function(err, result) {
+                    if (err) return showError("Could not open refrenced file: " + path);
+                    
+                    openTab(result);
+                });
+            }
+            if (path[0] !== "/" && path[0] !== "~") {
+                path = "/" + path;
+            }
+            openTab();
+            
+            function openTab(nonVFSValue) {
+                tabs.open(
+                    {
+                        path: path,
+                        active: true,
+                        value: nonVFSValue
+                    },
+                    function(err, tab) {
+                        if (err)
+                            return;
+                        
+                        if (nonVFSValue) {
+                            makeReadonly(tab);
+                            if (tab.document)
+                                tab.document.meta.closeOnError = true;
+                        }
+                            
+                        var state = tab.document && tab.document.getState();
+                        if (state && state.ace) {
+                            pos = addUnknownColumn(tab.editor.ace, pos);
+                            lastJump = sourcePos && {
+                                ace: tab.editor.ace,
+                                row: pos.row,
+                                column: pos.column,
+                                path: path,
+                                sourcePos: sourcePos,
+                                sourcePath: sourcePath
+                            };
+                            state.ace.jump = {
+                                row: pos.row,
+                                column: pos.column
+                            };
+                        }
+                        delete state.value;
+                        tab.document.setState(state);
+                        tabs.focusTab(tab);
+                        
+                        callback && callback();
                     }
-                    delete state.value;
-                    tab.document.setState(state);
-                    tabs.focusTab(tab);
-                    callback && callback();
+                );
+            }
+        }
+        
+        function makeReadonly(tab) {
+            tab.editor.ace.setReadOnly(true);
+            tab.editor.ace.session.on("changeEditor", function(e) {
+                if (e.oldEditor) {
+                    e.oldEditor.setReadOnly(false);
                 }
-            );
+                if (e.editor) {
+                    e.editor.setReadOnly(true);
+                }
+            });
         }
     
         function onJumpFailure(event, ace) {
