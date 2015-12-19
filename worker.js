@@ -1562,7 +1562,7 @@ function endTime(t, message, indent) {
             { method: "predictNextCompletion" },
             function(handler, next) {
                 var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
-                handler.predictNextCompletion(this.doc, null, pos, options, handleCallbackError(function(result) {
+                handler.predictNextCompletion(_self.doc, null, pos, options, handleCallbackError(function(result) {
                     if (result)
                         predictedString = result.predicted;
                     next();
