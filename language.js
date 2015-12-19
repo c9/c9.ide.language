@@ -613,6 +613,10 @@ define(function(require, exports, module) {
              * @param {Function} [callback]    An optional callback called when the handler is initialized
              * @param {String} callback.err    Any error that occured when loading this handler
              * @param {Object} callback.worker The worker object (see {@link #getWorker})
+             * @param {Function} callback.worker.emit
+             * @param {String} callback.worker.emit.event
+             * @param {Object} callback.worker.emit.payload
+             * @param {Object} callback.worker.emit.payload.data
              */
             registerLanguageHandler: registerLanguageHandler,
             
