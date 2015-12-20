@@ -526,6 +526,8 @@ module.exports = {
      * 
      * See also {@link #getCompletionRegex}.
      * See also {@link #predictNextCompletion}.
+     * See also {@link language.worker_util#execAnalysis} for invoking a code
+     * completion tool that runs in the workspace.
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
@@ -647,6 +649,9 @@ module.exports = {
      *     }
      * 
      * Should be overridden by inheritors that implement analysis.
+     * 
+     * See also {@link language.worker_util#execAnalysis} for invoking a code
+     * completion tool that runs in the workspace.
      * 
      * @param {Document} doc                       The Document object representing the source
      * @param {Object} fullAst                     The entire AST of the current file (if any)
