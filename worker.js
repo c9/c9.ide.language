@@ -1412,6 +1412,8 @@ function endTime(t, message, indent) {
             return callback(); // cursor position not current
         var partPos = syntaxDetector.posToRegion(part.region, pos);
         var tStart = startTime();
+        
+        startOverrideLine();
         _self.parse(part, function(ast) {
             endTime(tStart, "Complete: parser");
             _self.findNode(ast, pos, function(currentNode) {
@@ -1422,22 +1424,15 @@ function endTime(t, message, indent) {
                         handler.workspaceDir = _self.$workspaceDir;
                         handler.path = _self.$path;
                         var t = startTime();
-                        
-                        // HACK: temporaritly change doc in case current line is overridden
-                        if (overrideLine)
-                            _self.doc.$lines[pos.row] = overrideLine;
-                        _self.$overrideLine = overrideLine;
-                        _self.$lastCompleteRow = pos.row;
-                        
+
+                        startOverrideLine();
                         handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
                             next();
                         }));
-                        
-                        _self.$overrideLine = null;
-                        _self.doc.$lines[pos.row] = originalLine;
+                        endOverrideLine();
                     },
                     function() {
                         removeDuplicateMatches(matches);
@@ -1493,6 +1488,20 @@ function endTime(t, message, indent) {
                 });
             });
         });
+        endOverrideLine();
+        
+        // HACK: temporarily change doc in case current line is overridden
+        function startOverrideLine() {
+            if (overrideLine)
+                _self.doc.$lines[pos.row] = overrideLine;
+            _self.$overrideLine = overrideLine;
+            _self.$lastCompleteRow = pos.row;
+        }
+        
+        function endOverrideLine() {
+            _self.$overrideLine = null;
+            _self.doc.$lines[pos.row] = originalLine;
+        }
     };
     
     /**
