@@ -1415,8 +1415,9 @@ function endTime(t, message, indent) {
         _self.parse(part, function(ast) {
             endTime(tStart, "Complete: parser");
             _self.findNode(ast, pos, function(currentNode) {
-                asyncForEach(_self.handlers, function(handler, next) {
-                    if (_self.isHandlerMatch(handler, part, "complete")) {
+                _self.asyncForEachHandler(
+                    { part: part, method: "complete" },
+                    function(handler, next) {
                         handler.language = part.language;
                         handler.workspaceDir = _self.$workspaceDir;
                         handler.path = _self.$path;
@@ -1437,60 +1438,58 @@ function endTime(t, message, indent) {
                         
                         _self.$overrideLine = null;
                         _self.doc.$lines[pos.row] = originalLine;
-                    }
-                    else {
-                        next();
-                    }
-                }, function() {
-                    removeDuplicateMatches(matches);
-                    
-                    // Always prefer current identifier (similar to complete.js)
-                    var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
-                    matches.forEach(function(m) {
-                        if (m.isGeneric && m.$source !== "local")
-                            return;
-                        if (!m.name)
-                            m.name = m.replaceText;
-                        var match = prefixLine.lastIndexOf(m.replaceText);
-                        if (match > -1
-                            && match === pos.column - m.replaceText.length
-                            && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
-                            m.priority = 99;
-                    });
-                    
-                    // Sort by priority, score
-                    matches.sort(function(a, b) {
-                        if (a.priority < b.priority)
-                            return 1;
-                        else if (a.priority > b.priority)
-                            return -1;
-                        else if (a.score < b.score)
-                            return 1;
-                        else if (a.score > b.score)
-                            return -1;
-                        else if (a.id && a.id === b.id) {
-                            if (a.isFunction)
-                                return -1;
-                            else if (b.isFunction)
+                    },
+                    function() {
+                        removeDuplicateMatches(matches);
+                        
+                        // Always prefer current identifier (similar to complete.js)
+                        var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
+                        matches.forEach(function(m) {
+                            if (m.isGeneric && m.$source !== "local")
+                                return;
+                            if (!m.name)
+                                m.name = m.replaceText;
+                            var match = prefixLine.lastIndexOf(m.replaceText);
+                            if (match > -1
+                                && match === pos.column - m.replaceText.length
+                                && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
+                                m.priority = 99;
+                        });
+                        
+                        // Sort by priority, score
+                        matches.sort(function(a, b) {
+                            if (a.priority < b.priority)
                                 return 1;
+                            else if (a.priority > b.priority)
+                                return -1;
+                            else if (a.score < b.score)
+                                return 1;
+                            else if (a.score > b.score)
+                                return -1;
+                            else if (a.id && a.id === b.id) {
+                                if (a.isFunction)
+                                    return -1;
+                                else if (b.isFunction)
+                                    return 1;
+                            }
+                            if (a.name < b.name)
+                                return -1;
+                            else if (a.name > b.name)
+                                return 1;
+                            else
+                                return 0;
+                        });
+                        endTime(tStart, "COMPLETED!");
+                        callback({
+                            pos: pos,
+                            matches: matches,
+                            isUpdate: event.data.isUpdate,
+                            line: overrideLine || originalLine,
+                            path: _self.$path,
+                            forceBox: event.data.forceBox,
+                            deleteSuffix: event.data.deleteSuffix
                         }
-                        if (a.name < b.name)
-                            return -1;
-                        else if (a.name > b.name)
-                            return 1;
-                        else
-                            return 0;
-                    });
-                    endTime(tStart, "COMPLETED!");
-                    callback({
-                        pos: pos,
-                        matches: matches,
-                        isUpdate: event.data.isUpdate,
-                        line: overrideLine || originalLine,
-                        path: _self.$path,
-                        forceBox: event.data.forceBox,
-                        deleteSuffix: event.data.deleteSuffix
-                    });
+                    );
                 });
             });
         });
