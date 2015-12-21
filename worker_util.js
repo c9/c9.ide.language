@@ -174,7 +174,7 @@ module.exports = {
      * a temporary file.
      * 
      * Using stdin generally performs best and is used by default.
-     * To use a temporary file instead, use the `useTempFile` option
+     * To use a temporary file instead, use the `mode` option
      * and use `$FILE` in `options.args` to get the name of
      * the temporary file.
      * 
@@ -201,8 +201,9 @@ module.exports = {
      * @param {String[]} [options.args]         An array of args to pass to the executable.
      *                                          Use "$FILE" anywhere to get the path of the temporary file,
      *                                          if applicable.
-     * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
-     *                                          file.
+     * @param {"stdin"|"tempfile"} [options.mode="stdin"]
+     *                                          Pass the unsaved contents of the current file using a temporary
+     *                                          file or stdin.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file),
      *                                          relative to the workspace.
      * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
