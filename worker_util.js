@@ -227,7 +227,7 @@ module.exports = {
      *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
      *                                          two calls. Lower numbers put heavier load on the workspace.
      *                                          Default 50.
-     * @param {Function} [callback]
+     * @param {Function} callback
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
      * @param {String}   callback.stderr        The stderr buffer.
