@@ -100,6 +100,73 @@ module.exports = {
         });
     },
     
+                
+    /**
+     * Spawns a child process.
+     * 
+     * Example:
+     * 
+     *     proc.spawn("ls", function(err, process) {
+     *         if (err) throw err;
+     * 
+     *         process.stdout.on("data", function(chunk) {
+     *             console.log(chunk); 
+     *         });
+     *     });
+     * 
+     * @param {String}   path                             the path to the file to execute
+     * @param {Object}   [options]
+     * @param {Array}    [options.args]                   An array of args to pass to the executable.
+     * @param {String}   [options.stdoutEncoding="utf8"]  The encoding to use on the stdout stream.
+     * @param {String}   [options.stderrEncoding="utf8"]  The encoding to use on the stderr stream.
+     * @param {String}   [options.cwd]                    Current working directory of the child process
+     * @param {Object}   [options.stdio]                  Child's stdio configuration. 
+     * @param {Object}   [options.env]                    Environment key-value pairs
+     * @param {Boolean}  [options.detached]               The child will be a process group leader. (See below)
+     * @param {Number}   [options.uid]                    Sets the user identity of the process. (See setuid(2).)
+     * @param {Number}   [options.gid]                    Sets the group identity of the process. (See setgid(2).)
+     * @param {Boolean}  [options.resumeStdin]            Start reading from stdin, so the process doesn't exit
+     * @param {Boolean}  [options.resolve]                Resolve the path to the VFS root before spawning process
+     * @param {Function} callback
+     * @param {Error}    callback.err                     The error object if one has occured.
+     * @param {proc.Process}  callback.result             A descriptor for the child process.
+     * @param {Function} callback.result.on               Listen to standard "exit", "error", "close", "disconnect", "message"
+     *                                                    child process events.
+     * @param {Object} callback.result.stdout
+     * @param {Function} callback.result.stdout.on        Listen to standard "close", "data", "end", "error", "readable"
+     *                                                    child process events.
+     * @param {Object} callback.result.stderr
+     * @param {Function} callback.result.stderr.on        Listen to standard "close", "data", "end", "error", "readable"
+     *                                                    child process events.
+     */
+    spawn: function(path, options, callback) {
+        if (typeof options === "function")
+            return this.execFile(path, {}, arguments[1]);
+        
+        var id = msgId++;
+        worker.sender.emit("spawn", { path: path, options: options, id: id });
+        worker.sender.on("spawnResult", function onSpawnResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("spawnResult", onSpawnResult);
+            callback && callback(event.data.err, {
+                stdout: { on: listen.bind(null, "stdout") },
+                stderr: { on: listen.bind(null, "stderr") },
+                on: listen.bind(null, "child")
+            });
+            
+            function listen(sourceName, event, listener) {
+                worker.sender.on("spawnEvent$" + id + sourceName + event, listener);
+                worker.sender.on("spawnEvent$" + id + "childexit", function gc() {
+                    setTimeout(function() {
+                        worker.sender.off("spawnEvent$" + id + sourceName + event, listener);
+                        worker.sender.off("spawnEvent$" + id + "childexit", gc);
+                    });
+                });
+            }
+        });
+    },
+    
     /**
      * Invoke an analysis tool on the current user's workspace,
      * such as a linter or code completion tool. Passes the

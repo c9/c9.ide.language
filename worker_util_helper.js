@@ -61,6 +61,38 @@ define(function(require, exports, module) {
                     );
                 });
                 
+                worker.on("spawn", function(e) {
+                    ensureConnected(
+                        function(next) {
+                            try {
+                                proc.spawn(e.data.path, e.data.options, next);
+                            }
+                            catch (e) {
+                                next(e);
+                            }
+                        },
+                        function(err, child) {
+                            if (err)
+                                return worker.emit("spawnResult", { data: { id: e.data.id, err: err, }});
+                            
+                            worker.emit("spawnResult", { data: {
+                                id: e.data.id,
+                            }});
+                            forwardEach(child, "child", ["exit", "error", "close", "disconnect", "message"]);
+                            forwardEach(child.stdout, "stdout", ["close", "data", "end", "error", "readable"]);
+                            forwardEach(child.stderr, "stdout", ["close", "data", "end", "error", "readable"]);
+                            
+                            function forwardEach(source, sourceName, events) {
+                                events.forEach(function(event) {
+                                    source.on(event, function(e) {
+                                        worker.emit("spawnEvent$" + e.data.id + sourceName + event, { data: e });
+                                    });
+                                });
+                            }
+                        }
+                    );
+                });
+                
                 worker.on("readFile", function tryIt(e) {
                     readTabOrFile(e.data.path, e.data.options, function(err, value) {
                         if (err && err.code === "EDISCONNECT")
