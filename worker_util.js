@@ -130,6 +130,9 @@ module.exports = {
      * @param {Function} callback
      * @param {Error}    callback.err                     The error object if one has occured.
      * @param {proc.Process}  callback.result             A descriptor for the child process.
+     * @param {Number} callback.result.pid                The PID of the child.
+     * @param {Function} callback.result.kill             Kill the child.
+     * @param {String} [callback.result.kill.signal]      Signal to kill the child with.
      * @param {Function} callback.result.on               Listen to standard "exit", "error", "close", "disconnect", "message"
      *                                                    child process events.
      * @param {Object} callback.result.stdout
@@ -152,11 +155,16 @@ module.exports = {
             callback && callback(event.data.err, {
                 stdout: { on: listen.bind(null, "stdout") },
                 stderr: { on: listen.bind(null, "stderr") },
-                on: listen.bind(null, "child")
+                on: listen.bind(null, "child"),
+                kill: function(signal) {
+                    worker.sender.emit("spawn_kill$" + id, { signal: signal });
+                }
             });
             
             function listen(sourceName, event, listener) {
-                worker.sender.on("spawnEvent$" + id + sourceName + event, listener);
+                worker.sender.on("spawnEvent$" + id + sourceName + event, function(e) {
+                    listener(e.data);
+                });
                 worker.sender.on("spawnEvent$" + id + "childexit", function gc() {
                     setTimeout(function() {
                         worker.sender.off("spawnEvent$" + id + sourceName + event, listener);

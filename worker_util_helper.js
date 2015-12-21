@@ -62,30 +62,32 @@ define(function(require, exports, module) {
                 });
                 
                 worker.on("spawn", function(e) {
+                    var id = e.data.id;
                     ensureConnected(
                         function(next) {
-                            try {
-                                proc.spawn(e.data.path, e.data.options, next);
-                            }
-                            catch (e) {
-                                next(e);
-                            }
+                            proc.spawn(e.data.path, e.data.options, next);
                         },
                         function(err, child) {
                             if (err)
-                                return worker.emit("spawnResult", { data: { id: e.data.id, err: err, }});
+                                return worker.emit("spawnResult", { data: { id: id, err: err, }});
                             
-                            worker.emit("spawnResult", { data: {
-                                id: e.data.id,
-                            }});
-                            forwardEach(child, "child", ["exit", "error", "close", "disconnect", "message"]);
-                            forwardEach(child.stdout, "stdout", ["close", "data", "end", "error", "readable"]);
-                            forwardEach(child.stderr, "stdout", ["close", "data", "end", "error", "readable"]);
+                            forwardEvents(child, "child", ["exit", "error", "close", "disconnect", "message"]);
+                            forwardEvents(child.stdout, "stdout", ["close", "data", "end", "error", "readable"]);
+                            forwardEvents(child.stderr, "stderr", ["close", "data", "end", "error", "readable"]);
+                            worker.on("spawn_kill$" + id, kill);
+                            child.on("exit", function gc() {
+                                worker.off("spawn_kill$" + id, kill);
+                            });
+                            worker.emit("spawnResult", { data: { id: id, pid: child.pid }});
                             
-                            function forwardEach(source, sourceName, events) {
+                            function kill(e) {
+                                child.kill(e.signal);
+                            }
+                            
+                            function forwardEvents(source, sourceName, events) {
                                 events.forEach(function(event) {
                                     source.on(event, function(e) {
-                                        worker.emit("spawnEvent$" + e.data.id + sourceName + event, { data: e });
+                                        worker.emit("spawnEvent$" + id + sourceName + event, { data: e });
                                     });
                                 });
                             }
