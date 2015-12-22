@@ -183,6 +183,17 @@ module.exports = {
      * unsaved contents of the current file via stdin or using
      * a temporary file.
      * 
+     * Latency of this function is determined by performance
+     * of the server-side analyzer, ping times to the server,
+     * and the message size.
+     * 
+     * Message sizes over a few kilobytes are often more
+     * significant to latency than ping times. We gzip all messages,
+     * and do an additional optimization when messages in JSON
+     * format are used. JSON strings are packed using hash consing
+     * and memoization to improve latency. Use options.json to
+     * return JSON instead of strings for stdout and stderr.
+     * 
      * Using stdin generally performs best and is used by default.
      * To use a temporary file instead, use the `mode` option
      * and use `$FILE` in `options.args` to get the name of
@@ -219,7 +230,7 @@ module.exports = {
      * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
      *                                          either relative to the root (when starting with a /) or to the workspace.
      * @param {Number} [options.timeout]        Timeout in milliseconds for requests. Default 30000.
-     * @param {Number} [options.json]           Convert stdout and stderr to JSON when possible.
+     * @param {Boolean} [options.json]          Convert stdout and stderr to JSON when possible.
      * @param {Number} [options.maxBuffer=200*1024]
      * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
      *                                          instance runs at a time. Defaults to a concatenation of 'command'
