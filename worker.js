@@ -1716,9 +1716,10 @@ function endTime(t, message, indent) {
     
     function handleCallbackError(callback) {
         return function(optionalErr, result) {
-            if (optionalErr instanceof Error || typeof optionalErr === "string") {
+            if (optionalErr &&
+                (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack)) {
                 console.error(optionalErr.stack || optionalErr);
-                callback();
+                return callback();
             }
             
             // We only support Error and string errors; 
