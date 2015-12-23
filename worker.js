@@ -283,6 +283,7 @@ function endTime(t, message, indent) {
             handler.proxy = _self.serverProxy;
             handler.sender = _self.sender;
             handler.$isInited = false;
+            _self.completionCache = _self.predictionCache = null;
             _self.handlers.push(handler);
             _self.$initHandler(handler, null, true, function() {
                 // Note: may not return for a while for asynchronous workers,
@@ -396,11 +397,11 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "parse" },
             function parseNext(handler, next) {
-                handler.parse(value, function onParse(ast) {
+                handler.parse(value, handleCallbackError(function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
-                });
+                }));
             },
             function() {
                 callback(resultAst);
@@ -432,11 +433,11 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "findNode" },
             function(handler, next) {
-                handler.findNode(ast, posInPart, function(node) {
+                handler.findNode(ast, posInPart, handleCallbackError(function(node) {
                     if (node)
                         result = node;
                     next();
-                });
+                }));
             },
             function() { callback(result); }
         );
@@ -464,7 +465,7 @@ function endTime(t, message, indent) {
         this.parse(null, function(ast) {
             asyncForEach(_self.handlers, function(handler, next) {
                 if (_self.isHandlerMatch(handler, null, "outline")) {
-                    handler.outline(_self.doc, ast, function(outline) {
+                    handler.outline(_self.doc, ast, handleCallbackError(function(outline) {
                         if (!outline)
                             return next();
                         if (!result || (!outline.isGeneric && result.isGeneric)) {
@@ -483,7 +484,7 @@ function endTime(t, message, indent) {
                         [].push.apply(result.items, outline.items);
                         result.isGeneric = outline.isGeneric;
                         next();
-                    });
+                    }));
                 }
                 else
                     next();
@@ -503,12 +504,12 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "hierarchy")) {
-                handler.hierarchy(_self.doc, data.pos, function(hierarchy) {
+                handler.hierarchy(_self.doc, data.pos, handleCallbackError(function(hierarchy) {
                     if (hierarchy)
                         return _self.sender.emit("hierarchy", hierarchy);
                     else
                         next();
-                });
+                }));
             }
             else
                 next();
@@ -519,12 +520,12 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(_self.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
-                handler.codeFormat(_self.doc, function(newSource) {
+                handler.codeFormat(_self.doc, handleCallbackError(function(newSource) {
                     if (newSource)
                         return _self.sender.emit("code_format", newSource);
                     else
                         next();
-                });
+                }));
             }
             else
                 next();
@@ -577,12 +578,12 @@ function endTime(t, message, indent) {
                         handler.language = part.language;
                         var t = startTime();
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
-                        handler.analyze(part.getValue(), ast, function(result) {
+                        handler.analyze(part.getValue(), ast, handleCallbackError(function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result)
                                 partMarkers = partMarkers.concat(result);
                             next();
-                        }, minimalAnalysis);
+                        }, minimalAnalysis));
                     },
                     function() {
                         filterMarkersAroundError(ast, partMarkers);
@@ -659,7 +660,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, node, function(result) {
+                                handler.getInspectExpression(part, ast, partPos, node, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
@@ -669,7 +670,7 @@ function endTime(t, message, indent) {
                                         rejected = true;
                                     }
                                     next();
-                                });
+                                }));
                             }
                             else {
                                 next();
@@ -780,10 +781,10 @@ function endTime(t, message, indent) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
                     if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
-                        handler.onCursorMove(part, ast, posInPart, currentNode, function(response) {
+                        handler.onCursorMove(part, ast, posInPart, currentNode, handleCallbackError(function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -940,12 +941,12 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, currentNode, function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, currentNode, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -996,11 +997,11 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
-                        handler.getQuickfixes(part, ast, partPos, currentNode, function(results) {
+                        handler.getQuickfixes(part, ast, partPos, currentNode, handleCallbackError(function(results) {
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1040,14 +1041,14 @@ function endTime(t, message, indent) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
-                        handler.getRefactorings(part, ast, partPos, currentNode, function(response) {
+                        handler.getRefactorings(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
                                 if (!result || result.isGeneric)
                                     result = response;
                             }
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1077,13 +1078,13 @@ function endTime(t, message, indent) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
-                        handler.getRenamePositions(part, ast, partPos, currentNode, function(response) {
+                        handler.getRenamePositions(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
                                     result = response;
                             }
                             next();
-                        });
+                        }));
                     }
                     else {
                         next();
@@ -1121,7 +1122,7 @@ function endTime(t, message, indent) {
 
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "commitRename")) {
-                handler.commitRename(_self.doc, oldId, newName, isGeneric, function(response) {
+                handler.commitRename(_self.doc, oldId, newName, isGeneric, handleCallbackError(function(response) {
                     if (response) {
                         commited = true;
                         _self.sender.emit("commitRenameResult", { err: response, oldName: oldId.value, newName: newName });
@@ -1129,7 +1130,7 @@ function endTime(t, message, indent) {
                     } else {
                         next();
                     }
-                });
+                }));
             }
             else
                 next();
@@ -1145,9 +1146,9 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(this.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "onRenameCancel")) {
-                handler.onRenameCancel(function() {
+                handler.onRenameCancel(handleCallbackError(function() {
                     next();
-                });
+                }));
             }
             else {
                 next();
@@ -1208,10 +1209,10 @@ function endTime(t, message, indent) {
                 { method: "onUpdate" },
                 function(handler, next) {
                     var t = startTime();
-                    handler.onUpdate(_self.doc, function() {
+                    handler.onUpdate(_self.doc, handleCallbackError(function() {
                         endTime(t, "Update: " + handler.$source);
                         next();
-                    });
+                    }));
                 },
                 function() {
                     _self.analyze(now, function() {
@@ -1279,13 +1280,13 @@ function endTime(t, message, indent) {
         this.initRegexes(handler, this.$language);
         if (!handler.$isInited) {
             handler.$isInited = true;
-            handler.init(function() {
+            handler.init(handleCallbackError(function() {
                 // Note: may not return for a while for asynchronous workers,
                 //       don't use this for queueing other tasks
                 handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
                 handler.$isInitCompleted = true;
                 callback();
-            });
+            }));
         }
         else if (onDocumentOpen) {
             // Note: may not return for a while for asynchronous workers,
@@ -1380,49 +1381,73 @@ function endTime(t, message, indent) {
         var _self = this;
         var data = event.data;
         var pos = data.pos;
-        var line = _self.doc.getLine(pos.row);
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
-            var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
-            if (!part)
-                return; // cursor position not current
-            var partPos = syntaxDetector.posToRegion(part.region, pos);
-            var language = part.language;
-            var tStart = startTime();
-            _self.parse(part, function(ast) {
-                endTime(tStart, "Complete: parser");
-                _self.findNode(ast, pos, function(node) {
-                    var currentNode = node;
-                    var matches = [];
+            var newCache = _self.tryCachedCompletion(pos, identifierRegex, event.data.isUpdate);
+            if (!newCache) {
+                // Use existing cache
+                if (_self.completionCache.result)
+                    _self.predictNextCompletion(event, pos, identifierRegex, _self.completionCache.result);
+                return;
+            }
+            
+            _self.getCompleteHandlerResult(event, pos, identifierRegex, null, function(result) {
+                if (!result) return;
+                _self.sender.emit("complete", result);
+                _self.storeCachedCompletion(newCache, identifierRegex, result);
+                _self.predictNextCompletion(event, pos, identifierRegex, result);
+            });
+        });
+    };
     
-                    asyncForEach(_self.handlers, function(handler, next) {
-                        if (_self.isHandlerMatch(handler, part, "complete")) {
-                            handler.language = language;
-                            handler.workspaceDir = _self.$workspaceDir;
-                            handler.path = _self.$path;
-                            var t = startTime();
-                            handler.complete(part, ast, partPos, currentNode, function(completions) {
-                                endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
-                                if (completions && completions.length)
-                                    matches = matches.concat(completions);
-                                next();
-                            });
-                        }
-                        else {
+    /**
+     * Invoke parser and completion handlers to get a completion result.
+     */
+    this.getCompleteHandlerResult = function(event, pos, identifierRegex, overrideLine, callback) {
+        var _self = this;
+        var matches = [];
+        var originalLine = _self.doc.getLine(pos.row);
+        var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
+        if (!part)
+            return callback(); // cursor position not current
+        var partPos = syntaxDetector.posToRegion(part.region, pos);
+        var tStart = startTime();
+        
+        startOverrideLine();
+        _self.parse(part, function(ast) {
+            endTime(tStart, "Complete: parser");
+            _self.findNode(ast, pos, function(currentNode) {
+                _self.asyncForEachHandler(
+                    { part: part, method: "complete" },
+                    function(handler, next) {
+                        handler.language = part.language;
+                        handler.workspaceDir = _self.$workspaceDir;
+                        handler.path = _self.$path;
+                        var t = startTime();
+
+                        startOverrideLine();
+                        handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
+                            endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
+                            if (completions && completions.length)
+                                matches = matches.concat(completions);
                             next();
-                        }
-                    }, function() {
+                        }));
+                        endOverrideLine();
+                    },
+                    function() {
                         removeDuplicateMatches(matches);
                         
                         // Always prefer current identifier (similar to complete.js)
-                        var prefixLine = line.substr(0, pos.column);
+                        var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
                         matches.forEach(function(m) {
                             if (m.isGeneric && m.$source !== "local")
                                 return;
+                            if (!m.name)
+                                m.name = m.replaceText;
                             var match = prefixLine.lastIndexOf(m.replaceText);
                             if (match > -1
                                 && match === pos.column - m.replaceText.length
-                                && completeUtil.retrievePrecedingIdentifier(line, pos.column, m.identifierRegex || identifierRegex))
+                                && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
                                 m.priority = 99;
                         });
                         
@@ -1449,20 +1474,180 @@ function endTime(t, message, indent) {
                             else
                                 return 0;
                         });
-                        _self.sender.emit("complete", {
+                        endTime(tStart, "COMPLETED!");
+                        callback({
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
-                            line: line,
+                            line: overrideLine || originalLine,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
-                        });
-                        endTime(tStart, "COMPLETED!");
-                    });
+                        }
+                    );
                 });
             });
         });
+        endOverrideLine();
+        
+        // HACK: temporarily change doc in case current line is overridden
+        function startOverrideLine() {
+            if (overrideLine)
+                _self.doc.$lines[pos.row] = overrideLine;
+            _self.$overrideLine = overrideLine;
+            _self.$lastCompleteRow = pos.row;
+        }
+        
+        function endOverrideLine() {
+            _self.$overrideLine = null;
+            _self.doc.$lines[pos.row] = originalLine;
+        }
+    };
+    
+    /**
+     * Try to use a cached completion.
+     * 
+     * @return {Object} a caching key if a new cache needs to be prepared,
+     *                  or null in case the previous cache could be used (cache hit)
+     */
+    this.tryCachedCompletion = function(pos, identifierRegex, isUpdate) {
+        var that = this;
+        var cacheKey = this.getCompleteCacheKey(pos, identifierRegex);
+        
+        if (isUpdate) {
+            // Updating our cache; return previous cache to update it
+            if (cacheKey.matches(this.completionCache))
+                return this.completionCache;
+            if (cacheKey.matches(this.completionPrediction))
+                return this.completionPrediction;
+        }
+    
+        if (cacheKey.matches(this.completionCache)) {
+            if (this.completionCache.result)
+                cacheHit();
+            else
+                this.completionCache.resultCallbacks.push(cacheHit);
+            return;
+        }
+    
+        if (this.completionPrediction && this.completionPrediction.result
+            && cacheKey.matches(this.completionPrediction)) {
+            this.completionCache = this.completionPrediction;
+            return cacheHit();
+        }
+        
+        return this.completionCache = cacheKey;
+            
+        function cacheHit() {
+            that.sender.emit("complete", that.completionCache.result);
+        }
+    };
+    
+    /**
+     * Store cached completion.
+     */
+    this.storeCachedCompletion = function(cache, identifierRegex, result) {
+        if (this.completionCache !== cache && this.predictionCache !== cache)
+            return;
+        if (!completeUtil.canCompleteForChangedLine(cache.line, result.line, cache.pos, result.pos, identifierRegex))
+            return;
+        cache.result = result;
+        cache.resultCallbacks.forEach(function(c) {
+            c();
+        });
+    };
+    
+    /**
+     * Store cached completion.
+     */
+    this.predictNextCompletion = function(event, pos, identifierRegex, result) {
+        if (event.data.isUpdate)
+            return;
+        
+        var predictedString;
+        var _self = this;
+        this.asyncForEachHandler(
+            { method: "predictNextCompletion" },
+            function(handler, next) {
+                var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
+                handler.predictNextCompletion(_self.doc, null, pos, options, handleCallbackError(function(result) {
+                    if (result)
+                        predictedString = result.predicted;
+                    next();
+                }));
+            },
+            function() {
+                if (!predictedString)
+                    return;
+                
+                var line = _self.doc.getLine(pos.row);
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+                var predictedLine = line.substr(0, pos.column - prefix.length)
+                    + predictedString
+                    + line.substr(pos.column);
+                var predictedPos = { row: pos.row, column: pos.column - prefix.length + predictedString.length };
+                if (_self.completionPrediction && _self.completionPrediction.line === predictedLine)
+                    return;
+                
+                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
+                _self.getCompleteHandlerResult(event, predictedPos, identifierRegex, predictedLine, function(result) {
+                    cache.result = result;
+                });
+            }
+        );
+        
+        var filteredMatches;
+        function getFilteredMatches() {
+            if (filteredMatches)
+                return filteredMatches;
+            var line = _self.doc.getLine(pos.row);
+            var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+            filteredMatches = result.matches.filter(function(m) {
+                return m.replaceText.indexOf(prefix) === 0;
+            });
+            return filteredMatches;
+        }
+    };
+    
+    /**
+     * Get a key for caching code completion.
+     * Takes the current document and what not and omits the current identifier from the input
+     * (which may change as the user types).
+     * 
+     * @param pos
+     * @param identifierRegex
+     * @param [overrideLine]   A line to override the current line with while making the key
+     */
+    this.getCompleteCacheKey = function(pos, identifierRegex, overrideLine) {
+        var doc = this.doc;
+        var path = this.$path;
+        var line = doc.getLine(pos.row);
+        var prefix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
+        var suffix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
+        var completeLine = (overrideLine || line).substr(0, pos.column - prefix.length)
+            + (overrideLine || line).substr(pos.column + suffix.length);
+        doc.$lines[pos.row] = "";
+        var completeValue = doc.getValue();
+        doc.$lines[pos.row] = line;
+        var completePos = { row: pos.row, column: pos.column - prefix.length };
+        return {
+            result: null,
+            resultCallbacks: [],
+            line: completeLine,
+            value: completeValue,
+            pos: completePos,
+            prefix: prefix,
+            path: path,
+            matches: function(other) {
+                return other
+                    && other.path === this.path
+                    && other.line === this.line
+                    && other.pos.row === this.pos.row
+                    && other.pos.column === this.pos.column
+                    && other.value === this.value
+                    && this.prefix.indexOf(other.prefix) === 0; // match if they're like foo and we're fooo
+            }
+        };
     };
     
     /**
@@ -1509,6 +1694,7 @@ function endTime(t, message, indent) {
      */
     this.completeUpdate = function(pos, line) {
         assert(line !== undefined);
+        this.completionCache = null;
         if (!isInWebWorker) { // Avoid making the stack too deep in ?noworker=1 mode
             var _self = this;
             setTimeout(function onCompleteUpdate() {
@@ -1524,6 +1710,20 @@ function endTime(t, message, indent) {
         setTimeout(function() {
             throw exception; // throw bare exception so it gets reported
         });
+    }
+    
+    function handleCallbackError(callback) {
+        return function(optionalErr, result) {
+            if (optionalErr instanceof Error || typeof optionalErr === "string") {
+                console.error(optionalErr.stack || optionalErr);
+                callback();
+            }
+            
+            // We only support Error and string errors; 
+            // anything else is treated as a result since legacy
+            // handlers didn't have an error argument.
+            callback(optionalErr || result);
+        };
     }
 
 }).call(LanguageWorker.prototype);

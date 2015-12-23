@@ -153,16 +153,13 @@ define(function(require, exports, module) {
                 allowImmediateEmit = true;
                 lastCompletionTooltip.active = false;
             }
-            else if (!(lastPos && inRange(lastPos, cursorPos))) {
-                if (!lastCompletionTooltip.active)
-                    hide();
+            else if (!lastCompletionTooltip.active) {
+                hide();
             }
         }
         
         function inRange(pos, cursorPos) {
-            // We only consider the cursor in range if it's on the first row
-            // of the tooltip area
-            return pos.sl === cursorPos.row && tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
+            return tree.inRange(pos, { line: cursorPos.row, col: cursorPos.column });
         } 
         
         var drawn = false;
@@ -176,6 +173,7 @@ define(function(require, exports, module) {
         function show(row, column, html, _ace) {
             draw();
             ace = _ace;
+            var cursorPos = ace.getCursorPosition();
             
             if (!isVisible) {
                 isVisible = true;
@@ -186,22 +184,30 @@ define(function(require, exports, module) {
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
-            //setTimeout(function() {
-                var position = ace.renderer.textToScreenCoordinates(row, column);
-                var cursorConfig = ace.renderer.$cursorLayer.config;
-                labelHeight = dom.getInnerHeight(tooltipEl);
+            
+            var position = ace.renderer.textToScreenCoordinates(row, column);
+            var cursorConfig = ace.renderer.$cursorLayer.config;
+            labelHeight = dom.getInnerHeight(tooltipEl);
+            isTopdown = true;
+            if (row > cursorPos.row) // don't obscure cursor
                 isTopdown = true;
-                if (position.pageY < labelHeight)
-                    isTopdown = true;
-                else if (position.pageY + labelHeight > window.innerHeight)
-                    isTopdown = false;
-                tooltipEl.style.left = (position.pageX - 22) + "px";
-                if (!isTopdown)
-                    tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
-                else
-                    tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
-                adjustCompleterTop && adjustCompleterTop(labelHeight);
-            //});
+            else if (row < cursorPos.row) // don't obscure cursor
+                isTopdown = false;
+            else if (position.pageY < labelHeight) // not enough space above us
+                isTopdown = true;
+            else if (position.pageY + labelHeight > window.innerHeight)
+                isTopdown = false;
+            
+            var editorBottom = ace.renderer.scroller.getBoundingClientRect().bottom;
+            if (isTopdown && position.pageY > editorBottom)
+                position.pageY = editorBottom - cursorConfig.lineHeight;
+                
+            tooltipEl.style.left = (position.pageX - 22) + "px";
+            if (!isTopdown)
+                tooltipEl.style.top = (position.pageY - labelHeight + 3) + "px";
+            else
+                tooltipEl.style.top = (position.pageY + cursorConfig.lineHeight + 2) + "px";
+            adjustCompleterTop && adjustCompleterTop(labelHeight);
         }
         
         function onMouseDown() {
@@ -248,9 +254,9 @@ define(function(require, exports, module) {
         }
         
         function setLastCompletion(completion, pos) {
-            // Here we store information about generic completions
+            // Here we store information about completions
             // that may be usable as tooltips
-            if (!completion.isGeneric || !completion)
+            if (!completion.guessTooltip)
                 return lastCompletionTooltip = {};
             var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
             if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)

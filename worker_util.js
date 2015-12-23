@@ -22,6 +22,7 @@ var worker = require("./worker");
 var completeUtil = require("./complete_util");
 
 var msgId = 0;
+var docCache = { row: null, entries: {} };
 
 module.exports = {
 
@@ -61,11 +62,14 @@ module.exports = {
     },
     
     /**
-     * Calls {@link proc#execFile} from the worker.
+     * Calls {@link proc#execFile} from the worker, invoking an executable
+     * on the current user's workspace.
      * 
-     * @param {String}   path                             the path to the file to execute
+     * See {@link language.worker_util#execAnalysis} for invoking tools like linters and code completers.
+     * 
+     * @param {String}   path                             The path to the file to execute
      * @param {Object}   [options]
-     * @param {Array}    [options.args]                   An array of args to pass to the executable.
+     * @param {String[]} [options.args]                An array of args to pass to the executable.
      * @param {String}   [options.stdoutEncoding="utf8"]  The encoding to use on the stdout stream. Defaults to .
      * @param {String}   [options.stderrEncoding="utf8"]  The encoding to use on the stderr stream. Defaults to "utf8".
      * @param {String}   [options.cwd]                    Current working directory of the child process
@@ -83,6 +87,9 @@ module.exports = {
      * @param {String}   callback.stderr                  The stderr buffer
      */
     execFile: function(path, options, callback) {
+        if (typeof options === "function")
+            return this.execFile(path, {}, arguments[1]);
+        
         var id = msgId++;
         worker.sender.emit("execFile", { path: path, options: options, id: id });
         worker.sender.on("execFileResult", function onExecFileResult(event) {
@@ -91,6 +98,113 @@ module.exports = {
             worker.sender.off("execFileResult", onExecFileResult);
             callback && callback(event.data.err, event.data.stdout, event.data.stderr);
         });
+    },
+    
+    /**
+     * Invoke an analysis tool on the current user's workspace,
+     * such as a linter or code completion tool. Passes the
+     * unsaved contents of the current file via stdin or using
+     * a temporary file.
+     * 
+     * Using stdin generally performs best and is used by default.
+     * To use a temporary file instead, use the `useTempFile` option
+     * and use `$FILE` in `options.args` to get the name of
+     * the temporary file.
+     * 
+     * Example:
+     * 
+     * ```
+     * execAnalysis(
+     *     "bash",
+     *     {
+     *         args: ["-n", "$FILE"],
+     *         useTempFile: true
+     *     },
+     *     function(err, stdout, stderr) {
+     *         console.log("Bash linting results:", stderr);
+     *     }
+     * )
+     * ```
+     * 
+     * This function uses collab to efficiently pass any unsaved contents
+     * of the current file to the server.
+     * 
+     * @param {String} command                  The path to the file to execute.
+     * @param {Object} [options]
+     * @param {String[]} [options.args]         An array of args to pass to the executable.
+     *                                          Use "$FILE" anywhere to get the path of the temporary file,
+     *                                          if applicable.
+     * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
+     *                                          file.
+     * @param {String} [options.path]           The path to the file to analyze (defaults to the current file),
+     *                                          relative to the workspace.
+     * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
+     *                                          either relative to the root (when starting with a /) or to the workspace.
+     * @param {Number} [options.timeout]        Timeout in milliseconds for requests. Default 30000.
+     * @param {Number} [options.maxBuffer=200*1024]
+     * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
+     *                                          instance runs at a time. Defaults to a concatenation of 'command'
+     *                                          and the current language name . Can be null to allow multiple
+     *                                          instances in parallel.
+     * @param {Number} [options.maxCallInterval]
+     *                                          The maximum interval between calls for server-side handlers,
+     *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
+     *                                          two calls. Lower numbers put heavier load on the workspace.
+     *                                          Default 50.
+     * @param {Function} [callback]
+     * @param {Error}    callback.error         The error object if an error occurred.
+     * @param {String}   callback.stdout        The stdout buffer.
+     * @param {String}   callback.stderr        The stderr buffer.
+     */
+    execAnalysis: function(command, options, callback) {
+        if (typeof options === "function")
+            return this.execAnalysis(command, {}, arguments[1]);
+        
+        var myWorker = worker.$lastWorker;
+        options.command = command;
+        options.path = options.path || myWorker.$path.substr(1);
+        options.cwd = options.cwd || getRelativeDirname(options.path);
+        options.maxBuffer = options.maxBuffer || 200 * 1024;
+        var maxCallInterval = options.maxCallInterval || 50;
+        if (myWorker.$overrideLine) {
+            // Special handling for completion predictions
+            maxCallInterval = 0;
+            options.overrideLineRow = myWorker.$lastCompleteRow;
+            options.overrideLine = myWorker.$overrideLine;
+        }
+        else {
+            // Ensure high fidelity for current line, which may have changed in the UI
+            options.overrideLineRow = myWorker.$lastCompleteRow;
+            options.overrideLine = myWorker.doc.getLine(options.overrideLineRow);
+        }
+        if (options.path && !options.path[0] === "/")
+            return callback(new Error("Only workspace-relative paths are supported"));
+            
+        // The jsonalyzer has a nice pipeline for invoking tools like this;
+        // let's use that to pass the unsaved contents via the collab bus.
+        var id = msgId++;
+        worker.sender.emit("jsonalyzerCallServer", {
+            id: id,
+            handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
+            method: "invoke",
+            filePath: "/" + options.path,
+            maxCallInterval: maxCallInterval,
+            timeout: options.timeout || 30000,
+            semaphore: "semaphore" in options
+                ? options.semaphore
+                : command + "|" + myWorker.$language,
+            args: [options.path, null, null, options]
+        });
+        worker.sender.on("jsonalyzerCallServerResult", function onResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("jsonalyzerCallServerResult", onResult);
+            callback && callback(event.data.result[0], event.data.result[1], event.data.result[2]);
+        });
+        
+        function getRelativeDirname(file) {
+            return file.replace(/^\//, "").replace(/[\/\\].*?$/, "");
+        }
     },
     
     /**
@@ -175,6 +289,48 @@ module.exports = {
             callback && callback(event.data.err && JSON.parse(event.data.err), event.data.data);
         });
         worker.sender.emit("stat", { path: path, id: id });
+    },
+    
+    /**
+     * Prettify JavaDoc/JSDoc-like documentation strings to HTML.
+     */
+    filterDocumentation: function(doc) {
+        // We prettify doc strings here since we don't have a nice
+        // system for it elsewhere that does it on demand.
+        // For now this kinda works and is pretty fast.
+        
+        if (docCache.entries["_" + doc])
+            return docCache.entries["_" + doc];
+            
+        // Garbage collect cache
+        var lastRow = worker.$lastWorker.$lastCompleteRow;
+        if (docCache.row !== lastRow)
+            docCache.entries = {};
+        docCache.row = lastRow;
+        
+        var result = escapeHtml(doc)
+            .replace(/(\n|^)[ \t]*\*+[ \t]*/g, "\n")
+            .trim()
+            // Initial newline before first parameter
+            .replace(/@(param|public|private|platform|event|method|function|class|constructor|fires?|throws?|returns?|internal|ignore)/, "<br/>@$1")
+            // .replace(/\n@(\w+)/, "<br/>\n@$1")
+            // Paragraphs
+            .replace(/\n\n(?!@)/g, "<br/><br/>")
+            .replace(/@(param|public|private|platform|event|method|function|class|constructor|fires?|throws?|returns?|internal|ignore) ({[\w\.]+} )?(\[?[\w\.]+\]?)/g, "<br><b>@$1</b> <i>$2$3</i>&nbsp;")
+            .replace(/\n@(\w+)/g, "<br/>\n<b>@$1</b>")
+            .replace(/&lt;(\/?)code&gt;/g, "<$1tt>")
+            .replace(/&lt;(\/?)(b|i|em|br|a) ?\/?&gt;/g, "<$1$2>")
+            .replace(/&lt;(a\s+(target=('|&quot;)[^"'&]*('|&quot;)\s+)?href=('|&quot;)(https?:\/\/|#)[^"'&]*('|&quot;)\s*(target=('|&quot;)[^"'&]*('|&quot;)\s*)?)&gt;/g, '<$1 target="_docs">');
+        docCache.entries["_" + doc] = result;
+        return result;
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
     },
 
     /**
