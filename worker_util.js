@@ -234,13 +234,12 @@ module.exports = {
      * @param {Number} [options.maxBuffer=200*1024]
      * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
      *                                          instance runs at a time. Defaults to a concatenation of 'command'
-     *                                          and the current language name . Can be null to allow multiple
+     *                                          and the current language name. Can be null to allow multiple
      *                                          instances in parallel.
-     * @param {Number} [options.maxCallInterval]
+     * @param {Number} [options.maxCallInterval=50]
      *                                          The maximum interval between calls for server-side handlers,
      *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
      *                                          two calls. Lower numbers put heavier load on the workspace.
-     *                                          Default 50.
      * @param {Function} callback
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
