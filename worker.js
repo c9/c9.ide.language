@@ -1442,8 +1442,8 @@ function endTime(t, message, indent) {
                         matches.forEach(function(m) {
                             if (m.isGeneric && m.$source !== "local")
                                 return;
-                            if (!m.name)
-                                m.name = m.replaceText;
+                            m.name = m.name || m.replaceText;
+                            m.replaceText = m.replaceText || m.name;
                             var match = prefixLine.lastIndexOf(m.replaceText);
                             if (match > -1
                                 && match === pos.column - m.replaceText.length
