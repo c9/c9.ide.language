@@ -1523,11 +1523,15 @@ function endTime(t, message, indent) {
         }
     
         if (cacheKey.matches(this.completionCache)) {
-            if (this.completionCache.result)
-                cacheHit();
-            else
-                this.completionCache.resultCallbacks.push(cacheHit);
-            return;
+            // HACK: don't cache when 3 characters where typed, tern does funny
+            //       stuff when typing 3+ characters
+            if (this.$language !== "javascript" || cacheKey.prefix.length < 3 || this.completionCache.prefix.length >= 3) {
+                if (this.completionCache.result)
+                    cacheHit();
+                else
+                    this.completionCache.resultCallbacks.push(cacheHit);
+                return;
+            }
         }
     
         if (this.completionPrediction && this.completionPrediction.result
