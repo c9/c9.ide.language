@@ -566,8 +566,9 @@ module.exports = {
     },
 
     /**
-     * Adds pre-caching to code completion, by predicting how to do the next
-     * completion after the current one as the user keeps typing.
+     * Adds pre-caching or predictions to the code completer,
+     * by predicting how to do the next completion after the
+     * current one as the user keeps typing.
      *
      * An example implementation for JavaScript returns the current
      * completion plus a dot:
@@ -614,6 +615,9 @@ module.exports = {
      * 
      * So all our function has to do is return "foo." and we're on
      * our way to predict the future!
+     * 
+     * Use the showEarly property to show the predicted completions immediately
+     * to users, e.g. show `this.foo` when the user types `th`.
      * 
      * May be overridden by inheritors that implement code completion.
      * 
