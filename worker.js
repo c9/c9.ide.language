@@ -1387,7 +1387,7 @@ function endTime(t, message, indent) {
             if (!newCache) {
                 // Use existing cache
                 if (_self.completionCache.result)
-                    _self.predictNextCompletion(event, pos, identifierRegex, _self.completionCache.result);
+                    _self.predictNextCompletion(event, _self.completionCache, pos, identifierRegex, _self.completionCache.result);
                 return;
             }
             
@@ -1395,7 +1395,7 @@ function endTime(t, message, indent) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
-                _self.predictNextCompletion(event, pos, identifierRegex, result);
+                _self.predictNextCompletion(event, newCache, pos, identifierRegex, result);
             });
         });
     };
@@ -1560,19 +1560,22 @@ function endTime(t, message, indent) {
     /**
      * Store cached completion.
      */
-    this.predictNextCompletion = function(event, pos, identifierRegex, result) {
+    this.predictNextCompletion = function(event, cacheKey, pos, identifierRegex, result) {
         if (event.data.isUpdate)
             return;
         
         var predictedString;
+        var showEarly;
         var _self = this;
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
             function(handler, next) {
                 var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
                 handler.predictNextCompletion(_self.doc, null, pos, options, handleCallbackError(function(result) {
-                    if (result)
+                    if (result) {
                         predictedString = result.predicted;
+                        showEarly = result.showEarly;
+                    }
                     next();
                 }));
             },
@@ -1592,6 +1595,8 @@ function endTime(t, message, indent) {
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
                 _self.getCompleteHandlerResult(event, predictedPos, identifierRegex, predictedLine, function(result) {
                     cache.result = result;
+                    if (showEarly && cacheKey.matches(_self.completionCache))
+                        showPredictionsEarly(result);
                 });
             }
         );
@@ -1606,6 +1611,16 @@ function endTime(t, message, indent) {
                 return m.replaceText.indexOf(prefix) === 0;
             });
             return filteredMatches;
+        }
+        
+        function showPredictionsEarly(result) {
+            [].push.apply(_self.completionCache.result.matches, result.matches.map(function(m) {
+                m = Object.assign({}, m);
+                m.replaceText = predictedString + m.replaceText;
+                m.name = predictedString + m.name;
+                return m;
+            }));
+            _self.sender.emit("complete", _self.completionCache.result);
         }
     };
     

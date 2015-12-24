@@ -631,6 +631,10 @@ module.exports = {
      * @param {Object} callback.result       The function's result, an array of completion matches
      * @param {String} callback.result.predicted
      *                                       The predicted text for which to try completion
+     * @param {Boolean} callback.result.showEarly
+     *                                       Show the prediction as part of the completion
+     *                                       results immediately (e.g., to show this.foo
+     *                                       when the user types 'th')
      */
     // TODO: change all similar signatures to this form?
     predictNextCompletion: function(doc, fullAst, pos, options, callback) {
