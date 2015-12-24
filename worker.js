@@ -1589,7 +1589,9 @@ function endTime(t, message, indent) {
                     + predictedString
                     + line.substr(pos.column);
                 var predictedPos = { row: pos.row, column: pos.column - prefix.length + predictedString.length };
-                if (_self.completionPrediction && _self.completionPrediction.line === predictedLine)
+                var lastPrediction = _self.completionPrediction;
+                if (lastPrediction && lastPrediction.line === predictedLine
+                    && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
                     return;
                 
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
