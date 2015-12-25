@@ -156,18 +156,6 @@ module.exports = {
     },
 
     /**
-     * Determine if the language component supports parsing.
-     * Assumed to be true if at least one hander for the language reports true.
-     * 
-     * Should be overridden by inheritors.
-     * 
-     * @return {Boolean}
-     */
-    isParsingSupported: function() {
-        return false;
-    },
-
-    /**
      * Returns a regular expression for identifiers in the handler's language.
      * If not specified, /[A-Za-z0-9$_]/ is used.
      * 
