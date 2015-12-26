@@ -110,6 +110,34 @@ module.exports = {
         throw new Error("Use worker_util.completeUpdate instead()"); // implemented by worker.completeUpdate
     },
     
+    /**
+     * Get an event emitter for emitting and receiving
+     * UI events.
+     * 
+     * Example:
+     * 
+     * ```
+     * worker_util.getEmitter().emit("log", "Hello there")
+     * ```
+     * 
+     * which can be received by a UI plugin using:
+     * 
+     * ```
+     * language.registerLanguageHandler("myplugin", function(err, handler) {
+     *     if (err) return console.error(err);
+     * 
+     *     handler.on("log", function(e) {
+     *         console.log(e);
+     *     });
+     * });
+     * ```
+     * 
+     * @param {String} [overridePath] An optional path of the plugin for which to send/receive UI events,
+     *                                e.g. "c9.ide.language/python/worker/python_completer" to send/receive
+     *                                events in name of the Python completer plugin.
+     */
+    getEmitter: function(overridePath) {}, // implemented by worker
+    
     // OVERRIDABLE ACCESORS
 
     /**

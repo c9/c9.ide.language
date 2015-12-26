@@ -283,6 +283,9 @@ function endTime(t, message, indent) {
             handler.proxy = _self.serverProxy;
             handler.sender = _self.sender;
             handler.$isInited = false;
+            handler.getEmitter = function(overridePath) {
+                return _self.$createEmitter(overridePath || path);
+            };
             _self.completionCache = _self.predictionCache = null;
             _self.handlers.push(handler);
             _self.$initHandler(handler, null, true, function() {
@@ -333,6 +336,28 @@ function endTime(t, message, indent) {
             return;
         }
         onRegistered(handler);
+    };
+    
+    this.$createEmitter = function(path) {
+        var sender = this.sender;
+        return {
+            on: function(event, listener) {
+                sender.on(path + "/" + event, function(e) {
+                    listener(e.data);
+                });
+            },
+            once: function(event, listener) {
+                sender.once(path + "/" + event, function(e) {
+                    listener(e.data);
+                });
+            },
+            off: function(event, listener) {
+                sender.off(path + "/" + event, listener);
+            },
+            emit: function(event, data) {
+                sender.emit(path + "/" + event, data);
+            }
+        };
     };
     
     this.unregister = function(modulePath, callback) {
