@@ -374,7 +374,7 @@ module.exports = {
      * tooltips early.
      * 
      * @param {Document} doc                               Document object representing the source
-     * @param {Object} fullAst                             The entire AST of the current file (if any)
+     * @param {Object} ast                                 The entire AST of the current file (if any)
      * @param {Object} cursorPos                           The current cursor position
      * @param {Number} cursorPos.row                       The current cursor's row
      * @param {Number} cursorPos.column                    The current cursor's column
@@ -410,7 +410,7 @@ module.exports = {
      * @param {Number} [callback.result.displayPos.row]    The display position's row
      * @param {Number} [callback.result.displayPos.column] The display position's column
      */
-    tooltip: function(doc, fullAst, cursorPos, options, callback) {
+    tooltip: function(doc, ast, cursorPos, options, callback) {
         callback();
     },
     
@@ -420,7 +420,7 @@ module.exports = {
      * Should be overridden by inheritors that implement occurrence highlighting.
      * 
      * @param {Document} doc                           Document object representing the source
-     * @param {Object} fullAst                         The entire AST of the current file (if any)
+     * @param {Object} ast                             The entire AST of the current file (if any)
      * @param {Object} cursorPos                       The current cursor position
      * @param {Number} cursorPos.row                   The current cursor's row
      * @param {Number} cursorPos.column                The current cursor's column
@@ -439,7 +439,7 @@ module.exports = {
      * @param {"occurrence_other"|"occurrence_main"} callback.result.markers.type
      *                                                 The type of occurrence: the main one, or any other one.
      */
-    highlightOccurrences: function(doc, fullAst, cursorPos, options, callback) {
+    highlightOccurrences: function(doc, ast, cursorPos, options, callback) {
         callback();
     },
     
@@ -449,7 +449,7 @@ module.exports = {
      * Should be overridden by inheritors that implement refactorings.
      * 
      * @param {Document} doc                 Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} ast                   The entire AST of the current file (if any)
      * @param {Object} cursorPos             The current cursor position
      * @param {Number} cursorPos.row         The current cursor's row
      * @param {Number} cursorPos.column      The current cursor's column
@@ -463,7 +463,7 @@ module.exports = {
      * @param {String[]} [callback.result.isGeneric]
      *                                       Whether is a generic answer and should be deferred
      */
-    getRefactorings: function(doc, fullAst, cursorPos, options, callback) {
+    getRefactorings: function(doc, ast, cursorPos, options, callback) {
         callback();
     },
 
@@ -484,7 +484,7 @@ module.exports = {
      * Should be overridden by inheritors that implement an outline.
      * 
      * @param {Document} doc                           The Document object representing the source
-     * @param {Object} fullAst                         The entire AST of the current file (if any)
+     * @param {Object} ast                             The entire AST of the current file (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Error|String} callback.err              Any resulting error
      * @param {Object} callback.result                 The function's result, a JSON outline structure or null if not supported
@@ -506,7 +506,7 @@ module.exports = {
      * @param {Boolean} [callback.result.isUnordered]  Indicates the outline is not ordered by appearance of the items,
      *                                                 but that they're e.g. grouped as methods, properties, etc.
      */
-    outline: function(doc, fullAst, callback) {
+    outline: function(doc, ast, callback) {
         callback();
     },
 
@@ -515,7 +515,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement a type hierarchy.
      * 
-     * Not supported right now.
+     * @ignore Not supported right now.
      * 
      * @param {Document} doc               The Document object representing the source
      * @param {Object} cursorPos           The current cursor position
@@ -551,7 +551,7 @@ module.exports = {
      * completion tool that runs in the workspace.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} ast                   The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
@@ -583,7 +583,7 @@ module.exports = {
      *                                       Indicates that this is a contextual completion,
      *                                       and that any generic completions should not be shown
      */
-    complete: function(doc, fullAst, pos, options, callback) {
+    complete: function(doc, ast, pos, options, callback) {
         callback();
     },
 
@@ -596,7 +596,7 @@ module.exports = {
      * completion plus a dot:
      * 
      * ```
-     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
+     * handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
      *     // Only predict if we have exactly one available completion
      *     if (options.matches.length !== 1)
      *         return callback();
@@ -620,7 +620,7 @@ module.exports = {
      * For the above scenario, our function is called with the following arguments:
      * 
      * ```
-     * predictNextCompletion(doc, fullAst, pos, {
+     * predictNextCompletion(doc, ast, pos, {
      *     matches: [{
      *        name: "foo",
      *        replaceText: "foo"
@@ -635,7 +635,7 @@ module.exports = {
      * before making a prediction:
      * 
      * ```
-     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
+     * handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
      *     // We look at all current completion proposals, but first filter for
      *     // contextual completions and ignore any keyword predictions
      *     var predicted = options.matches.filter(function(m) {
@@ -657,7 +657,7 @@ module.exports = {
      * May be overridden by inheritors that implement code completion.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} ast                   The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
@@ -676,7 +676,7 @@ module.exports = {
      *                                       results immediately (e.g., to show this.foo
      *                                       when the user types 'th')
      */
-    predictNextCompletion: function(doc, fullAst, pos, options, callback) {
+    predictNextCompletion: function(doc, ast, pos, options, callback) {
         callback();
     },
 
@@ -822,7 +822,7 @@ module.exports = {
      * Should be overridden by inheritors that implement jump to definition.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} fullAst               The entire AST of the current file (if any)
+     * @param {Object} ast                   The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
@@ -842,7 +842,7 @@ module.exports = {
      *                                       Indicates that this is a generic, language-independent
      *                                       suggestion (that should be deferred)
      */
-    jumpToDefinition: function(doc, fullAst, pos, options, callback) {
+    jumpToDefinition: function(doc, ast, pos, options, callback) {
         callback();
     },
     
@@ -874,7 +874,7 @@ module.exports = {
      * ```
      * 
      * @param {Document} doc                          The Document object representing the source
-     * @param {Object} fullAst                        The entire AST of the current file (if any)
+     * @param {Object} ast                            The entire AST of the current file (if any)
      * @param {Object} pos                            The current cursor position
      * @param {Number} pos.row                        The current cursor's row
      * @param {Number} pos.column                     The current cursor's column
@@ -909,7 +909,7 @@ module.exports = {
      * options's position is used.
      * 
      * @param {Document} doc                    The Document object representing the source
-     * @param {Object} fullAst                  The entire AST of the current file (if any)
+     * @param {Object} ast                      The entire AST of the current file (if any)
      * @param {Object} pos                      The current cursor position
      * @param {Number} pos.row                  The current cursor's row
      * @param {Number} pos.column               The current cursor's column
@@ -923,7 +923,7 @@ module.exports = {
      * @param {Number} callback.result.pos.sc   The expression's starting column
      * @param {Number} callback.result.pos.ec   The expression's ending column
      */
-    getInspectExpression: function(doc, fullAst, pos, options, callback) {
+    getInspectExpression: function(doc, ast, pos, options, callback) {
         callback();
     }
 };
