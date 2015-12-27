@@ -496,31 +496,31 @@ function endTime(t, message, indent) {
         var isUnordered = false;
         var applySort = false;
         this.parse(null, function(ast) {
-            asyncForEach(_self.handlers, function(handler, next) {
-                if (_self.isHandlerMatch(handler, null, "outline")) {
-                    handler.outline(_self.doc, ast, handleCallbackError(function(outline) {
-                        if (!outline)
-                            return next();
-                        if (!result || (!outline.isGeneric && result.isGeneric)) {
-                            // Overwrite generic outline
-                            result = outline;
-                            isUnordered = outline.isUnordered;
-                            return next();
-                        }
-                        if (result && outline.isGeneric && !result.isGeneric) {
-                            // Ignore generic outline
-                            return next();
-                        }
-                        
-                        // Merging multiple outlines; need to sort them later
-                        applySort = true;
-                        [].push.apply(result.items, outline.items);
-                        result.isGeneric = outline.isGeneric;
-                        next();
-                    }));
-                }
-                else
+            _self.asyncForEachHandler({ method: "outline" }, function(handler, next) {
+                if (handler.outline.length === 3) // legacy signature
+                    return handler.outline(_self.doc, ast, handleCallbackError(processResult));
+                handler.outline(_self.doc, ast, {}, handleCallbackError(processResult));
+                    
+                function processResult(outline) {
+                    if (!outline)
+                        return next();
+                    if (!result || (!outline.isGeneric && result.isGeneric)) {
+                        // Overwrite generic outline
+                        result = outline;
+                        isUnordered = outline.isUnordered;
+                        return next();
+                    }
+                    if (result && outline.isGeneric && !result.isGeneric) {
+                        // Ignore generic outline
+                        return next();
+                    }
+                    
+                    // Merging multiple outlines; need to sort them later
+                    applySort = true;
+                    [].push.apply(result.items, outline.items);
+                    result.isGeneric = outline.isGeneric;
                     next();
+                }
             }, function() {
                 if (applySort && result)
                     result.items = result.items.sort(function(a, b) {
