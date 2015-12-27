@@ -512,7 +512,7 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = value;
         }
     
-        function registerLanguageHandler(modulePath, contents, callback) {
+        function registerLanguageHandler(modulePath, contents, callback, plugin) {
             if (!callback && typeof contents === "function") {
                 callback = contents;
                 contents = null;
@@ -634,6 +634,7 @@ define(function(require, exports, module) {
              * @param {String} callback.worker.emit.event
              * @param {Object} callback.worker.emit.payload
              * @param {Object} callback.worker.emit.payload.data
+             * @param {Plugin} [plugin]        The plugin registering this language handler.
              */
             registerLanguageHandler: registerLanguageHandler,
             
