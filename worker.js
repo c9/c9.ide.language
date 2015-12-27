@@ -424,7 +424,13 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "parse" },
             function parseNext(handler, next) {
-                handler.parse(value, handleCallbackError(function onParse(ast) {
+                if (handler.parse.length === 2) // legacy signature
+                    return handler.parse(value, handleCallbackError(function onParse(ast) {
+                        if (ast) resultAst = ast;
+                        next();
+                    }));
+
+                handler.parse(value, {}, handleCallbackError(function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
@@ -605,12 +611,20 @@ function endTime(t, message, indent) {
                         handler.language = part.language;
                         var t = startTime();
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
-                        handler.analyze(part.getValue(), ast, handleCallbackError(function(result) {
+                        
+                        if (handler.analyze.length === 3 || /^[^)]+minimalAnalysis/.test(handler.analyze.toString())) {
+                            // Legacy signature
+                            return handler.analyze(part.getValue(), ast, handleCallbackError(doNext), minimalAnalysis);
+                        }
+                        
+                        handler.analyze(part.getValue(), ast, { minimalAnalysis: minimalAnalysis }, handleCallbackError(doNext));
+                        
+                        function doNext(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result)
                                 partMarkers = partMarkers.concat(result);
                             next();
-                        }, minimalAnalysis));
+                        }
                     },
                     function() {
                         filterMarkersAroundError(ast, partMarkers);

@@ -243,10 +243,11 @@ module.exports = {
      * Should be overridden by inheritors that implement parsing
      * (which is, like all features here, optional).
      * 
-     * @param value {String}   the source the document to analyze
-     * @return {Object}        an abstract syntax tree (of any type), or null if not implemented
+     * @param {String} docValue   the source the document to analyze
+     * @param {Object} options    options
+     * @return {Object}           an abstract syntax tree (of any type), or null if not implemented
      */
-    parse: function(value, callback) {
+    parse: function(docValue, options, callback) {
         callback();
     },
 
@@ -699,6 +700,10 @@ module.exports = {
      * @param {Object} ast                         The entire AST of the current file (if any)
      * @param {Function} callback                  The callback; must be called
      * @param {Error|String} callback.err          Any resulting error
+     * @param {Object} options
+     * @param {Object} options
+     * @param {Boolean} [options.minimalAnalysis]  Fast, minimal analysis is requested, e.g.
+     *                                             for code completion or tooltips.
      * @param {Object[]} callback.result           The function's result, an array of error and warning markers
      * @param {Object} callback.result.pos         The current cursor position
      * @param {Number} callback.result.pos.row     The current cursor's row
@@ -706,10 +711,8 @@ module.exports = {
      * @param {String} callback.result.type        The type of warning, i.e., "error", "warning", or "info"
      * @param {String} callback.result.message     The message of the warning, i.e., "error", "warning", or "info"
      * @param {Boolean} [callback.result.quickfix] Whether there is a quickfix available for this marker
-     * @param {Boolean} [minimalAnalysis]          Fast, minimal analysis is requested, e.g.
-     *                                             for code completion or tooltips.
      */
-    analyze: function(value, ast, callback, minimalAnalysis) {
+    analyze: function(doc, ast, options, callback) {
         callback();
     },
 
