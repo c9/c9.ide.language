@@ -523,24 +523,7 @@ define(function(require, exports, module) {
                     if (e.data.path !== modulePath)
                         return;
                     worker.removeEventListener(reply);
-                    callback && callback(e.data.err, {
-                        on: function(event, listener) {
-                            worker.on(modulePath + "/" + event, function(e) {
-                                listener(e.data);
-                            });
-                        },
-                        once: function(event, listener) {
-                            worker.once(modulePath + "/" + event, function(e) {
-                                listener(e.data);
-                            });
-                        },
-                        off: function(event, listener) {
-                            worker.off(modulePath + "/" + event, listener);
-                        },
-                        emit: function(event, data) {
-                            worker.emit(modulePath + "/" + event, { data: data });
-                        }
-                    });
+                    callback && callback(e.data.err, createEmitter(modulePath));
                 });
                 if (modulePath)
                     updateRequireConfig(modulePath, worker);
@@ -550,8 +533,30 @@ define(function(require, exports, module) {
     
         function unregisterLanguageHandler(modulePath) {
             getWorker(function(err, worker) {
+                if (err) return console.error(err);
                 worker.call("unregister", [modulePath]);
             });
+        }
+        
+        function createEmitter(modulePath) {
+            return {
+                on: function(event, listener) {
+                    worker.on(modulePath + "/" + event, function(e) {
+                        listener(e.data);
+                    });
+                },
+                once: function(event, listener) {
+                    worker.once(modulePath + "/" + event, function(e) {
+                        listener(e.data);
+                    });
+                },
+                off: function(event, listener) {
+                    worker.off(modulePath + "/" + event, listener);
+                },
+                emit: function(event, data) {
+                    worker.emit(modulePath + "/" + event, { data: data });
+                }
+            };
         }
         
         function updateRequireConfig(modulePath, worker) {
