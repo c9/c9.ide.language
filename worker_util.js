@@ -21,8 +21,10 @@ define(function(require, exports, module) {
 var worker = require("./worker");
 var completeUtil = require("./complete_util");
 
+var MAX_MEMO_DICT_SIZE = 3000;
 var msgId = 0;
 var docCache = { row: null, entries: {} };
+var memoDict = [];
 
 module.exports = {
 
@@ -100,14 +102,100 @@ module.exports = {
         });
     },
     
+                
+    /**
+     * Spawns a child process.
+     * 
+     * Example:
+     * 
+     *     proc.spawn("ls", function(err, process) {
+     *         if (err) throw err;
+     * 
+     *         process.stdout.on("data", function(chunk) {
+     *             console.log(chunk); 
+     *         });
+     *     });
+     * 
+     * @param {String}   path                             the path to the file to execute
+     * @param {Object}   [options]
+     * @param {Array}    [options.args]                   An array of args to pass to the executable.
+     * @param {String}   [options.stdoutEncoding="utf8"]  The encoding to use on the stdout stream.
+     * @param {String}   [options.stderrEncoding="utf8"]  The encoding to use on the stderr stream.
+     * @param {String}   [options.cwd]                    Current working directory of the child process
+     * @param {Object}   [options.stdio]                  Child's stdio configuration. 
+     * @param {Object}   [options.env]                    Environment key-value pairs
+     * @param {Boolean}  [options.detached]               The child will be a process group leader. (See below)
+     * @param {Number}   [options.uid]                    Sets the user identity of the process. (See setuid(2).)
+     * @param {Number}   [options.gid]                    Sets the group identity of the process. (See setgid(2).)
+     * @param {Boolean}  [options.resumeStdin]            Start reading from stdin, so the process doesn't exit
+     * @param {Boolean}  [options.resolve]                Resolve the path to the VFS root before spawning process
+     * @param {Function} callback
+     * @param {Error}    callback.err                     The error object if one has occured.
+     * @param {proc.Process}  callback.result             A descriptor for the child process.
+     * @param {Number} callback.result.pid                The PID of the child.
+     * @param {Function} callback.result.kill             Kill the child.
+     * @param {String} [callback.result.kill.signal]      Signal to kill the child with.
+     * @param {Function} callback.result.on               Listen to standard "exit", "error", "close", "disconnect", "message"
+     *                                                    child process events.
+     * @param {Object} callback.result.stdout
+     * @param {Function} callback.result.stdout.on        Listen to standard "close", "data", "end", "error", "readable"
+     *                                                    child process events.
+     * @param {Object} callback.result.stderr
+     * @param {Function} callback.result.stderr.on        Listen to standard "close", "data", "end", "error", "readable"
+     *                                                    child process events.
+     */
+    spawn: function(path, options, callback) {
+        if (typeof options === "function")
+            return this.execFile(path, {}, arguments[1]);
+        
+        var id = msgId++;
+        worker.sender.emit("spawn", { path: path, options: options, id: id });
+        worker.sender.on("spawnResult", function onSpawnResult(event) {
+            if (event.data.id !== id)
+                return;
+            worker.sender.off("spawnResult", onSpawnResult);
+            callback && callback(event.data.err, {
+                stdout: { on: listen.bind(null, "stdout") },
+                stderr: { on: listen.bind(null, "stderr") },
+                on: listen.bind(null, "child"),
+                kill: function(signal) {
+                    worker.sender.emit("spawn_kill$" + id, { signal: signal });
+                }
+            });
+            
+            function listen(sourceName, event, listener) {
+                worker.sender.on("spawnEvent$" + id + sourceName + event, function(e) {
+                    listener(e.data);
+                });
+                worker.sender.on("spawnEvent$" + id + "childexit", function gc() {
+                    setTimeout(function() {
+                        worker.sender.off("spawnEvent$" + id + sourceName + event, listener);
+                        worker.sender.off("spawnEvent$" + id + "childexit", gc);
+                    });
+                });
+            }
+        });
+    },
+    
     /**
      * Invoke an analysis tool on the current user's workspace,
      * such as a linter or code completion tool. Passes the
      * unsaved contents of the current file via stdin or using
      * a temporary file.
      * 
+     * Latency of this function is determined by performance
+     * of the server-side analyzer, ping times to the server,
+     * and the message size.
+     * 
+     * Message sizes over a few kilobytes are often more
+     * significant to latency than ping times. We gzip all messages,
+     * and do an additional optimization when messages in JSON
+     * format are used. JSON strings are packed using hash consing
+     * and memoization to improve latency. Use options.json to
+     * return JSON instead of strings for stdout and stderr.
+     * 
      * Using stdin generally performs best and is used by default.
-     * To use a temporary file instead, use the `useTempFile` option
+     * To use a temporary file instead, use the `mode` option
      * and use `$FILE` in `options.args` to get the name of
      * the temporary file.
      * 
@@ -134,24 +222,25 @@ module.exports = {
      * @param {String[]} [options.args]         An array of args to pass to the executable.
      *                                          Use "$FILE" anywhere to get the path of the temporary file,
      *                                          if applicable.
-     * @param {Boolean} [options.useTempFile]   Pass the unsaved contents of the current file using a temporary
-     *                                          file.
+     * @param {"stdin"|"tempfile"} [options.mode="stdin"]
+     *                                          Pass the unsaved contents of the current file using a temporary
+     *                                          file or stdin.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file),
      *                                          relative to the workspace.
      * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
      *                                          either relative to the root (when starting with a /) or to the workspace.
      * @param {Number} [options.timeout]        Timeout in milliseconds for requests. Default 30000.
+     * @param {Boolean} [options.json]          Convert stdout and stderr to JSON when possible.
      * @param {Number} [options.maxBuffer=200*1024]
      * @param {String} [options.semaphore]      A unique string identifying this analyzer, making sure only one
      *                                          instance runs at a time. Defaults to a concatenation of 'command'
-     *                                          and the current language name . Can be null to allow multiple
+     *                                          and the current language name. Can be null to allow multiple
      *                                          instances in parallel.
-     * @param {Number} [options.maxCallInterval]
+     * @param {Number} [options.maxCallInterval=50]
      *                                          The maximum interval between calls for server-side handlers,
      *                                          e.g. 2000 to allow for a delay of maximally 2000ms between
      *                                          two calls. Lower numbers put heavier load on the workspace.
-     *                                          Default 50.
-     * @param {Function} [callback]
+     * @param {Function} callback
      * @param {Error}    callback.error         The error object if an error occurred.
      * @param {String}   callback.stdout        The stdout buffer.
      * @param {String}   callback.stderr        The stderr buffer.
@@ -165,6 +254,10 @@ module.exports = {
         options.path = options.path || myWorker.$path.substr(1);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
+        options.memoStrings = {
+            dictStart: memoDict.startIndex || 0,
+            dictLength: memoDict.length
+        };
         var maxCallInterval = options.maxCallInterval || 50;
         if (myWorker.$overrideLine) {
             // Special handling for completion predictions
@@ -199,11 +292,63 @@ module.exports = {
             if (event.data.id !== id)
                 return;
             worker.sender.off("jsonalyzerCallServerResult", onResult);
-            callback && callback(event.data.result[0], event.data.result[1], event.data.result[2]);
+            var stdout = doUnmemoStrings(event.data.result[1]);
+            var stderr = doUnmemoStrings(event.data.result[2]);
+            callback(event.data.result[0], stdout, stderr, {
+                serverTime: event.data.result[3],
+                size: (event.data.result[1] || "").length + (event.data.result[2] || "").length
+            });
         });
         
         function getRelativeDirname(file) {
             return file.replace(/^\//, "").replace(/[\/\\].*?$/, "");
+        }
+        
+        function doUnmemoStrings(string) {
+            try {
+                var object = JSON.parse(string);
+                for (var i = 0; i < object.dict.length; i++)
+                    memoDict[i + object.dictStart] = object.dict[i];
+                object.json = unmemoStrings(object.json);
+                
+                if (memoDict.length - (memoDict.startIndex || 0) > MAX_MEMO_DICT_SIZE) {
+                    var oldStart = memoDict.startIndex || 0;
+                    var newStart = memoDict.startIndex = memoDict.length - (MAX_MEMO_DICT_SIZE / 2);
+                    setTimeout(function gc() {
+                        for (var i = oldStart; i < newStart; i++)
+                            delete memoDict[i];
+                    }, 120000); // Wait until old requests end
+                }
+                
+                
+                return options.json ? object.json : JSON.stringify(object.json);
+            }
+            catch (e) {
+                return string;
+            }
+        }
+        
+        function unmemoStrings(json) {
+            if (Array.isArray(json))
+                return json.map(unmemoStrings);
+            var result = {};
+            for (var key in json) {
+                var key2 = memoDict[key];
+                var value = json[key];
+                var value2; 
+                if (typeof value === "object") {
+                    value2 = unmemoStrings(value);
+                }
+                else if (typeof value === "number") {
+                    value2 = memoDict[value];
+                }
+                else {
+                    value2 = value;
+                }
+                
+                result[key2] = value2;
+            }
+            return result;
         }
     },
     

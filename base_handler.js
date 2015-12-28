@@ -156,18 +156,6 @@ module.exports = {
     },
 
     /**
-     * Determine if the language component supports parsing.
-     * Assumed to be true if at least one hander for the language reports true.
-     * 
-     * Should be overridden by inheritors.
-     * 
-     * @return {Boolean}
-     */
-    isParsingSupported: function() {
-        return false;
-    },
-
-    /**
      * Returns a regular expression for identifiers in the handler's language.
      * If not specified, /[A-Za-z0-9$_]/ is used.
      * 
@@ -575,17 +563,10 @@ module.exports = {
      * 
      * ```
      * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
-     *     // We look at all current completion proposals, but first filter for
-     *     // contextual completions and ignore any keyword predictions
-     *     var predicted = options.matches.filter(function(m) {
-     *         return m.isContextual && !m.replaceText.match(KEYWORD_REGEX);
-     *     });
-     *     // Let's predict only if we have exactly one proposal left over to
-     *     // make a prediction for (e.g., we know the user is going to type "foo")
-     *     if (predicted.length !== 1)
+     *     // Only predict if we have exactly one available completion
+     *     if (options.matches.length !== 1)
      *         return callback();
-     *     // Predict that the current user is going to type this identifier
-     *     // followed by a dot (e.g., "foo.")
+     *     // Return that completion plus a dot
      *     callback(null, { predicted: predicted[0] + "." });
      * };
      * ```
@@ -615,6 +596,26 @@ module.exports = {
      * 
      * So all our function has to do is return "foo." and we're on
      * our way to predict the future!
+     * 
+     * Below is a more sophisticated example which filters the current completions
+     * before making a prediction:
+     * 
+     * ```
+     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
+     *     // We look at all current completion proposals, but first filter for
+     *     // contextual completions and ignore any keyword predictions
+     *     var predicted = options.matches.filter(function(m) {
+     *         return m.isContextual && !m.replaceText.match(KEYWORD_REGEX);
+     *     });
+     *     // Let's predict only if we have exactly one proposal left over to
+     *     // make a prediction for (e.g., we know the user is going to type "foo")
+     *     if (predicted.length !== 1)
+     *         return callback();
+     *     // Predict that the current user is going to type this identifier
+     *     // followed by a dot (e.g., "foo.")
+     *     callback(null, { predicted: predicted[0] + "." });
+     * };
+     * ```
      * 
      * Use the showEarly property to show the predicted completions immediately
      * to users, e.g. show `this.foo` when the user types `th`.

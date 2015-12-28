@@ -145,7 +145,7 @@ define(function(require, exports, module) {
         function notifyWorkerTransferData(type, path, immediateWindow, syntax, value, force) {
             if (!force && type === "switchFile" && getTabPath(getActiveTab()) !== path)
                 return;
-            console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
+            // console.log("[language] Sent to worker (" + type + "): " + path + " length: " + value.length);
             if (options.workspaceDir === undefined)
                 console.error("[language] options.workspaceDir is undefined!");
             // background tabs=open document, foreground tab=switch to file

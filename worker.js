@@ -336,6 +336,8 @@ function endTime(t, message, indent) {
     };
     
     this.unregister = function(modulePath, callback) {
+        if (window.require)
+            window.require.modules[modulePath] = null;
         this.handlers = this.handlers.filter(function(h) {
             return h !== modulePath;
         });
@@ -1442,8 +1444,8 @@ function endTime(t, message, indent) {
                         matches.forEach(function(m) {
                             if (m.isGeneric && m.$source !== "local")
                                 return;
-                            if (!m.name)
-                                m.name = m.replaceText;
+                            m.name = m.name || m.replaceText;
+                            m.replaceText = m.replaceText || m.name;
                             var match = prefixLine.lastIndexOf(m.replaceText);
                             if (match > -1
                                 && match === pos.column - m.replaceText.length
@@ -1731,9 +1733,10 @@ function endTime(t, message, indent) {
     
     function handleCallbackError(callback) {
         return function(optionalErr, result) {
-            if (optionalErr instanceof Error || typeof optionalErr === "string") {
+            if (optionalErr &&
+                (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack)) {
                 console.error(optionalErr.stack || optionalErr);
-                callback();
+                return callback();
             }
             
             // We only support Error and string errors; 
