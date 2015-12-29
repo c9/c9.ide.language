@@ -283,9 +283,6 @@ function endTime(t, message, indent) {
             handler.proxy = _self.serverProxy;
             handler.sender = _self.sender;
             handler.$isInited = false;
-            handler.getEmitter = function(overridePath) {
-                return _self.$createEmitter(overridePath || path);
-            };
             _self.completionCache = _self.predictionCache = null;
             _self.handlers.push(handler);
             _self.$initHandler(handler, null, true, function() {
@@ -336,28 +333,6 @@ function endTime(t, message, indent) {
             return;
         }
         onRegistered(handler);
-    };
-    
-    this.$createEmitter = function(path) {
-        var sender = this.sender;
-        return {
-            on: function(event, listener) {
-                sender.on(path + "/" + event, function(e) {
-                    listener(e.data);
-                });
-            },
-            once: function(event, listener) {
-                sender.once(path + "/" + event, function(e) {
-                    listener(e.data);
-                });
-            },
-            off: function(event, listener) {
-                sender.off(path + "/" + event, listener);
-            },
-            emit: function(event, data) {
-                sender.emit(path + "/" + event, data);
-            }
-        };
     };
     
     this.unregister = function(modulePath, callback) {
@@ -424,13 +399,7 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { part: part, method: "parse" },
             function parseNext(handler, next) {
-                if (handler.parse.length === 2) // legacy signature
-                    return handler.parse(value, handleCallbackError(function onParse(ast) {
-                        if (ast) resultAst = ast;
-                        next();
-                    }));
-
-                handler.parse(value, {}, handleCallbackError(function onParse(ast) {
+                handler.parse(value, handleCallbackError(function onParse(ast) {
                     if (ast)
                         resultAst = ast;
                     next();
@@ -496,31 +465,31 @@ function endTime(t, message, indent) {
         var isUnordered = false;
         var applySort = false;
         this.parse(null, function(ast) {
-            _self.asyncForEachHandler({ method: "outline" }, function(handler, next) {
-                if (handler.outline.length === 3) // legacy signature
-                    return handler.outline(_self.doc, ast, handleCallbackError(processResult));
-                handler.outline(_self.doc, ast, {}, handleCallbackError(processResult));
-                    
-                function processResult(outline) {
-                    if (!outline)
-                        return next();
-                    if (!result || (!outline.isGeneric && result.isGeneric)) {
-                        // Overwrite generic outline
-                        result = outline;
-                        isUnordered = outline.isUnordered;
-                        return next();
-                    }
-                    if (result && outline.isGeneric && !result.isGeneric) {
-                        // Ignore generic outline
-                        return next();
-                    }
-                    
-                    // Merging multiple outlines; need to sort them later
-                    applySort = true;
-                    [].push.apply(result.items, outline.items);
-                    result.isGeneric = outline.isGeneric;
-                    next();
+            asyncForEach(_self.handlers, function(handler, next) {
+                if (_self.isHandlerMatch(handler, null, "outline")) {
+                    handler.outline(_self.doc, ast, handleCallbackError(function(outline) {
+                        if (!outline)
+                            return next();
+                        if (!result || (!outline.isGeneric && result.isGeneric)) {
+                            // Overwrite generic outline
+                            result = outline;
+                            isUnordered = outline.isUnordered;
+                            return next();
+                        }
+                        if (result && outline.isGeneric && !result.isGeneric) {
+                            // Ignore generic outline
+                            return next();
+                        }
+                        
+                        // Merging multiple outlines; need to sort them later
+                        applySort = true;
+                        [].push.apply(result.items, outline.items);
+                        result.isGeneric = outline.isGeneric;
+                        next();
+                    }));
                 }
+                else
+                    next();
             }, function() {
                 if (applySort && result)
                     result.items = result.items.sort(function(a, b) {
@@ -611,20 +580,12 @@ function endTime(t, message, indent) {
                         handler.language = part.language;
                         var t = startTime();
                         _self.$lastAnalyzer = handler.$source + ".analyze()";
-                        
-                        if (handler.analyze.length === 3 || /^[^)]+minimalAnalysis/.test(handler.analyze.toString())) {
-                            // Legacy signature
-                            return handler.analyze(part.getValue(), ast, handleCallbackError(doNext), minimalAnalysis);
-                        }
-                        
-                        handler.analyze(part.getValue(), ast, { minimalAnalysis: minimalAnalysis }, handleCallbackError(doNext));
-                        
-                        function doNext(result) {
+                        handler.analyze(part.getValue(), ast, handleCallbackError(function(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));
                             if (result)
                                 partMarkers = partMarkers.concat(result);
                             next();
-                        }
+                        }, minimalAnalysis));
                     },
                     function() {
                         filterMarkersAroundError(ast, partMarkers);
@@ -822,7 +783,7 @@ function endTime(t, message, indent) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
                     if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
-                        handler.onCursorMove(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.onCursorMove(part, ast, posInPart, currentNode, handleCallbackError(function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
                         }));
@@ -908,7 +869,7 @@ function endTime(t, message, indent) {
                     // triggered by the cursor move event
                     assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
                     asyncForEach(["tooltip", "highlightOccurrences"], function(method, nextMethod) {
-                        handler[method](part, ast, posInPart, { node: currentNode }, function(response) {
+                        handler[method](part, ast, posInPart, currentNode, function(response) {
                             result = processCursorMoveResponse(response, part, result);
                             nextMethod();
                         });
@@ -982,7 +943,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, currentNode, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
@@ -1038,7 +999,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
-                        handler.getQuickfixes(part, ast, partPos, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.getQuickfixes(part, ast, partPos, currentNode, handleCallbackError(function(results) {
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
@@ -1082,7 +1043,7 @@ function endTime(t, message, indent) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
-                        handler.getRefactorings(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRefactorings(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
                                 if (!result || result.isGeneric)
@@ -1119,7 +1080,7 @@ function endTime(t, message, indent) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
-                        handler.getRenamePositions(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRenamePositions(part, ast, partPos, currentNode, handleCallbackError(function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
                                     result = response;
@@ -1467,7 +1428,7 @@ function endTime(t, message, indent) {
                         var t = startTime();
 
                         startOverrideLine();
-                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions) {
+                        handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);

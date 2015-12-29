@@ -110,34 +110,6 @@ module.exports = {
         throw new Error("Use worker_util.completeUpdate instead()"); // implemented by worker.completeUpdate
     },
     
-    /**
-     * Get an event emitter for emitting and receiving
-     * UI events.
-     * 
-     * Example:
-     * 
-     * ```
-     * worker_util.getEmitter().emit("log", "Hello there")
-     * ```
-     * 
-     * which can be received by a UI plugin using:
-     * 
-     * ```
-     * language.registerLanguageHandler("myplugin", function(err, handler) {
-     *     if (err) return console.error(err);
-     * 
-     *     handler.on("log", function(e) {
-     *         console.log(e);
-     *     });
-     * });
-     * ```
-     * 
-     * @param {String} [overridePath] An optional path of the plugin for which to send/receive UI events,
-     *                                e.g. "c9.ide.language/python/worker/python_completer" to send/receive
-     *                                events in name of the Python completer plugin.
-     */
-    getEmitter: function(overridePath) {}, // implemented by worker
-    
     // OVERRIDABLE ACCESORS
 
     /**
@@ -243,11 +215,10 @@ module.exports = {
      * Should be overridden by inheritors that implement parsing
      * (which is, like all features here, optional).
      * 
-     * @param {String} docValue   the source the document to analyze
-     * @param {Object} options    options
-     * @return {Object}           an abstract syntax tree (of any type), or null if not implemented
+     * @param value {String}   the source the document to analyze
+     * @return {Object}        an abstract syntax tree (of any type), or null if not implemented
      */
-    parse: function(docValue, options, callback) {
+    parse: function(value, callback) {
         callback();
     },
 
@@ -349,18 +320,17 @@ module.exports = {
      * the document has been analyzed, and feedback is requested.
      * 
      * @param {Document} doc                      Document object representing the source
-     * @param {Object} ast                        The entire AST of the current file (if parsed already, otherwise null)
+     * @param {Object} fullAst                    The entire AST of the current file (if parsed already, otherwise null)
      * @param {Object} cursorPos                  The current cursor position
      * @param {Number} cursorPos.row              The current cursor's row
      * @param {Number} cursorPos.column           The current cursor's column
-     * @param {Object} options                    Options
-     * @param {Object} options.node               The current AST node (if parse() is implemented and if parsed already, otherwise null)
+     * @param {Object} currentNode                The AST node the cursor is currently at (if parsed alreadty, and if any)
      * @param {Function} callback                 The callback; must be called
      * @param {Error|String} callback.err         Any resulting error
      * @paran {Object} callback.result            An optional result. Supports the same result objects as
      *                                            {@link #tooltip} and {@link #highlightOccurrences}
      */
-    onCursorMove: function(doc, ast, cursorPos, options, callback) {
+    onCursorMove: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
     
@@ -374,12 +344,11 @@ module.exports = {
      * tooltips early.
      * 
      * @param {Document} doc                               Document object representing the source
-     * @param {Object} ast                                 The entire AST of the current file (if any)
+     * @param {Object} fullAst                             The entire AST of the current file (if any)
      * @param {Object} cursorPos                           The current cursor position
      * @param {Number} cursorPos.row                       The current cursor's row
      * @param {Number} cursorPos.column                    The current cursor's column
-     * @param {Object} options                             Options
-     * @param {Object} options.node                        The current AST node (if parse() is implemented) 
+     * @param {Object} currentNode                         The AST node the cursor is currently at (if any)
      * @param {Function} callback                          The callback; must be called
      * @param {Error|String} callback.err                  Any resulting error
      * @param {Object} callback.result                     The function's result
@@ -410,7 +379,7 @@ module.exports = {
      * @param {Number} [callback.result.displayPos.row]    The display position's row
      * @param {Number} [callback.result.displayPos.column] The display position's column
      */
-    tooltip: function(doc, ast, cursorPos, options, callback) {
+    tooltip: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
     
@@ -420,12 +389,11 @@ module.exports = {
      * Should be overridden by inheritors that implement occurrence highlighting.
      * 
      * @param {Document} doc                           Document object representing the source
-     * @param {Object} ast                             The entire AST of the current file (if any)
+     * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Object} cursorPos                       The current cursor position
      * @param {Number} cursorPos.row                   The current cursor's row
      * @param {Number} cursorPos.column                The current cursor's column
-     * @param {Object} options                         Options
-     * @param {Object} options.node                    The current AST node (if parse() is implemented) 
+     * @param {Object} currentNode                     The AST node the cursor is currently at (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Error|String} callback.err              Any resulting error
      * @param {Object} callback.result                 The function's result
@@ -439,7 +407,7 @@ module.exports = {
      * @param {"occurrence_other"|"occurrence_main"} callback.result.markers.type
      *                                                 The type of occurrence: the main one, or any other one.
      */
-    highlightOccurrences: function(doc, ast, cursorPos, options, callback) {
+    highlightOccurrences: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
     
@@ -449,12 +417,11 @@ module.exports = {
      * Should be overridden by inheritors that implement refactorings.
      * 
      * @param {Document} doc                 Document object representing the source
-     * @param {Object} ast                   The entire AST of the current file (if any)
+     * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} cursorPos             The current cursor position
      * @param {Number} cursorPos.row         The current cursor's row
      * @param {Number} cursorPos.column      The current cursor's column
-     * @param {Object} options               Options
-     * @param {Object} options.node          The current AST node (if parse() is implemented) 
+     * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result
@@ -463,7 +430,7 @@ module.exports = {
      * @param {String[]} [callback.result.isGeneric]
      *                                       Whether is a generic answer and should be deferred
      */
-    getRefactorings: function(doc, ast, cursorPos, options, callback) {
+    getRefactorings: function(doc, fullAst, cursorPos, currentNode, callback) {
         callback();
     },
 
@@ -484,7 +451,7 @@ module.exports = {
      * Should be overridden by inheritors that implement an outline.
      * 
      * @param {Document} doc                           The Document object representing the source
-     * @param {Object} ast                             The entire AST of the current file (if any)
+     * @param {Object} fullAst                         The entire AST of the current file (if any)
      * @param {Function} callback                      The callback; must be called
      * @param {Error|String} callback.err              Any resulting error
      * @param {Object} callback.result                 The function's result, a JSON outline structure or null if not supported
@@ -506,7 +473,7 @@ module.exports = {
      * @param {Boolean} [callback.result.isUnordered]  Indicates the outline is not ordered by appearance of the items,
      *                                                 but that they're e.g. grouped as methods, properties, etc.
      */
-    outline: function(doc, ast, callback) {
+    outline: function(doc, fullAst, callback) {
         callback();
     },
 
@@ -515,7 +482,7 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement a type hierarchy.
      * 
-     * @ignore Not supported right now.
+     * Not supported right now.
      * 
      * @param {Document} doc               The Document object representing the source
      * @param {Object} cursorPos           The current cursor position
@@ -551,12 +518,11 @@ module.exports = {
      * completion tool that runs in the workspace.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} ast                   The entire AST of the current file (if any)
+     * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
-     * @param {Object} options               Options
-     * @param {Object} options.node          The current AST node (if parse() is implemented) 
+     * @param {Object} currentNode           The AST node the cursor is currently at (if any)
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result, an array of completion matches
@@ -583,7 +549,7 @@ module.exports = {
      *                                       Indicates that this is a contextual completion,
      *                                       and that any generic completions should not be shown
      */
-    complete: function(doc, ast, pos, options, callback) {
+    complete: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     },
 
@@ -596,7 +562,7 @@ module.exports = {
      * completion plus a dot:
      * 
      * ```
-     * handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
+     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
      *     // Only predict if we have exactly one available completion
      *     if (options.matches.length !== 1)
      *         return callback();
@@ -620,7 +586,7 @@ module.exports = {
      * For the above scenario, our function is called with the following arguments:
      * 
      * ```
-     * predictNextCompletion(doc, ast, pos, {
+     * predictNextCompletion(doc, fullAst, pos, {
      *     matches: [{
      *        name: "foo",
      *        replaceText: "foo"
@@ -635,7 +601,7 @@ module.exports = {
      * before making a prediction:
      * 
      * ```
-     * handler.predictNextCompletion = function(doc, ast, pos, options, callback) {
+     * handler.predictNextCompletion = function(doc, fullAst, pos, options, callback) {
      *     // We look at all current completion proposals, but first filter for
      *     // contextual completions and ignore any keyword predictions
      *     var predicted = options.matches.filter(function(m) {
@@ -657,12 +623,11 @@ module.exports = {
      * May be overridden by inheritors that implement code completion.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} ast                   The entire AST of the current file (if any)
+     * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} options               Options
-     * @param {Object} options.node          The most recent completion AST node (if parse() is implemented) 
      * @param {Object} options.matches       The most recent completion matches
      * @param {String} options.path          The current path
      * @param {String} options.language      The current language
@@ -676,7 +641,8 @@ module.exports = {
      *                                       results immediately (e.g., to show this.foo
      *                                       when the user types 'th')
      */
-    predictNextCompletion: function(doc, ast, pos, options, callback) {
+    // TODO: change all similar signatures to this form?
+    predictNextCompletion: function(doc, fullAst, pos, options, callback) {
         callback();
     },
 
@@ -697,13 +663,9 @@ module.exports = {
      * completion tool that runs in the workspace.
      * 
      * @param {Document} doc                       The Document object representing the source
-     * @param {Object} ast                         The entire AST of the current file (if any)
+     * @param {Object} fullAst                     The entire AST of the current file (if any)
      * @param {Function} callback                  The callback; must be called
      * @param {Error|String} callback.err          Any resulting error
-     * @param {Object} options
-     * @param {Object} options
-     * @param {Boolean} [options.minimalAnalysis]  Fast, minimal analysis is requested, e.g.
-     *                                             for code completion or tooltips.
      * @param {Object[]} callback.result           The function's result, an array of error and warning markers
      * @param {Object} callback.result.pos         The current cursor position
      * @param {Number} callback.result.pos.row     The current cursor's row
@@ -711,8 +673,10 @@ module.exports = {
      * @param {String} callback.result.type        The type of warning, i.e., "error", "warning", or "info"
      * @param {String} callback.result.message     The message of the warning, i.e., "error", "warning", or "info"
      * @param {Boolean} [callback.result.quickfix] Whether there is a quickfix available for this marker
+     * @param {Boolean} [minimalAnalysis]          Fast, minimal analysis is requested, e.g.
+     *                                             for code completion or tooltips.
      */
-    analyze: function(doc, ast, options, callback) {
+    analyze: function(value, fullAst, callback, minimalAnalysis) {
         callback();
     },
 
@@ -741,8 +705,7 @@ module.exports = {
      * @param {Object} pos                            The current cursor position
      * @param {Number} pos.row                        The current cursor's row
      * @param {Number} pos.column                     The current cursor's column
-     * @param {Object} options                        Options
-     * @param {Object} options.node                   The current AST node (if parse() is implemented) 
+     * @param {Object} currentNode                    The AST node the cursor is currently at (if any)
      * @param {Function} callback                     The callback; must be called
      * @param {Error|String} callback.err             Any resulting error
      * @param {Object} callback.result                The function's result (see function description).
@@ -755,7 +718,7 @@ module.exports = {
      * @param {Number} callback.result.others.row     The row of another identifier to be renamed
      * @param {Number} callback.result.others.column  The column of another identifier to be renamed
      */
-    getRenamePositions: function(doc, ast, pos, options, callback) {
+    getRenamePositions: function(doc, ast, pos, currentNode, callback) {
         callback();
     },
 
@@ -822,7 +785,7 @@ module.exports = {
      * Should be overridden by inheritors that implement jump to definition.
      * 
      * @param {Document} doc                 The Document object representing the source
-     * @param {Object} ast                   The entire AST of the current file (if any)
+     * @param {Object} fullAst               The entire AST of the current file (if any)
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
@@ -842,7 +805,7 @@ module.exports = {
      *                                       Indicates that this is a generic, language-independent
      *                                       suggestion (that should be deferred)
      */
-    jumpToDefinition: function(doc, ast, pos, options, callback) {
+    jumpToDefinition: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     },
     
@@ -874,7 +837,7 @@ module.exports = {
      * ```
      * 
      * @param {Document} doc                          The Document object representing the source
-     * @param {Object} ast                            The entire AST of the current file (if any)
+     * @param {Object} fullAst                        The entire AST of the current file (if any)
      * @param {Object} pos                            The current cursor position
      * @param {Number} pos.row                        The current cursor's row
      * @param {Number} pos.column                     The current cursor's column
@@ -896,7 +859,7 @@ module.exports = {
      * @param {String[]} [callback.result.deltas.lines]
      * @param {Object} [callback.result.pos]          The position where the cursor should be after applying
      */
-    getQuickfixes: function(doc, ast, pos, options, callback) {
+    getQuickfixes: function(doc, ast, pos, currentNode, callback) {
         callback();
     },
     
@@ -906,10 +869,10 @@ module.exports = {
      * 
      * Should be overridden by inheritors that implement a debugger
      * with live inspect. If not implemented, the string value based on
-     * options's position is used.
+     * currentNode's position is used.
      * 
      * @param {Document} doc                    The Document object representing the source
-     * @param {Object} ast                      The entire AST of the current file (if any)
+     * @param {Object} fullAst                  The entire AST of the current file (if any)
      * @param {Object} pos                      The current cursor position
      * @param {Number} pos.row                  The current cursor's row
      * @param {Number} pos.column               The current cursor's column
@@ -923,7 +886,7 @@ module.exports = {
      * @param {Number} callback.result.pos.sc   The expression's starting column
      * @param {Number} callback.result.pos.ec   The expression's ending column
      */
-    getInspectExpression: function(doc, ast, pos, options, callback) {
+    getInspectExpression: function(doc, fullAst, pos, currentNode, callback) {
         callback();
     }
 };

@@ -512,7 +512,7 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = value;
         }
     
-        function registerLanguageHandler(modulePath, contents, callback, plugin) {
+        function registerLanguageHandler(modulePath, contents, callback) {
             if (!callback && typeof contents === "function") {
                 callback = contents;
                 contents = null;
@@ -523,7 +523,7 @@ define(function(require, exports, module) {
                     if (e.data.path !== modulePath)
                         return;
                     worker.removeEventListener(reply);
-                    callback && callback(e.data.err, createEmitter(modulePath));
+                    callback && callback(e.data.err, worker);
                 });
                 if (modulePath)
                     updateRequireConfig(modulePath, worker);
@@ -533,30 +533,8 @@ define(function(require, exports, module) {
     
         function unregisterLanguageHandler(modulePath) {
             getWorker(function(err, worker) {
-                if (err) return console.error(err);
                 worker.call("unregister", [modulePath]);
             });
-        }
-        
-        function createEmitter(modulePath) {
-            return {
-                on: function(event, listener) {
-                    worker.on(modulePath + "/" + event, function(e) {
-                        listener(e.data);
-                    });
-                },
-                once: function(event, listener) {
-                    worker.once(modulePath + "/" + event, function(e) {
-                        listener(e.data);
-                    });
-                },
-                off: function(event, listener) {
-                    worker.off(modulePath + "/" + event, listener);
-                },
-                emit: function(event, data) {
-                    worker.emit(modulePath + "/" + event, { data: data });
-                }
-            };
         }
         
         function updateRequireConfig(modulePath, worker) {
@@ -639,7 +617,6 @@ define(function(require, exports, module) {
              * @param {String} callback.worker.emit.event
              * @param {Object} callback.worker.emit.payload
              * @param {Object} callback.worker.emit.payload.data
-             * @param {Plugin} [plugin]        The plugin registering this language handler.
              */
             registerLanguageHandler: registerLanguageHandler,
             
@@ -652,21 +629,16 @@ define(function(require, exports, module) {
             /**
              * Gets the current worker, or waits for it to be ready and gets it.
              * 
-             * @param {Function} callback                         The callback
-             * @param {String} callback.err                       Any error
-             * @param {Function} callback.result                  Our result
-             * @param {Function} callback.result.on               Event handler for worker events
-             * @param {String} callback.result.on.event           Event name
-             * @param {Function} callback.result.on.listener      Event listener
-             * @param {Function} callback.result.once             One-time event handler for worker events
-             * @param {String} callback.result.once.event         Event name
-             * @param {Function} callback.result.once.listener    Event listener
-             * @param {Object} callback.result.once.listener.data Event data
-             * @param {String} callback.result.off.event          Event name
-             * @param {Function} callback.result.off.listener     Event listener
-             * @param {Function} callback.result.emit             Event emit function for worker
-             * @param {String} callback.result.on.event           Event name
-             * @param {Object} callback.result.on.data            Event data
+             * @param {Function} callback                      The callback
+             * @param {String} callback.err                    Any error
+             * @param {Function} callback.result               Our result
+             * @param {Function} callback.result.on            Event handler for worker events
+             * @param {String} callback.result.on.event        Event name
+             * @param {Function} callback.result.on.handler    Event handler function
+             * @param {Object} callback.result.on.handler.data Event data
+             * @param {Function} callback.result.emit          Event emit function for worker
+             * @param {String} callback.result.on.event        Event name
+             * @param {Object} callback.result.on.data         Event data
              */
             getWorker: getWorker,
             
