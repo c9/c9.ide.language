@@ -1447,6 +1447,7 @@ function endTime(t, message, indent) {
     this.getCompleteHandlerResult = function(event, pos, identifierRegex, overrideLine, callback) {
         var _self = this;
         var matches = [];
+        var hadError = false;
         var originalLine = _self.doc.getLine(pos.row);
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         if (!part)
@@ -1467,10 +1468,11 @@ function endTime(t, message, indent) {
                         var t = startTime();
 
                         startOverrideLine();
-                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions) {
+                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions, handledErr) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
+                            hadError = hadError || handledErr;
                             next();
                         }));
                         endOverrideLine();
@@ -1520,6 +1522,7 @@ function endTime(t, message, indent) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
+                            hadError: hadError,
                             line: overrideLine || originalLine,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
@@ -1596,6 +1599,8 @@ function endTime(t, message, indent) {
         cache.resultCallbacks.forEach(function(c) {
             c();
         });
+        if (result.hadError)
+            this.completionCache = null;
     };
     
     /**
@@ -1638,9 +1643,10 @@ function endTime(t, message, indent) {
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
                 _self.getCompleteHandlerResult(event, predictedPos, identifierRegex, predictedLine, function(result) {
                     cache.result = result;
-                    var latest = _self.completionCache;
-                    if (showEarly && latest && latest.result && cacheKey.matches(latest))
+                    if (showEarly && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
+                    if (result.hadError)
+                        _self.completionPrediction = null;
                 });
             }
         );
