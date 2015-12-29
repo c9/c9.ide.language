@@ -1781,8 +1781,9 @@ function endTime(t, message, indent) {
         return function(optionalErr, result) {
             if (optionalErr &&
                 (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack)) {
-                console.error(optionalErr.stack || optionalErr);
-                return callback();
+                if (optionalErr.code !== "ESUPERSEDED")
+                    console.error(optionalErr.stack || optionalErr);
+                return callback(null, optionalErr);
             }
             
             // We only support Error and string errors; 
