@@ -701,7 +701,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, node, handleCallbackError(function(result) {
+                                handler.getInspectExpression(part, ast, partPos, {node: node}, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
