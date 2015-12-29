@@ -1638,7 +1638,7 @@ function endTime(t, message, indent) {
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
                 _self.getCompleteHandlerResult(event, predictedPos, identifierRegex, predictedLine, function(result) {
                     cache.result = result;
-                    if (showEarly && cacheKey.matches(_self.completionCache))
+                    if (showEarly && _self.completionCache.result && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
                 });
             }
