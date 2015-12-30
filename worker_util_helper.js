@@ -48,6 +48,7 @@ define(function(require, exports, module) {
                 worker.on("refreshAllMarkers", language.refreshAllMarkers.bind(language));
                 
                 worker.on("execFile", function(e) {
+                    e.data.options.cwd = e.data.options.cwd || c9.workspaceDir;
                     ensureConnected(
                         proc.execFile.bind(proc, e.data.path, e.data.options),
                         function(err, stdout, stderr) {
@@ -63,6 +64,7 @@ define(function(require, exports, module) {
                 
                 worker.on("spawn", function(e) {
                     var id = e.data.id;
+                    e.data.options.cwd = e.data.options.cwd || c9.workspaceDir;
                     ensureConnected(
                         function(next) {
                             proc.spawn(e.data.path, e.data.options, next);
