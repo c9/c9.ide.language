@@ -301,7 +301,7 @@ module.exports = {
         });
         
         function getRelativeDirname(file) {
-            return file.replace(/([\/\\]|^)[^\/\\]+/, "").replace(/^\//, "");
+            return file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
         }
         
         function doUnmemoStrings(string) {
