@@ -259,12 +259,14 @@ define(function(require, exports, module) {
             if (!completion.guessTooltip)
                 return lastCompletionTooltip = {};
             var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
-            if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)
+            if (completion.name.indexOf(simpleName) !== 0)
                 return lastCompletionTooltip = {};
             
             var matcher = "(" + util.escapeRegExp(simpleName) + ")\\(([^\\)]*)?";
+            
             lastCompletionTooltip = {
-                doc: completion.name,
+                docHtml: completion.docHeadHtml,
+                doc: completion.docHead || completion.name,
                 row: pos.row,
                 matcher: new RegExp(matcher + "$"),
                 substringMatcher: new RegExp(matcher),
