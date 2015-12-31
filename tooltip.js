@@ -119,7 +119,7 @@ define(function(require, exports, module) {
                             + ':&nbsp;' + util.escapeXml(activeParam.type)
                             + "</span>";
                     }
-                    if (activeParam && (activeParam.doc || activeParam.docHtml)) {
+                    if (activeParam && (activeParam.docHtml || util.escapeXml(activeParam.doc))) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
                             + '<span class="language_activeparam">' + util.escapeXml(activeParam.name) + '</span>:'
@@ -292,7 +292,7 @@ define(function(require, exports, module) {
         }
         
         function beautifyCompletionDoc(args) {
-            var doc = lastCompletionTooltip.doc;
+            var doc = lastCompletionTooltip.docHtml || lastCompletionTooltip.doc;
             if (!doc.match(lastCompletionTooltip.substringMatcher))
                 return doc;
             var argIndex = args.split(",").length - 1;
