@@ -119,7 +119,7 @@ define(function(require, exports, module) {
                             + ':&nbsp;' + util.escapeXml(activeParam.type)
                             + "</span>";
                     }
-                    if (activeParam && (activeParam.docHtml || util.escapeXml(activeParam.doc))) {
+                    if (activeParam && (activeParam.docHtml || activeParam.doc)) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
                             + '<span class="language_activeparam">' + util.escapeXml(activeParam.name) + '</span>:'
