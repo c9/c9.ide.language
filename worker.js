@@ -1409,6 +1409,7 @@ function endTime(t, message, indent) {
         var _self = this;
         var matches = [];
         var originalLine = _self.doc.getLine(pos.row);
+        var line = overrideLine || originalLine;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         if (!part)
             return callback(); // cursor position not current
@@ -1427,6 +1428,7 @@ function endTime(t, message, indent) {
                         handler.path = _self.$path;
                         var t = startTime();
 
+                        originalLine = _self.doc.getLine(pos.row);
                         startOverrideLine();
                         handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
@@ -1440,7 +1442,7 @@ function endTime(t, message, indent) {
                         removeDuplicateMatches(matches);
                         
                         // Always prefer current identifier (similar to complete.js)
-                        var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
+                        var prefixLine = line.substr(0, pos.column);
                         matches.forEach(function(m) {
                             if (m.isGeneric && m.$source !== "local")
                                 return;
@@ -1449,7 +1451,7 @@ function endTime(t, message, indent) {
                             var match = prefixLine.lastIndexOf(m.replaceText);
                             if (match > -1
                                 && match === pos.column - m.replaceText.length
-                                && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
+                                && completeUtil.retrievePrecedingIdentifier(line, pos.column, m.identifierRegex || identifierRegex))
                                 m.priority = 99;
                         });
                         
@@ -1481,7 +1483,7 @@ function endTime(t, message, indent) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
-                            line: overrideLine || originalLine,
+                            line: line,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
