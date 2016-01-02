@@ -210,14 +210,21 @@ module.exports = {
     /**
      * Returns a regular expression that matches strings that appear
      * in the grammatical position of an expression *and* can prefix an expression.
-     * This is an expert feature that helps optimize the caching strategy of
-     * the code completion engine.
      * 
-     * The intention of this regex is to match statements like "if (".
-     * This way, as a user types "i", code completion results are cached,
-     * and are allowed to be reused when they type "if (". Normally.
+     * Warning: this is an expert feature that helps optimize the caching
+     * strategy of the code completion engine. Implemented incorrectly, it can
+     * make completions appear in places they shouldn't or may cause completions
+     * to go missing.
      * 
-     * Example for JavaScript:
+     * The intention of the returned regex is to match statements like `if (`.
+     * Normally, when a user types `i`, the code completio results are cached,
+     * but need to be recomputed when they type `if (i`. The expresssion
+     * prefix regex can be used to indicate that the cached results can safely
+     * be reused even in these situations. With this optimization, it's
+     * possible to use caching to such an extent that even for longer statements
+     * like `if (foo === bar`, completions only need to be computed once.
+     * 
+     * Example implementation for JavaScript:
      * 
      * ```
      * completer.getExpressionPrefixRegex = function() {
@@ -227,10 +234,9 @@ module.exports = {
      * };
      * ```
      * 
-     * which matches strings such as "if (", "while (" and "x + ".
+     * which matches strings such as "if (", "while (", and "x + ".
      * 
      * MAY be overridden by inheritors that implement code completion.
-     * Expert feature only.
      * 
      * @return RegExp
      */
