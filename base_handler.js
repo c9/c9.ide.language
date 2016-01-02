@@ -116,7 +116,7 @@ module.exports = {
      * Returns whether this language handler should be enabled for the given
      * file.
      * 
-     * Must be overridden by inheritors.
+     * MUST be overridden by inheritors.
      * 
      * @param {String} language   to check the handler against
      * @return {Boolean}
@@ -129,7 +129,7 @@ module.exports = {
      * Returns whether this language handler should be used in a
      * particular kind of editor.
      * 
-     * May be overridden by inheritors; returns {@link #HANDLES_EDITOR}
+     * MAY be overridden by inheritors; returns {@link #HANDLES_EDITOR}
      * by default.
      * 
      * @return {Number} One of {@link #HANDLES_EDITOR},
@@ -146,7 +146,7 @@ module.exports = {
      * Should return Infinity if size does not matter.
      * Default is 10.000 lines of 80 characters.
      * 
-     * May be overridden by inheritors.
+     * MAY be overridden by inheritors.
      * 
      * @return {Number}
      */
@@ -163,7 +163,7 @@ module.exports = {
      * (like with php $variables), include '$$'' in the regex, e.g.
      * /[A-Z0-9$$_]/.
      *
-     * Should be overridden by inheritors that implement code completion.
+     * SHOULD be overridden by inheritors that implement code completion.
      * 
      * @return RegExp
      */
@@ -183,7 +183,7 @@ module.exports = {
      * /console\.$/. Only when the regex ends with a $ will it be tried
      * as a regex that matches against the whole line.
      * 
-     * Should be overridden by inheritors that implement code completion.
+     * SHOULD be overridden by inheritors that implement code completion.
      * Default implementation returns null.
      * 
      * @return RegExp
@@ -198,12 +198,43 @@ module.exports = {
      * To avoid delays, this function can be used to trigger
      * analysis & tooltip fetching early.
      * 
-     * Should be overridden by inheritors that implement tooltips.
+     * SHOULD be overridden by inheritors that implement tooltips.
      * Default implementation returns null.
      * 
      * @return RegExp
      */
     getTooltipRegex: function() {
+        return null;
+    },
+    
+    /**
+     * Returns a regular expression that matches strings that appear
+     * in the grammatical position of an expression *and* can prefix an expression.
+     * This is an expert feature that helps optimize the caching strategy of
+     * the code completion engine.
+     * 
+     * The intention of this regex is to match statements like "if (".
+     * This way, as a user types "i", code completion results are cached,
+     * and are allowed to be reused when they type "if (". Normally.
+     * 
+     * Example for JavaScript:
+     * 
+     * ```
+     * completer.getExpressionPrefixRegex = function() {
+     *      // Match strings that can be and expression or its prefix, i.e.
+     *      // keywords/identifiers followed by whitespace and/or operators
+     *      return /(\b\w+\s+|\b(if|while|for)\s+\(|[{[\-+*%<>!|&]\s*)+/;
+     * };
+     * ```
+     * 
+     * which matches strings such as "if (", "while (" and "x + ".
+     * 
+     * MAY be overridden by inheritors that implement code completion.
+     * Expert feature only.
+     * 
+     * @return RegExp
+     */
+    getExpressionPrefixRegex: function() {
         return null;
     },
 
@@ -212,7 +243,7 @@ module.exports = {
     /**
      * Parses the given document.
      * 
-     * Should be overridden by inheritors that implement parsing
+     * SHOULD be overridden by inheritors that implement parsing
      * (which is, like all features here, optional).
      * 
      * @param value {String}   the source the document to analyze
@@ -226,7 +257,7 @@ module.exports = {
      * Finds a tree node at a certain row and column,
      * e.g. using the findNode(pos) function of treehugger.
      * 
-     * Should be overridden by inheritors that implement parsing.
+     * SHOULD be overridden by inheritors that implement parsing.
      * 
      * @param {Object} ast                An abstract syntax tree object from {@link #parse}
      * @param {Object} pos                The position of the node to look up
@@ -244,7 +275,7 @@ module.exports = {
      * Returns the  a tree node at a certain row and col,
      * e.g. using the node.getPos() function of treehugger.
      * 
-     * Should be overridden by inheritors that implement parsing.
+     * SHOULD be overridden by inheritors that implement parsing.
      * 
      * @param {Object} node                The node to look up
      * @param {Function} callback          The callback for the result
@@ -264,7 +295,7 @@ module.exports = {
     /**
      * Initialize this language handler.
      * 
-     * May be overridden by inheritors.
+     * MAY be overridden by inheritors.
      * 
      * @param callback            The callback; must be called
      */
@@ -275,7 +306,7 @@ module.exports = {
     /**
      * Invoked when the document has been updated (possibly after a certain delay)
      * 
-     * May be overridden by inheritors.
+     * MAY be overridden by inheritors.
      * 
      * @param {Document} doc  The current document
      * @param {Function} callback            The callback; must be called
@@ -287,7 +318,7 @@ module.exports = {
     /**
      * Invoked when a new document has been opened.
      * 
-     * May be overridden by inheritors.
+     * MAY be overridden by inheritors.
      * 
      * @param {String} path        The path of the newly opened document
      * @param {String} doc         The Document object representing the source
@@ -301,7 +332,7 @@ module.exports = {
     /**
      * Invoked when a document is closed in the IDE.
      * 
-     * May be overridden by inheritors.
+     * MAY be overridden by inheritors.
      * 
      * @param {String} path the path of the file
      * @param {Function} callback  The callback; must be called
@@ -313,7 +344,7 @@ module.exports = {
     /**
      * Invoked when the cursor has been moved.
      * 
-     * May be overridden by inheritors that immediately act upon cursor moves.
+     * MAY be overridden by inheritors that immediately act upon cursor moves.
      * 
      * See {@link #tooltip} and {@link #highlightOccurrences}
      * for handler functions that are invoked after the cursor has been moved,
@@ -338,7 +369,7 @@ module.exports = {
      * Invoked when the cursor has been moved inside to a different AST node.
      * Gets a tooltip to display when the cursor is moved to a particular location.
      * 
-     * Should be overridden by inheritors that implement tooltips.
+     * SHOULD be overridden by inheritors that implement tooltips.
      * 
      * See {@link #getTooltipRegex} for setting a regular expression to trigger
      * tooltips early.
@@ -386,7 +417,7 @@ module.exports = {
     /**
      * Gets the instances to highlight when the cursor is moved to a particular location.
      * 
-     * Should be overridden by inheritors that implement occurrence highlighting.
+     * SHOULD be overridden by inheritors that implement occurrence highlighting.
      * 
      * @param {Document} doc                           Document object representing the source
      * @param {Object} fullAst                         The entire AST of the current file (if any)
@@ -414,7 +445,7 @@ module.exports = {
     /**
      * Determines what refactorings to enable when the cursor is moved to a particular location.
      * 
-     * Should be overridden by inheritors that implement refactorings.
+     * SHOULD be overridden by inheritors that implement refactorings.
      * 
      * @param {Document} doc                 Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
@@ -448,7 +479,7 @@ module.exports = {
      *          isUnordered: true
      *     }
      * 
-     * Should be overridden by inheritors that implement an outline.
+     * SHOULD be overridden by inheritors that implement an outline.
      * 
      * @param {Document} doc                           The Document object representing the source
      * @param {Object} fullAst                         The entire AST of the current file (if any)
@@ -480,7 +511,7 @@ module.exports = {
     /**
      * Constructs a hierarchy.
      * 
-     * Should be overridden by inheritors that implement a type hierarchy.
+     * SHOULD be overridden by inheritors that implement a type hierarchy.
      * 
      * Not supported right now.
      * 
@@ -499,7 +530,7 @@ module.exports = {
     /**
      * Performs code completion for the user based on the current cursor position.
      * 
-     * Should be overridden by inheritors that implement code completion.
+     * MUST be overridden by inheritors that implement code completion.
      * 
      * Example completion result:
      * {
@@ -620,7 +651,7 @@ module.exports = {
      * Use the showEarly property to show the predicted completions immediately
      * to users, e.g. show `this.foo` when the user types `th`.
      * 
-     * May be overridden by inheritors that implement code completion.
+     * MAY be overridden by inheritors that implement code completion.
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
@@ -657,7 +688,7 @@ module.exports = {
      *         message: "Assigning to undeclared variable."
      *     }
      * 
-     * Should be overridden by inheritors that implement analysis.
+     * SHOULD be overridden by inheritors that implement analysis.
      * 
      * See also {@link language.worker_util#execAnalysis} for invoking a code
      * completion tool that runs in the workspace.
@@ -698,7 +729,7 @@ module.exports = {
      *         ]
      *     }
      * 
-     * Must be overridden by inheritors that implement rename refactoring.
+     * MUST be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Document} doc                          The Document object representing the source
      * @param {Object} ast                            The entire AST of the current file (if any)
@@ -725,7 +756,7 @@ module.exports = {
     /**
      * Invoked when refactoring is started.
      * 
-     * May be overridden by inheritors that implement rename refactoring.
+     * MAY be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Function} callback            The callback; must be called
@@ -737,7 +768,7 @@ module.exports = {
     /**
      * Confirms that a rename refactoring is valid, before committing it.
      * 
-     * May be overridden by inheritors that implement rename refactoring.
+     * MAY be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} oldId                 The old identifier was being renamed
@@ -756,7 +787,7 @@ module.exports = {
     /**
      * Invoked when a refactor request is cancelled
      * 
-     * May be overridden by inheritors that implement rename refactoring.
+     * MAY be overridden by inheritors that implement rename refactoring.
      * 
      * @param {Function} callback            The callback; must be called
      */
@@ -767,7 +798,7 @@ module.exports = {
     /**
      * Performs code formatting.
      * 
-     * Should be overridden by inheritors that implement code formatting.
+     * MUST be overridden by inheritors that implement code formatting.
      * 
      * @param {Document} doc the Document object representing the source
      * @param {Function} callback            The callback; must be called
@@ -782,7 +813,7 @@ module.exports = {
     /**
      * Performs jumping to a definition.
      * 
-     * Should be overridden by inheritors that implement jump to definition.
+     * MUST be overridden by inheritors that implement jump to definition.
      * 
      * @param {Document} doc                 The Document object representing the source
      * @param {Object} fullAst               The entire AST of the current file (if any)
@@ -816,7 +847,7 @@ module.exports = {
      * Note that there is currently no UI for this feature,
      * we just have a keyboard shortcut.
      * 
-     * Must be overridden by inheritors that implement quickfixes.
+     * MUST be overridden by inheritors that implement quickfixes.
      * 
      * Example result:
      * 
@@ -867,7 +898,7 @@ module.exports = {
      * Given the cursor position and the parsed node at that position,
      * gets the string to send to the debugger for live inspect hovering.
      * 
-     * Should be overridden by inheritors that implement a debugger
+     * SHOULD be overridden by inheritors that implement a debugger
      * with live inspect. If not implemented, the string value based on
      * currentNode's position is used.
      * 

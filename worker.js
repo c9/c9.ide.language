@@ -259,6 +259,9 @@ function endTime(t, message, indent) {
 
 (function() {
     
+    var identifierRegexes = {};
+    var expressionPrefixRegexes = {};
+    
     this.enableFeature = function(name, value) {
         disabledFeatures[name] = !value;
     };
@@ -736,14 +739,13 @@ function endTime(t, message, indent) {
     };
     
     this.getIdentifierRegex = function(pos) {
-        var part = this.getPart(pos || { row: 0, column: 0 });
-        var result;
-        var _self = this;
-        this.handlers.forEach(function (h) {
-            if (_self.isHandlerMatch(h, part, "getIdentifierRegex", true))
-                result = h.getIdentifierRegex() || result;
-        });
-        return result || completeUtil.DEFAULT_ID_REGEX;
+        var part = pos && this.getPart(pos);
+        return identifierRegexes[part ? part.language : this.$language] || completeUtil.DEFAULT_ID_REGEX;
+    };
+    
+    this.getExpressionPrefixRegex = function(pos) {
+        var part = pos && this.getPart(pos);
+        return expressionPrefixRegexes[part ? part.language : this.$language] || completeUtil.DEFAULT_ID_REGEX;
     };
 
     /**
@@ -1314,8 +1316,17 @@ function endTime(t, message, indent) {
     this.initRegexes = function(handler, language) {
         if (!handler.handlesLanguage(language))
             return;
-        if (handler.getIdentifierRegex())
+        if (handler.getIdentifierRegex()) {
             this.sender.emit("setIdentifierRegex", { language: language, identifierRegex: handler.getIdentifierRegex() });
+            identifierRegexes[language] = handler.getIdentifierRegex();
+        }
+        if (handler.getExpressionPrefixRegex()) {
+            var regex = handler.getExpressionPrefixRegex();
+            if (!/\$$/.test(regex.source))
+                regex = new RegExp(regex.source + "$");
+            this.sender.emit("setExpressionPrefixRegex", { language: language, expressionPrefixRegex: regex });
+            expressionPrefixRegexes[language] = regex;
+        }
         if (handler.getCompletionRegex())
             this.sender.emit("setCompletionRegex", { language: language, completionRegex: handler.getCompletionRegex() });
         if (handler.getTooltipRegex())
@@ -1385,27 +1396,40 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
-            var newCache = _self.tryCachedCompletion(pos, identifierRegex, event.data.isUpdate);
+            var expressionPrefixRegex = _self.getExpressionPrefixRegex(pos);
+            var overrideLine = expressionPrefixRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
+            var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
+        
+            var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, expressionPrefixRegex, event.data);
+            console.log(newCache
+                ? "NEW CACHE KEY FOR: \"" + newCache.line + "\" with prefix \"" + newCache.prefix + "\" @ " + newCache.pos.column
+                : "REUSE CACHE FOR: \"" + _self.completionCache.line + "\"") // DEBUG
             if (!newCache) {
                 // Use existing cache
                 if (_self.completionCache.result)
-                    _self.predictNextCompletion(event, _self.completionCache, pos, identifierRegex, _self.completionCache.result);
+                    _self.predictNextCompletion(event, _self.completionCache, pos, identifierRegex, expressionPrefixRegex, _self.completionCache.result);
                 return;
             }
             
-            _self.getCompleteHandlerResult(event, pos, identifierRegex, null, function(result) {
+            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
-                _self.predictNextCompletion(event, newCache, pos, identifierRegex, result);
+                _self.predictNextCompletion(event, newCache, pos, identifierRegex, expressionPrefixRegex, result);
             });
         });
     };
     
+    function tryShortenCompletionPrefix(line, offset, identifierRegex) {
+        // Instead of completing for "  i", complete for "  ", helping caching and reuse of completions
+        if (identifierRegex.test(line[offset - 1] || ""))
+            return line.substr(0, offset - 1) + line.substr(offset);
+    }
+    
     /**
      * Invoke parser and completion handlers to get a completion result.
      */
-    this.getCompleteHandlerResult = function(event, pos, identifierRegex, overrideLine, callback) {
+    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, callback) {
         var _self = this;
         var matches = [];
         var originalLine = _self.doc.getLine(pos.row);
@@ -1494,10 +1518,11 @@ function endTime(t, message, indent) {
         });
         endOverrideLine(originalLine);
         
-        // HACK: temporarily change doc in case current line is overridden
+        // HACK: temporarily override doc contents
         function startOverrideLine() {
             if (overrideLine)
                 _self.doc.$lines[pos.row] = overrideLine;
+            
             _self.$overrideLine = overrideLine;
             _self.$lastCompleteRow = pos.row;
         }
@@ -1514,11 +1539,11 @@ function endTime(t, message, indent) {
      * @return {Object} a caching key if a new cache needs to be prepared,
      *                  or null in case the previous cache could be used (cache hit)
      */
-    this.tryCachedCompletion = function(pos, identifierRegex, isUpdate) {
+    this.tryCachedCompletion = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
         var that = this;
-        var cacheKey = this.getCompleteCacheKey(pos, identifierRegex);
+        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex);
         
-        if (isUpdate) {
+        if (options.isUpdate) {
             // Updating our cache; return previous cache to update it
             if (cacheKey.matches(this.completionCache))
                 return this.completionCache;
@@ -1543,7 +1568,15 @@ function endTime(t, message, indent) {
         return this.completionCache = cacheKey;
             
         function cacheHit() {
-            that.sender.emit("complete", that.completionCache.result);
+            that.sender.emit("complete", {
+                line: overrideLine != null ? overrideLine : that.doc.getLine(pos.row),
+                forceBox: options.forceBox,
+                isUpdate: options.isUpdate,
+                matches: that.completionCache.result.matches,
+                path: that.$path,
+                pos: pos,
+                deleteSuffix: options.deleteSuffix,
+            });
         }
     };
     
@@ -1564,13 +1597,15 @@ function endTime(t, message, indent) {
     /**
      * Store cached completion.
      */
-    this.predictNextCompletion = function(event, cacheKey, pos, identifierRegex, result) {
+    this.predictNextCompletion = function(event, cacheKey, pos, identifierRegex, expressionPrefixRegex, result) {
         if (event.data.isUpdate)
             return;
         
+        var _self = this;
         var predictedString;
         var showEarly;
-        var _self = this;
+        var line = _self.doc.getLine(pos.row);
+        
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
             function(handler, next) {
@@ -1583,11 +1618,10 @@ function endTime(t, message, indent) {
                     next();
                 }));
             },
-            function() {
+            function tryPrediction() {
                 if (!predictedString)
                     return;
                 
-                var line = _self.doc.getLine(pos.row);
                 var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
                 var predictedLine = line.substr(0, pos.column - prefix.length)
                     + predictedString
@@ -1598,8 +1632,8 @@ function endTime(t, message, indent) {
                     && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
                     return;
                 
-                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, identifierRegex, predictedLine);
-                _self.getCompleteHandlerResult(event, predictedPos, identifierRegex, predictedLine, function(result) {
+                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex);
+                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, function(result) {
                     cache.result = result;
                     var latest = _self.completionCache;
                     if (showEarly && latest && latest.result && cacheKey.matches(latest))
@@ -1612,7 +1646,6 @@ function endTime(t, message, indent) {
         function getFilteredMatches() {
             if (filteredMatches)
                 return filteredMatches;
-            var line = _self.doc.getLine(pos.row);
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             filteredMatches = result.matches.filter(function(m) {
                 return m.replaceText.indexOf(prefix) === 0;
@@ -1637,20 +1670,23 @@ function endTime(t, message, indent) {
      * (which may change as the user types).
      * 
      * @param pos
+     * @param overrideLine   A line to override the current line with while making the key
      * @param identifierRegex
-     * @param [overrideLine]   A line to override the current line with while making the key
      */
-    this.getCompleteCacheKey = function(pos, identifierRegex, overrideLine) {
+    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex) {
         var doc = this.doc;
         var path = this.$path;
-        var line = doc.getLine(pos.row);
-        var prefix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
-        var suffix = completeUtil.retrievePrecedingIdentifier(overrideLine || line, pos.column, identifierRegex);
-        var completeLine = (overrideLine || line).substr(0, pos.column - prefix.length)
-            + (overrideLine || line).substr(pos.column + suffix.length);
+        var originalLine = doc.getLine(pos.row);
+        var line = overrideLine != null ? overrideLine : originalLine;
+        var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+        var suffix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+        var completeLine = removeExpressionPrefix(
+            line.substr(0, pos.column - prefix.length) + line.substr(pos.column + suffix.length));
+        
         doc.$lines[pos.row] = "";
         var completeValue = doc.getValue();
-        doc.$lines[pos.row] = line;
+        doc.$lines[pos.row] = originalLine;
+        
         var completePos = { row: pos.row, column: pos.column - prefix.length };
         return {
             result: null,
@@ -1670,6 +1706,16 @@ function endTime(t, message, indent) {
                     && this.prefix.indexOf(other.prefix) === 0; // match if they're like foo and we're fooo
             }
         };
+        
+        function removeExpressionPrefix(line) {
+            if (!expressionPrefixRegex)
+                return line;
+            var match = expressionPrefixRegex.exec(line.substr(0, pos.column - prefix.length));
+            if (!match)
+                return line;
+            pos.column -= match[0].length;
+            return line.substr(line, line.length - match[0].length);
+        }
     };
     
     /**
@@ -1684,30 +1730,30 @@ function endTime(t, message, indent) {
         var line = _self.doc.getLine(pos.row);
         this.waitForCompletionSyncThread = this.waitForCompletionSyncThread || 0;
         var threadId = ++this.waitForCompletionSyncThread;
-        var regex = this.getIdentifierRegex(pos);
-        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
+        var identifierRegex = this.getIdentifierRegex(pos);
+        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
             setTimeout(function() {
                 if (threadId !== _self.waitForCompletionSyncThread)
                     return;
                 line = _self.doc.getLine(pos.row);
-                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
+                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
                     setTimeout(function() {
                         if (threadId !== _self.waitForCompletionSyncThread)
                             return;
-                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, regex)) {
+                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
                             if (!line) { // sanity check
                                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
                             }
                             return; // ugh give up already
                         }
-                        runCompletion(regex);
+                        runCompletion(identifierRegex);
                     }, 20);
                 }
-                runCompletion(regex);
+                runCompletion(identifierRegex);
             }, 5);
             return;
         }
-        runCompletion(regex);
+        runCompletion(identifierRegex);
     };
     
     /**
