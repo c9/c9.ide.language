@@ -172,6 +172,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         });
         
         describe('ace', function() {
+            this.timeout(30000);
             before(function(done) {
                 apf.config.setProperty("allow-select", false);
                 apf.config.setProperty("allow-blur", false);
@@ -192,7 +193,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             });
             
             describe("analysis", function(){
-                this.timeout(30000);
                 var jsTab;
                 var jsSession;
 
