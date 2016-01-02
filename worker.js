@@ -1548,7 +1548,7 @@ function endTime(t, message, indent) {
                 return this.completionPrediction;
         }
     
-        if (cacheKey.matches(this.completionCache)) {
+        if (cacheKey.matches(this.completionCache) && !isRecompletionRequired()) {
             if (this.completionCache.result)
                 cacheHit();
             else
@@ -1574,6 +1574,13 @@ function endTime(t, message, indent) {
                 pos: pos,
                 deleteSuffix: options.deleteSuffix,
             });
+        }
+        
+        function isRecompletionRequired() {
+            // HACK: recompute completions for identifiers of length 3+,
+            //       since they're treated specially in tern
+            return that.$language === "javascript" && cacheKey.prefix.length >= 3
+                 && that.completionCache.prefix.length < 3;
         }
     };
     
