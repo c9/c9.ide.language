@@ -677,6 +677,33 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         });
                     });
                 });
+                
+                it("doesn't cache with expression prefixes based on function names or params", function(done) {
+                    jsSession.setValue("ffarg; function ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("ff");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/ffarg/));
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("oo(ff");
+                        afterCompleteOpen(function(el) {
+                            // cache got cleared so we have farg here now
+                            assert(el.textContent.match(/ffoo/));
+                            assert(el.textContent.match(/ffarg/));
+                            complete.closeCompletionBox();
+                            jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                            jsTab.editor.ace.onTextInput("ort) ff");
+                            afterCompleteOpen(function(el) {
+                                // cache got cleared so we have fort here now
+                                assert(el.textContent.match(/ffoo/));
+                                assert(el.textContent.match(/ffort/));
+                                assert(el.textContent.match(/ffarg/));
+                                done();
+                            });
+                        });
+                    });
+                });
             });
         });
         
