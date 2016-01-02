@@ -1687,27 +1687,31 @@ function endTime(t, message, indent) {
         var completeLine = removeExpressionPrefix(
             line.substr(0, pos.column - prefix.length) + line.substr(pos.column + suffix.length));
         
-        doc.$lines[pos.row] = "";
-        var completeValue = doc.getValue();
-        doc.$lines[pos.row] = originalLine;
+        var completeLines = doc.$lines.slice();
+        completeLines[pos.row] = null;
         
         var completePos = { row: pos.row, column: pos.column - prefix.length };
         return {
             result: null,
             resultCallbacks: [],
             line: completeLine,
-            value: completeValue,
+            lines: completeLines,
             pos: completePos,
             prefix: prefix,
             path: path,
             matches: function(other) {
                 return other
                     && other.path === this.path
-                    && other.line === this.line
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
                     && other.value === this.value
-                    && this.prefix.indexOf(other.prefix) === 0; // match if they're like foo and we're fooo
+                    && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
+                    && other.lines.length === completeLines.length
+                    && other.lines[this.pos.row - 1] === completeLines[this.pos.row - 1]
+                    && other.lines[this.pos.row + 1] === completeLines[this.pos.row + 1]
+                    && other.lines.every(function(l, i) {
+                        return l === completeLines[i];
+                    });
             }
         };
         
