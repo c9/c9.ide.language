@@ -223,7 +223,7 @@ module.exports = {
      * completer.getExpressionPrefixRegex = function() {
      *      // Match strings that can be and expression or its prefix, i.e.
      *      // keywords/identifiers followed by whitespace and/or operators
-     *      return /(\b\w+\s+|\b(if|while|for)\s+\(|([{[\-+*%<>!|&]|==|!=)\s*)+/;
+     *      return /(\b\w+\s+|\b(if|while|for)\s*\(|([{[\-+*%<>!|&]|==|!=)\s*)+/;
      * };
      * ```
      * 

@@ -646,14 +646,14 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it("caches across expression prefixes, including if(", function(done) {
+                it("caches across expression prefixes, including 'if(' and 'if ('", function(done) {
                     jsSession.setValue("_collin; _c");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
                         complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                        jsTab.editor.ace.onTextInput("rry if(_co");
+                        jsTab.editor.ace.onTextInput("rry if(if (_co");
                         afterCompleteOpen(function(el) {
                             assert(!el.textContent.match(/_corry/));
                             assert(el.textContent.match(/_collin/));
