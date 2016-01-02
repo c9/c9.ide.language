@@ -287,18 +287,18 @@ define(function(require, exports, module) {
             var name = RegExp.$1;
             var args = RegExp.$2;
             var beforeMatch = line.substr(0, line.length - name.length - args.length);
-            var doc = beautifyCompletionDoc(args);
-            show(pos.row, beforeMatch.length, doc, ace);
+            var docHtml = beautifyCompletionDoc(args);
+            show(pos.row, beforeMatch.length, docHtml, ace);
             lastPos = null;
             lastCompletionTooltip.active = true;
         }
         
         function beautifyCompletionDoc(args) {
-            var doc = lastCompletionTooltip.docHtml || lastCompletionTooltip.doc;
-            if (!doc.match(lastCompletionTooltip.substringMatcher))
-                return doc;
+            var docHtml = lastCompletionTooltip.docHtml || util.escapeRegExp(lastCompletionTooltip.doc);
+            if (!docHtml.match(lastCompletionTooltip.substringMatcher))
+                return docHtml;
             var argIndex = args.split(",").length - 1;
-            return doc.replace(
+            return docHtml.replace(
                 lastCompletionTooltip.substringMatcher,
                 function(all, name, params) {
                     return name + "(" + (params || "").split(",").map(function(param, i) {
