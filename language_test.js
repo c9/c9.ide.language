@@ -629,17 +629,50 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 
                 it("caches across expression prefixes", function(done) {
                     // This is a tricky test: normally typing "corry c" would show "corry" in the completion,
-                    // but since JavaScript has a getExpressionPrefixRegex set, it uses a cached result,
-                    // and doesn't show that completion (yet).
-                    jsSession.setValue("collin; c");
+                    // but since JavaScript is supposed to have a getExpressionPrefixRegex set,
+                    // a cached results should be used that doesn't have "corry" yet
+                    jsSession.setValue("_collin; _c");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
+                        complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                        jsTab.editor.ace.onTextInput("rry co");
+                        jsTab.editor.ace.onTextInput("rry _co");
                         afterCompleteOpen(function(el) {
-                            assert(!el.textContent.match(/corry/));
-                            assert(el.textContent.match(/collin/));
+                            assert(!el.textContent.match(/_corry/));
+                            assert(el.textContent.match(/_collin/));
+                            done();
+                        });
+                    });
+                });
+                
+                it("caches across expression prefixes, including if(", function(done) {
+                    jsSession.setValue("_collin; _c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry if(_co");
+                        afterCompleteOpen(function(el) {
+                            assert(!el.textContent.match(/_corry/));
+                            assert(el.textContent.match(/_collin/));
+                            done();
+                        });
+                    });
+                });
+                
+                it("doesn't cache across expression prefixes in assigments", function(done) {
+                    jsSession.setValue("_collin; _c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry=_co");
+                        afterCompleteOpen(function(el) {
+                            assert(el.textContent.match(/_corry/));
+                            assert(el.textContent.match(/_collin/));
                             done();
                         });
                     });
