@@ -222,7 +222,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                                 done();
                             });
                         });
-                    }, 500);
+                    }, 0);
                 });
                 
                 // TODO: make sure this works in the ci server
