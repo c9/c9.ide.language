@@ -621,7 +621,23 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                
+                it("caches across expression prefixes", function(done) {
+                    // This is a tricky test: normally typing "corry c" would show "corry" in the completion,
+                    // but since JavaScript has a getExpressionPrefixRegex set, it uses a cached result,
+                    // and doesn't show that completion (yet).
+                    jsSession.setValue("collin; c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry co");
+                        afterCompleteOpen(function(el) {
+                            assert(!el.textContent.match(/corry/));
+                            assert(el.textContent.match(/collin/));
+                            done();
+                        });
+                    });
+                });
             });
         });
         
