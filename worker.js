@@ -1409,7 +1409,7 @@ function endTime(t, message, indent) {
         var _self = this;
         var matches = [];
         var originalLine = _self.doc.getLine(pos.row);
-        var line = overrideLine || originalLine;
+        var line = overrideLine != null ? overrideLine : originalLine;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         if (!part)
             return callback(); // cursor position not current
@@ -1428,7 +1428,7 @@ function endTime(t, message, indent) {
                         handler.path = _self.$path;
                         var t = startTime();
 
-                        originalLine = _self.doc.getLine(pos.row);
+                        var originalLine2 = _self.doc.getLine(pos.row);
                         startOverrideLine();
                         handler.complete(part, ast, partPos, currentNode, handleCallbackError(function(completions) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
@@ -1436,7 +1436,7 @@ function endTime(t, message, indent) {
                                 matches = matches.concat(completions);
                             next();
                         }));
-                        endOverrideLine();
+                        endOverrideLine(originalLine2);
                     },
                     function() {
                         removeDuplicateMatches(matches);
@@ -1492,7 +1492,7 @@ function endTime(t, message, indent) {
                 });
             });
         });
-        endOverrideLine();
+        endOverrideLine(originalLine);
         
         // HACK: temporarily change doc in case current line is overridden
         function startOverrideLine() {
@@ -1502,9 +1502,9 @@ function endTime(t, message, indent) {
             _self.$lastCompleteRow = pos.row;
         }
         
-        function endOverrideLine() {
+        function endOverrideLine(line) {
             _self.$overrideLine = null;
-            _self.doc.$lines[pos.row] = originalLine;
+            _self.doc.$lines[pos.row] = line;
         }
     };
     
