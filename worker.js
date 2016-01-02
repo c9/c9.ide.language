@@ -1401,9 +1401,6 @@ function endTime(t, message, indent) {
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
             var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, expressionPrefixRegex, event.data);
-            console.log(newCache
-                ? "NEW CACHE KEY FOR: \"" + newCache.line + "\" with prefix \"" + newCache.prefix + "\" @ " + newCache.pos.column
-                : "REUSE CACHE FOR: \"" + _self.completionCache.line + "\"") // DEBUG
             if (!newCache) {
                 // Use existing cache
                 if (_self.completionCache.result)
