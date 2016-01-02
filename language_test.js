@@ -442,25 +442,21 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("shows default browser properties like onabort when 3 characters were typed", function(done) {
-                    jsSession.setValue('// function onlyShowMeAndMore() {};\no');
+                    jsSession.setValue('// function onlyShowMeAndMore() {};\non');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
-                    jsTab.editor.ace.onTextInput("n");
+                    jsTab.editor.ace.onTextInput("a");
                     afterCompleteOpen(function(el) {
-                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
-                        jsTab.editor.ace.onTextInput("a");
-                        afterCompleteOpen(function(el) {
-                            assert(el.textContent.match(/onabort/));
-                            done();
-                        });
+                        assert(el.textContent.match(/onabort/));
+                        done();
                     });
                 });
                 
-                it("shows no self-completion for 'var b'", function(done) {
+                it("shows no self-completion for 'var bre'", function(done) {
                     jsSession.setValue('var ');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
-                    jsTab.editor.ace.onTextInput("b");
+                    jsTab.editor.ace.onTextInput("bre");
                     afterCompleteOpen(function(el) {
-                        assert(!el.textContent.match(/bb/));
+                        assert(!el.textContent.match(/bre\b/));
                         assert(el.textContent.match(/break/));
                         done();
                     });
@@ -472,6 +468,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.onTextInput("b");
                     afterCompleteOpen(function(el) {
                         assert(el.textContent.match(/blie/));
+                        done();
+                    });
+                });
+                
+                it("shows word completion for 'var bre'", function(done) {
+                    jsSession.setValue('// breedbeeld\nvar ');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("bre");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/breedbeeld/));
                         done();
                     });
                 });
