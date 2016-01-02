@@ -49,6 +49,8 @@ define(function(require, exports, module) {
         var worker;
         
         function onCursorChange(e, sender, now) {
+            if (!worker.$doc)
+                return;
             var cursorPos = worker.$doc.selection.getCursor();
             var line = worker.$doc.getDocument().getLine(cursorPos.row);
             emit("cursormove", {
