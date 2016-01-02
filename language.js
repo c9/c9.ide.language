@@ -78,7 +78,7 @@ define(function(require, exports, module) {
          */
         function notifyWorker(type, e) {
             if (!worker)
-                return plugin.once("initWorker", notifyWorker.bind(null, type, e));
+                return plugin.once("initWorker", notifyWorker.bind(null, type, e), plugin);
             
             var tab = e.tab;
             var path = getTabPath(tab);
@@ -88,7 +88,7 @@ define(function(require, exports, module) {
                     setTimeout(function() { // wait for event to be consumed by others
                         notifyWorker(type, e);
                     });
-                });
+                }, plugin);
                 return;
             }
             var session = c9session && c9session.loaded && c9session.session;
@@ -105,9 +105,9 @@ define(function(require, exports, module) {
                 
                 worker.$doc = session;
                 
-                session.selection.on("changeCursor", onCursorChange);
-                session.on("changeMode", onChangeMode);
-                session.on("change", onChange);
+                session.selection.on("changeCursor", onCursorChange, plugin);
+                session.on("changeMode", onChangeMode, plugin);
+                session.on("change", onChange, plugin);
             }
             
             var syntax = session.syntax;
@@ -204,8 +204,8 @@ define(function(require, exports, module) {
             aceHandle.on("create", function(e) {
                 e.editor.on("createAce", function (ace) {
                     emit("attachToEditor", ace);
-                });
-            });
+                }, plugin);
+            }, plugin);
             
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
@@ -214,7 +214,7 @@ define(function(require, exports, module) {
                 var c9session = e.tab.document.getSession();
                 if (c9session && c9session.session == worker.$doc)
                     worker.$doc = null;
-            });
+            }, plugin);
             
             // Hook all newly opened files
             tabs.on("open", function(e) {
@@ -223,19 +223,19 @@ define(function(require, exports, module) {
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
                 }
-            });
+            }, plugin);
             
             // Switch to any active file
             tabs.on("focusSync", function(e) {
                 if (isEditorSupported(e.tab))               
                     notifyWorker("switchFile", e);
-            });
+            }, plugin);
             
             emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
                 setTimeout(function() { updateSettings(); });
-            });
+            }, plugin);
             
             settings.once("read", function() {
                 settings.setDefaults("user/language", [
@@ -251,9 +251,9 @@ define(function(require, exports, module) {
                     ["semi", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
-                settings.on("user/language", updateSettings);
-                settings.on("project/language", updateSettings);
-            });
+                settings.on("user/language", updateSettings, plugin);
+                settings.on("project/language", updateSettings, plugin);
+            }, plugin);
     
             // Preferences
             prefs.add({
@@ -394,7 +394,7 @@ define(function(require, exports, module) {
             });
             editor.on("documentUnload", function(e) {
             });
-        });
+        }, plugin);
         
         function getActiveTab() {
             return isEditorSupported(tabs.focussedTab)
@@ -416,12 +416,12 @@ define(function(require, exports, module) {
                 return setTimeout(callback.bind(null, null, worker)); // always async
             plugin.once("initWorker", function() {
                 callback(null, worker);
-            });
+            }, plugin);
         }
         
         function updateSettings(e) {
             if (!worker)
-                return plugin.once("initWorker", updateSettings);
+                return plugin.once("initWorker", updateSettings, plugin);
             
             ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc"]
             .forEach(function(s) {
@@ -476,7 +476,7 @@ define(function(require, exports, module) {
                 
                 worker.once("markers", function(e) {
                     next();
-                });
+                }, plugin);
             }, function() {
                 if (refreshAllPending > 1) {
                     refreshAllPending = 0;
@@ -524,7 +524,7 @@ define(function(require, exports, module) {
                         return;
                     worker.removeEventListener(reply);
                     callback && callback(e.data.err, worker);
-                });
+                }, plugin);
                 if (modulePath)
                     updateRequireConfig(modulePath, worker);
                 worker.call("register", [modulePath, contents]);
@@ -561,6 +561,13 @@ define(function(require, exports, module) {
         plugin.on("unload", function() {
             loaded = false;
             worker.terminate();
+            clearTimeout(delayedTransfer);
+            delayedTransfer = null;
+            lastWorkerMessage = {};
+            refreshAllPending = 0;
+            isContinuousCompletionEnabledSetting = undefined;
+            initedTabs = false;
+            ignoredMarkers = undefined;
         });
         
         /***** Register and define API *****/
