@@ -1419,7 +1419,7 @@ function endTime(t, message, indent) {
     
     function tryShortenCompletionPrefix(line, offset, identifierRegex) {
         // Instead of completing for "  i", complete for "  ", helping caching and reuse of completions
-        if (identifierRegex.test(line[offset - 1] || ""))
+        if (identifierRegex.test(line[offset - 1] || "") && !identifierRegex.test(line[offset - 2] || ""))
             return line.substr(0, offset - 1) + line.substr(offset);
     }
     
@@ -1710,7 +1710,7 @@ function endTime(t, message, indent) {
             var match = expressionPrefixRegex.exec(line.substr(0, pos.column - prefix.length));
             if (!match)
                 return line;
-            pos.column -= match[0].length;
+            pos = { row: pos.row, column: pos.column - match[0].length };
             return line.substr(line, line.length - match[0].length);
         }
     };

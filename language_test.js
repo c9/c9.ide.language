@@ -239,7 +239,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it('shows a word completer popup on keypress', function(done) {
-                    jsSession.setValue("conny con");
+                    jsSession.setValue("conny; con");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("n");
                     afterCompleteOpen(function(el) {
@@ -442,12 +442,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("shows default browser properties like onabort when 3 characters were typed", function(done) {
-                    jsSession.setValue('// function onlyShowMeAndMore() {};\non');
+                    jsSession.setValue('// function onlyShowMeAndMore() {};\no');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
-                    jsTab.editor.ace.onTextInput("a");
+                    jsTab.editor.ace.onTextInput("n");
                     afterCompleteOpen(function(el) {
-                        assert(el.textContent.match(/onabort/));
-                        done();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                        jsTab.editor.ace.onTextInput("a");
+                        afterCompleteOpen(function(el) {
+                            assert(el.textContent.match(/onabort/));
+                            done();
+                        });
                     });
                 });
                 
