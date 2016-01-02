@@ -45,10 +45,10 @@ define(function(require, exports, module) {
                     
                     assert(tab.editor && tab.editor.ace, "Could find a tab but no editor for " + event.data.path);
                     onHint(event, tab.editor.ace);
-                });
+                }, plugin);
                 worker.on("tooltipRegex", function(event) {
                     tooltipRegexes[event.data.language] = event.data.tooltipRegex;
-                });
+                }, plugin);
                 language.on("cursormove", function(e) {
                     clearTimeout(cursormoveTimeout);
                     if (e.selection.rangeCount || !tabs.focussedTab)
@@ -70,7 +70,7 @@ define(function(require, exports, module) {
                         worker.emit("cursormove", { data: { pos: latestPos, line: e.doc.getLine(latestPos.row), now: e.now }});
                         cursormoveTimeout = null;
                     }, e.now ? 0 : 100);
-                });
+                }, plugin);
             });
             
             aceHandle.on("themeChange", function(e) {
@@ -179,8 +179,8 @@ define(function(require, exports, module) {
                 isVisible = true;
                 
                 window.document.body.appendChild(tooltipEl);
-                ace.on("mousewheel", hide);
-                tabs.on("focus", hide);
+                ace.on("mousewheel", hide, plugin);
+                tabs.on("focus", hide, plugin);
                 window.document.addEventListener("mousedown", onMouseDown);
             }
             tooltipEl.innerHTML = html;
