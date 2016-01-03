@@ -1480,20 +1480,6 @@ function endTime(t, message, indent) {
                     function() {
                         removeDuplicateMatches(matches);
                         
-                        // Always prefer current identifier (similar to complete.js)
-                        var prefixLine = line.substr(0, pos.column);
-                        matches.forEach(function(m) {
-                            if (m.isGeneric && m.$source !== "local")
-                                return;
-                            m.name = m.name || m.replaceText;
-                            m.replaceText = m.replaceText || m.name;
-                            var match = prefixLine.lastIndexOf(m.replaceText);
-                            if (match > -1
-                                && match === pos.column - m.replaceText.length
-                                && completeUtil.retrievePrecedingIdentifier(line, pos.column, m.identifierRegex || identifierRegex))
-                                m.priority = 99;
-                        });
-                        
                         // Sort by priority, score
                         matches.sort(function(a, b) {
                             if (a.priority < b.priority)
