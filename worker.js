@@ -1660,7 +1660,10 @@ function endTime(t, message, indent) {
         }
         
         function showPredictionsEarly(result) {
-            [].push.apply(_self.completionCache.result.matches, result.matches.map(function(m) {
+            var newMatches = result.matches.filter(function(m) { return m.isContextual; });
+            if (!newMatches.length)
+                return;
+            [].push.apply(_self.completionCache.result.matches, newMatches.map(function(m) {
                 m = Object.assign({}, m);
                 m.replaceText = predictedString + m.replaceText;
                 m.name = predictedString + m.name;
