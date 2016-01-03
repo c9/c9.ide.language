@@ -195,16 +195,28 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             describe("analysis", function(){
                 var jsTab;
                 var jsSession;
+                var completionCalls = 0;
 
                 before(function(done) {
-                    language.getWorker(function(err, value) {
-                        worker = value;
-                        done();
-                    });
+                    language.getWorker(function(err, _worker) {
+                        if (err) return done(err);
+                        language.registerLanguageHandler(
+                            "plugins/c9.ide.language/language_test_helper",
+                            function(err) {
+                                if (err) return done(err);
+                                worker = _worker;
+                                worker.on("complete_called", function() {
+                                    completionCalls++;
+                                });
+                                done();
+                            });
+                        }
+                    );
                 });
                 
                 // Setup
                 beforeEach(function(done) {
+                    completionCalls = 0;
                     tabs.getTabs().forEach(function(tab) {
                         tab.close(true);
                     });
@@ -628,17 +640,19 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("caches across expression prefixes", function(done) {
-                    // This is a tricky test: normally typing "corry c" would show "corry" in the completion,
-                    // but since JavaScript is supposed to have a getExpressionPrefixRegex set,
-                    // a cached results should be used that doesn't have "corry" yet
                     jsSession.setValue("_collin; _c");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
                         complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput("rry _co");
                         afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            // Normally typing "_corry _c" would show "_corry" in the completion,
+                            // but since JavaScript is supposed to have a getExpressionPrefixRegex set,
+                            // a cached results should be used that doesn't have "_corry" yet
                             assert(!el.textContent.match(/_corry/));
                             assert(el.textContent.match(/_collin/));
                             done();
@@ -647,16 +661,18 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it("caches across expression prefixes, including 'if(' and 'if ('", function(done) {
-                    jsSession.setValue("_collin; _c");
+                    jsSession.setValue("b_collin; b_c");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
                         complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                        jsTab.editor.ace.onTextInput("rry if(if (_co");
+                        jsTab.editor.ace.onTextInput("rry if(if (b_co");
                         afterCompleteOpen(function(el) {
-                            assert(!el.textContent.match(/_corry/));
-                            assert(el.textContent.match(/_collin/));
+                            assert.equal(completionCalls, 1);
+                            assert(!el.textContent.match(/b_corry/));
+                            assert(el.textContent.match(/b_collin/));
                             done();
                         });
                     });
@@ -667,10 +683,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("o");
                     afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
                         complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput("rry=_co");
                         afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
                             assert(el.textContent.match(/_corry/));
                             assert(el.textContent.match(/_collin/));
                             done();
@@ -683,11 +701,13 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("ff");
                     afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
                         assert(el.textContent.match(/ffarg/));
                         complete.closeCompletionBox();
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput("oo(ff");
                         afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
                             // cache got cleared so we have farg here now
                             assert(el.textContent.match(/ffoo/));
                             assert(el.textContent.match(/ffarg/));
@@ -695,12 +715,29 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                             jsTab.editor.ace.onTextInput("ort) ff");
                             afterCompleteOpen(function(el) {
+                                assert.equal(completionCalls, 3);
                                 // cache got cleared so we have fort here now
                                 assert(el.textContent.match(/ffoo/));
                                 assert(el.textContent.match(/ffort/));
                                 assert(el.textContent.match(/ffarg/));
                                 done();
                             });
+                        });
+                    });
+                });
+                
+                it('predicts console.log() when typing just consol', function(done) {
+                    jsSession.setValue("consol");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("e");
+                    worker.on("predict_called", function() {
+                        assert.equal(completionCalls, 1);
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput(".");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            expect.html(el).text(/log\(/);
+                            done();
                         });
                     });
                 });
