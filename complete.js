@@ -782,9 +782,7 @@ define(function(require, exports, module) {
                 return;
     
             var matches = eventMatches = event.data.matches;
-            if (event.data.line !== line)
-                matches = filterMatches(matches, line, pos);
-                
+            matches = filterMatches(matches, line, pos);
             matches = cleanupMatches(matches, editor.ace, pos, line);
             
             if (matches.length === 1 && !event.data.forceBox) {

@@ -727,16 +727,47 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it('predicts console.log() when typing just consol', function(done) {
-                    jsSession.setValue("consol");
+                    jsSession.setValue("conso");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("e");
-                    worker.on("predict_called", function() {
+                    jsTab.editor.ace.onTextInput("l");
+                    worker.once("predict_called", function() {
                         assert.equal(completionCalls, 1);
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput(".");
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 1);
                             expect.html(el).text(/log\(/);
+                            done();
+                        });
+                    });
+                });
+                
+                it('shows the current identifier as the top result', function(done) {
+                    jsSession.setValue("concat; conso; cons");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        assert(el.textContent.match(/conso(?!l).*console/));
+                        done();
+                    });
+                });
+                
+                it('shows the current identifier as the top result, and removes it as you keep typing', function(done) {
+                    jsSession.setValue("2; concat; conso; cons");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        assert(el.textContent.match(/conso(?!l).*console/));
+
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0 } });
+                        jsTab.editor.ace.onTextInput("l");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            assert(!el.textContent.match(/conso(?!l)/));
+                            assert(el.textContent.match(/console/));
                             done();
                         });
                     });
