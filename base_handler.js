@@ -662,7 +662,8 @@ module.exports = {
      * ```
      * 
      * Use the showEarly property to show the predicted completions immediately
-     * to users, e.g. show `this.foo` when the user types `th`.
+     * to users, e.g. show `this.foo` when the user types `th`. Only
+     * completions marked "isContextual" are shown in this fashion.
      * 
      * MAY be overridden by inheritors that implement code completion.
      * 
