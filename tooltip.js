@@ -294,7 +294,7 @@ define(function(require, exports, module) {
         }
         
         function beautifyCompletionDoc(args) {
-            var docHtml = lastCompletionTooltip.docHtml || util.escapeRegExp(lastCompletionTooltip.doc);
+            var docHtml = lastCompletionTooltip.docHtml || util.escapeXml(lastCompletionTooltip.doc);
             if (!docHtml.match(lastCompletionTooltip.substringMatcher))
                 return docHtml;
             var argIndex = args.split(",").length - 1;
