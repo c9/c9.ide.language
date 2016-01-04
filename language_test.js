@@ -726,6 +726,22 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it("doesn't outside of a function context", function(done) {
+                    jsSession.setValue("function foo() { ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("f");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("} f");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
+                            done();
+                        });
+                    });
+                });
+                
                 it.skip('predicts console.log() when typing just consol', function(done) {
                     jsSession.setValue("conso");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
