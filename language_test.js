@@ -726,14 +726,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it('predicts console.log() when typing just consol', function(done) {
+                it.skip('predicts console.log() when typing just consol', function(done) {
                     jsSession.setValue("conso");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
                     worker.once("predict_called", function() {
                         assert.equal(completionCalls, 1);
-                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                        jsTab.editor.ace.onTextInput(".");
                         afterCompleteOpen(function retry(el) {
                             assert.equal(completionCalls, 1);
                             if (!el.textContent.match(/log/))
