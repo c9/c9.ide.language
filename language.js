@@ -107,9 +107,9 @@ define(function(require, exports, module) {
                 
                 worker.$doc = session;
                 
-                session.selection.on("changeCursor", onCursorChange, plugin);
-                session.on("changeMode", onChangeMode, plugin);
-                session.on("change", onChange, plugin);
+                session.selection.on("changeCursor", onCursorChange);
+                session.on("changeMode", onChangeMode);
+                session.on("change", onChange);
             }
             
             var syntax = session.syntax;
