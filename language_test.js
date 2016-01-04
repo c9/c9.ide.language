@@ -734,9 +734,10 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         assert.equal(completionCalls, 1);
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput(".");
-                        afterCompleteOpen(function(el) {
+                        afterCompleteOpen(function retry(el) {
                             assert.equal(completionCalls, 1);
-                            assert(el.textContent.match(/log/), el.textContent);
+                            if (!el.textContent.match(/log/))
+                                return afterCompleteOpen(retry);
                             done();
                         });
                     });
