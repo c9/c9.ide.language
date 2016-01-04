@@ -736,7 +736,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         jsTab.editor.ace.onTextInput(".");
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 1);
-                            expect.html(el).text(/log\(/);
+                            assert(el.textContent.match(/log/), el.textContent);
                             done();
                         });
                     });
