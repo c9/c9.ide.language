@@ -49,6 +49,8 @@ define(function(require, exports, module) {
         var worker;
         
         function onCursorChange(e, sender, now) {
+            if (!worker.$doc)
+                return;
             var cursorPos = worker.$doc.selection.getCursor();
             var line = worker.$doc.getDocument().getLine(cursorPos.row);
             emit("cursormove", {
@@ -78,7 +80,7 @@ define(function(require, exports, module) {
          */
         function notifyWorker(type, e) {
             if (!worker)
-                return plugin.once("initWorker", notifyWorker.bind(null, type, e));
+                return plugin.once("initWorker", notifyWorker.bind(null, type, e), plugin);
             
             var tab = e.tab;
             var path = getTabPath(tab);
@@ -88,7 +90,7 @@ define(function(require, exports, module) {
                     setTimeout(function() { // wait for event to be consumed by others
                         notifyWorker(type, e);
                     });
-                });
+                }, plugin);
                 return;
             }
             var session = c9session && c9session.loaded && c9session.session;
@@ -204,8 +206,8 @@ define(function(require, exports, module) {
             aceHandle.on("create", function(e) {
                 e.editor.on("createAce", function (ace) {
                     emit("attachToEditor", ace);
-                });
-            });
+                }, plugin);
+            }, plugin);
             
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
@@ -214,7 +216,7 @@ define(function(require, exports, module) {
                 var c9session = e.tab.document.getSession();
                 if (c9session && c9session.session == worker.$doc)
                     worker.$doc = null;
-            });
+            }, plugin);
             
             // Hook all newly opened files
             tabs.on("open", function(e) {
@@ -223,19 +225,19 @@ define(function(require, exports, module) {
                     if (!tabs.getPanes) // single-pane minimal UI
                         notifyWorker("switchFile", { tab: e.tab });
                 }
-            });
+            }, plugin);
             
             // Switch to any active file
             tabs.on("focusSync", function(e) {
                 if (isEditorSupported(e.tab))               
                     notifyWorker("switchFile", e);
-            });
+            }, plugin);
             
             emit.sticky("initWorker", { worker: worker });
 
             settings.on("read", function() {
                 setTimeout(function() { updateSettings(); });
-            });
+            }, plugin);
             
             settings.once("read", function() {
                 settings.setDefaults("user/language", [
@@ -251,9 +253,9 @@ define(function(require, exports, module) {
                     ["semi", "true"],
                     ["unusedFunctionArgs", "false"]
                 ]);
-                settings.on("user/language", updateSettings);
-                settings.on("project/language", updateSettings);
-            });
+                settings.on("user/language", updateSettings, plugin);
+                settings.on("project/language", updateSettings, plugin);
+            }, plugin);
     
             // Preferences
             prefs.add({
@@ -394,7 +396,7 @@ define(function(require, exports, module) {
             });
             editor.on("documentUnload", function(e) {
             });
-        });
+        }, plugin);
         
         function getActiveTab() {
             return isEditorSupported(tabs.focussedTab)
@@ -416,12 +418,12 @@ define(function(require, exports, module) {
                 return setTimeout(callback.bind(null, null, worker)); // always async
             plugin.once("initWorker", function() {
                 callback(null, worker);
-            });
+            }, plugin);
         }
         
         function updateSettings(e) {
             if (!worker)
-                return plugin.once("initWorker", updateSettings);
+                return plugin.once("initWorker", updateSettings, plugin);
             
             ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc"]
             .forEach(function(s) {
@@ -512,7 +514,7 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = value;
         }
     
-        function registerLanguageHandler(modulePath, contents, callback) {
+        function registerLanguageHandler(modulePath, contents, callback, plugin) {
             if (!callback && typeof contents === "function") {
                 callback = contents;
                 contents = null;
@@ -523,7 +525,7 @@ define(function(require, exports, module) {
                     if (e.data.path !== modulePath)
                         return;
                     worker.removeEventListener(reply);
-                    callback && callback(e.data.err, worker);
+                    callback && callback(e.data.err, createEmitter(modulePath));
                 });
                 if (modulePath)
                     updateRequireConfig(modulePath, worker);
@@ -533,8 +535,30 @@ define(function(require, exports, module) {
     
         function unregisterLanguageHandler(modulePath) {
             getWorker(function(err, worker) {
+                if (err) return console.error(err);
                 worker.call("unregister", [modulePath]);
             });
+        }
+        
+        function createEmitter(modulePath) {
+            return {
+                on: function(event, listener) {
+                    worker.on(modulePath + "/" + event, function(e) {
+                        listener(e.data);
+                    });
+                },
+                once: function(event, listener) {
+                    worker.once(modulePath + "/" + event, function(e) {
+                        listener(e.data);
+                    });
+                },
+                off: function(event, listener) {
+                    worker.off(modulePath + "/" + event, listener);
+                },
+                emit: function(event, data) {
+                    worker.emit(modulePath + "/" + event, { data: data });
+                }
+            };
         }
         
         function updateRequireConfig(modulePath, worker) {
@@ -561,6 +585,13 @@ define(function(require, exports, module) {
         plugin.on("unload", function() {
             loaded = false;
             worker.terminate();
+            clearTimeout(delayedTransfer);
+            delayedTransfer = null;
+            lastWorkerMessage = {};
+            refreshAllPending = 0;
+            isContinuousCompletionEnabledSetting = undefined;
+            initedTabs = false;
+            ignoredMarkers = undefined;
         });
         
         /***** Register and define API *****/
@@ -617,6 +648,7 @@ define(function(require, exports, module) {
              * @param {String} callback.worker.emit.event
              * @param {Object} callback.worker.emit.payload
              * @param {Object} callback.worker.emit.payload.data
+             * @param {Plugin} [plugin]        The plugin registering this language handler.
              */
             registerLanguageHandler: registerLanguageHandler,
             
@@ -629,16 +661,21 @@ define(function(require, exports, module) {
             /**
              * Gets the current worker, or waits for it to be ready and gets it.
              * 
-             * @param {Function} callback                      The callback
-             * @param {String} callback.err                    Any error
-             * @param {Function} callback.result               Our result
-             * @param {Function} callback.result.on            Event handler for worker events
-             * @param {String} callback.result.on.event        Event name
-             * @param {Function} callback.result.on.handler    Event handler function
-             * @param {Object} callback.result.on.handler.data Event data
-             * @param {Function} callback.result.emit          Event emit function for worker
-             * @param {String} callback.result.on.event        Event name
-             * @param {Object} callback.result.on.data         Event data
+             * @param {Function} callback                         The callback
+             * @param {String} callback.err                       Any error
+             * @param {Function} callback.result                  Our result
+             * @param {Function} callback.result.on               Event handler for worker events
+             * @param {String} callback.result.on.event           Event name
+             * @param {Function} callback.result.on.listener      Event listener
+             * @param {Function} callback.result.once             One-time event handler for worker events
+             * @param {String} callback.result.once.event         Event name
+             * @param {Function} callback.result.once.listener    Event listener
+             * @param {Object} callback.result.once.listener.data Event data
+             * @param {String} callback.result.off.event          Event name
+             * @param {Function} callback.result.off.listener     Event listener
+             * @param {Function} callback.result.emit             Event emit function for worker
+             * @param {String} callback.result.on.event           Event name
+             * @param {Object} callback.result.on.data            Event data
              */
             getWorker: getWorker,
             
