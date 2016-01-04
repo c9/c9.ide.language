@@ -119,7 +119,7 @@ define(function(require, exports, module) {
                             + ':&nbsp;' + util.escapeXml(activeParam.type)
                             + "</span>";
                     }
-                    if (activeParam && (activeParam.doc || activeParam.docHtml)) {
+                    if (activeParam && (activeParam.docHtml || activeParam.doc)) {
                         doc += '<div class="language_paramhelp">'
                             // + '<span class="language_activeparamindent">' + fnName + '(</span>'
                             + '<span class="language_activeparam">' + util.escapeXml(activeParam.name) + '</span>:'
@@ -259,12 +259,14 @@ define(function(require, exports, module) {
             if (!completion.guessTooltip)
                 return lastCompletionTooltip = {};
             var simpleName = completion.replaceText.replace("^^", "").replace(/\(\)$/, "");
-            if (simpleName === completion.name || completion.name.indexOf(simpleName) !== 0)
+            if (completion.name.indexOf(simpleName) !== 0)
                 return lastCompletionTooltip = {};
             
             var matcher = "(" + util.escapeRegExp(simpleName) + ")\\(([^\\)]*)?";
+            
             lastCompletionTooltip = {
-                doc: completion.name,
+                docHtml: completion.docHeadHtml,
+                doc: completion.docHead || completion.name,
                 row: pos.row,
                 matcher: new RegExp(matcher + "$"),
                 substringMatcher: new RegExp(matcher),
@@ -285,18 +287,18 @@ define(function(require, exports, module) {
             var name = RegExp.$1;
             var args = RegExp.$2;
             var beforeMatch = line.substr(0, line.length - name.length - args.length);
-            var doc = beautifyCompletionDoc(args);
-            show(pos.row, beforeMatch.length, doc, ace);
+            var docHtml = beautifyCompletionDoc(args);
+            show(pos.row, beforeMatch.length, docHtml, ace);
             lastPos = null;
             lastCompletionTooltip.active = true;
         }
         
         function beautifyCompletionDoc(args) {
-            var doc = lastCompletionTooltip.doc;
-            if (!doc.match(lastCompletionTooltip.substringMatcher))
-                return doc;
+            var docHtml = lastCompletionTooltip.docHtml || util.escapeXml(lastCompletionTooltip.doc);
+            if (!docHtml.match(lastCompletionTooltip.substringMatcher))
+                return docHtml;
             var argIndex = args.split(",").length - 1;
-            return doc.replace(
+            return docHtml.replace(
                 lastCompletionTooltip.substringMatcher,
                 function(all, name, params) {
                     return name + "(" + (params || "").split(",").map(function(param, i) {
