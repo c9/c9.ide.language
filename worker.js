@@ -701,7 +701,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, node, handleCallbackError(function(result) {
+                                handler.getInspectExpression(part, ast, partPos, {node: node}, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
@@ -1449,6 +1449,7 @@ function endTime(t, message, indent) {
         var matches = [];
         var hadError = false;
         var originalLine = _self.doc.getLine(pos.row);
+        var line = overrideLine != null ? overrideLine : originalLine;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
         if (!part)
             return callback(); // cursor position not current
@@ -1467,6 +1468,7 @@ function endTime(t, message, indent) {
                         handler.path = _self.$path;
                         var t = startTime();
 
+                        var originalLine2 = _self.doc.getLine(pos.row);
                         startOverrideLine();
                         handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions, handledErr) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
@@ -1475,24 +1477,10 @@ function endTime(t, message, indent) {
                             hadError = hadError || handledErr;
                             next();
                         }));
-                        endOverrideLine();
+                        endOverrideLine(originalLine2);
                     },
                     function() {
                         removeDuplicateMatches(matches);
-                        
-                        // Always prefer current identifier (similar to complete.js)
-                        var prefixLine = (overrideLine || originalLine).substr(0, pos.column);
-                        matches.forEach(function(m) {
-                            if (m.isGeneric && m.$source !== "local")
-                                return;
-                            m.name = m.name || m.replaceText;
-                            m.replaceText = m.replaceText || m.name;
-                            var match = prefixLine.lastIndexOf(m.replaceText);
-                            if (match > -1
-                                && match === pos.column - m.replaceText.length
-                                && completeUtil.retrievePrecedingIdentifier((overrideLine || originalLine), pos.column, m.identifierRegex || identifierRegex))
-                                m.priority = 99;
-                        });
                         
                         // Sort by priority, score
                         matches.sort(function(a, b) {
@@ -1523,7 +1511,7 @@ function endTime(t, message, indent) {
                             matches: matches,
                             isUpdate: event.data.isUpdate,
                             hadError: hadError,
-                            line: overrideLine || originalLine,
+                            line: line,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
                             deleteSuffix: event.data.deleteSuffix
@@ -1532,7 +1520,7 @@ function endTime(t, message, indent) {
                 });
             });
         });
-        endOverrideLine();
+        endOverrideLine(originalLine);
         
         // HACK: temporarily change doc in case current line is overridden
         function startOverrideLine() {
@@ -1542,9 +1530,9 @@ function endTime(t, message, indent) {
             _self.$lastCompleteRow = pos.row;
         }
         
-        function endOverrideLine() {
+        function endOverrideLine(line) {
             _self.$overrideLine = null;
-            _self.doc.$lines[pos.row] = originalLine;
+            _self.doc.$lines[pos.row] = line;
         }
     };
     
@@ -1664,7 +1652,10 @@ function endTime(t, message, indent) {
         }
         
         function showPredictionsEarly(result) {
-            [].push.apply(_self.completionCache.result.matches, result.matches.map(function(m) {
+            var newMatches = result.matches.filter(function(m) { return m.isContextual; });
+            if (!newMatches.length)
+                return;
+            [].push.apply(_self.completionCache.result.matches, newMatches.map(function(m) {
                 m = Object.assign({}, m);
                 m.replaceText = predictedString + m.replaceText;
                 m.name = predictedString + m.name;
@@ -1780,7 +1771,7 @@ function endTime(t, message, indent) {
     function handleCallbackError(callback) {
         return function(optionalErr, result) {
             if (optionalErr &&
-                (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack)) {
+                (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack || optionalErr.code)) {
                 if (optionalErr.code !== "ESUPERSEDED")
                     console.error(optionalErr.stack || optionalErr);
                 return callback(null, optionalErr);

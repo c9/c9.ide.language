@@ -616,8 +616,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         }
                     });
                 });
-                
-                
             });
         });
         
