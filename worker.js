@@ -1478,6 +1478,10 @@ function endTime(t, message, indent) {
                         endOverrideLine(originalLine2);
                     },
                     function() {
+                        matches.forEach(function(m) {
+                            m.name = m.name || m.replaceText;		
+                            m.replaceText = m.replaceText || m.name;
+                        });
                         removeDuplicateMatches(matches);
                         
                         // Sort by priority, score
