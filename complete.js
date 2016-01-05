@@ -829,8 +829,8 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            matches = cleanupMatches(eventMatches, ace, pos, line);
-            matches = filterMatches(matches, line, pos);
+            matches = filterMatches(eventMatches, line, pos);
+            matches = cleanupMatches(matches, ace, pos, line);
             if (matches.length) {
                 showCompletionBox({ace: ace}, matches, prefix, line);
             } else {
@@ -850,9 +850,10 @@ define(function(require, exports, module) {
             // Always prefer current identifier (similar to worker.js)
             var prefixLine = line.substr(0, pos.column);
             for (var i = 0; i < results.length; i++) {
+                var m = results[i];		
+                m.replaceText = m.replaceText || m.name;
                 if (results[i].isGeneric && results[i].$source !== "local")
                     continue;
-                var m = results[i];
                 var match = prefixLine.lastIndexOf(m.replaceText);
                 if (match > -1
                     && match === pos.column - m.replaceText.length

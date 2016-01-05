@@ -1683,6 +1683,7 @@ function endTime(t, message, indent) {
                 return filteredMatches;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             filteredMatches = result.matches.filter(function(m) {
+                m.replaceText = m.replaceText || m.name;
                 return m.replaceText.indexOf(prefix) === 0;
             });
             return filteredMatches;
