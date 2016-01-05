@@ -254,10 +254,6 @@ module.exports = {
         options.path = options.path || myWorker.$path.substr(1);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
-        options.memoStrings = {
-            dictStart: memoDict.startIndex || 0,
-            dictLength: memoDict.length
-        };
         var maxCallInterval = options.maxCallInterval || 50;
         if (myWorker.$overrideLine) {
             // Special handling for completion predictions
@@ -292,8 +288,8 @@ module.exports = {
             if (event.data.id !== id)
                 return;
             worker.sender.off("jsonalyzerCallServerResult", onResult);
-            var stdout = doUnmemoStrings(event.data.result[1]);
-            var stderr = doUnmemoStrings(event.data.result[2]);
+            var stdout = tryParseJSON(event.data.result[1]);
+            var stderr = tryParseJSON(event.data.result[2]);
             callback(event.data.result[0], stdout, stderr, {
                 serverTime: event.data.result[3],
                 size: (event.data.result[1] || "").length + (event.data.result[2] || "").length
@@ -304,51 +300,13 @@ module.exports = {
             return file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
         }
         
-        function doUnmemoStrings(string) {
+        function tryParseJSON(string) {
             try {
-                var object = JSON.parse(string);
-                for (var i = 0; i < object.dict.length; i++)
-                    memoDict[i + object.dictStart] = object.dict[i];
-                object.json = unmemoStrings(object.json);
-                
-                if (memoDict.length - (memoDict.startIndex || 0) > MAX_MEMO_DICT_SIZE) {
-                    var oldStart = memoDict.startIndex || 0;
-                    var newStart = memoDict.startIndex = memoDict.length - (MAX_MEMO_DICT_SIZE / 2);
-                    setTimeout(function gc() {
-                        for (var i = oldStart; i < newStart; i++)
-                            delete memoDict[i];
-                    }, 120000); // Wait until old requests end
-                }
-                
-                
-                return options.json ? object.json : JSON.stringify(object.json);
+                return options.json ? JSON.parse(string) : string;
             }
             catch (e) {
                 return string;
             }
-        }
-        
-        function unmemoStrings(json) {
-            if (Array.isArray(json))
-                return json.map(unmemoStrings);
-            var result = {};
-            for (var key in json) {
-                var key2 = memoDict[key];
-                var value = json[key];
-                var value2; 
-                if (typeof value === "object") {
-                    value2 = unmemoStrings(value);
-                }
-                else if (typeof value === "number") {
-                    value2 = memoDict[value];
-                }
-                else {
-                    value2 = value;
-                }
-                
-                result[key2] = value2;
-            }
-            return result;
         }
     },
     
