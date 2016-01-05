@@ -1468,6 +1468,7 @@ function endTime(t, message, indent) {
     this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, callback) {
         var _self = this;
         var matches = [];
+        var hadError = false;
         var originalLine = _self.doc.getLine(pos.row);
         var line = overrideLine != null ? overrideLine : originalLine;
         var part = syntaxDetector.getContextSyntaxPart(_self.doc, pos, _self.$language);
@@ -1490,10 +1491,11 @@ function endTime(t, message, indent) {
 
                         var originalLine2 = _self.doc.getLine(pos.row);
                         startOverrideLine();
-                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions) {
+                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions, handledErr) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
+                            hadError = hadError || handledErr;
                             next();
                         }));
                         endOverrideLine(originalLine2);
@@ -1529,6 +1531,7 @@ function endTime(t, message, indent) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
+                            hadError: hadError,
                             line: line,
                             path: _self.$path,
                             forceBox: event.data.forceBox,
@@ -1621,6 +1624,8 @@ function endTime(t, message, indent) {
         cache.resultCallbacks.forEach(function(c) {
             c();
         });
+        if (result.hadError)
+            this.completionCache = null;
     };
     
     /**
@@ -1664,9 +1669,10 @@ function endTime(t, message, indent) {
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex);
                 _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, function(result) {
                     cache.result = result;
-                    var latest = _self.completionCache;
-                    if (showEarly && latest && latest.result && cacheKey.matches(latest))
+                    if (showEarly && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
+                    if (result.hadError)
+                        _self.completionPrediction = null;
                 });
             }
         );
@@ -1820,8 +1826,9 @@ function endTime(t, message, indent) {
         return function(optionalErr, result) {
             if (optionalErr &&
                 (optionalErr instanceof Error || typeof optionalErr === "string" || optionalErr.stack || optionalErr.code)) {
-                console.error(optionalErr.stack || optionalErr);
-                return callback();
+                if (optionalErr.code !== "ESUPERSEDED")
+                    console.error(optionalErr.stack || optionalErr);
+                return callback(null, optionalErr);
             }
             
             // We only support Error and string errors; 
