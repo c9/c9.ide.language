@@ -726,7 +726,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it("doesn't outside of a function context", function(done) {
+                it("doesn't do prefix-caching outside of a function context", function(done) {
                     jsSession.setValue("function foo() { ");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("f");
@@ -737,6 +737,23 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         jsTab.editor.ace.onTextInput("} f");
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 2);
+                            done();
+                        });
+                    });
+                });
+                
+                it("doesn't do prefix-caching after property access", function(done) {
+                    jsSession.setValue("console.l");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("g c");
+                        afterCompleteOpen(function(el) {
+                            assert(el.textContent.match(/console/), el.textContent);
+                            assert.equal(completionCalls, 2, "Should refetch after property access: " + completionCalls);
                             done();
                         });
                     });
