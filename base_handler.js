@@ -560,9 +560,9 @@ module.exports = {
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result, an array of completion matches
-     * @param {String} callback.result.replaceText
+     * @param {String} [callback.result.replaceText]
      *                                       The text to replace the selection with
-     * @param {String} [callback.result.name]
+     * @param {String} callback.result.name
      *                                       The full name to show in the completion popup
      * @param {String} [callback.result.id]  The short name that identifies this completion
      * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}

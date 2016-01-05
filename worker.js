@@ -1478,10 +1478,6 @@ function endTime(t, message, indent) {
                         endOverrideLine(originalLine2);
                     },
                     function() {
-                        matches.forEach(function(m) {
-                            m.name = m.name || m.replaceText;		
-                            m.replaceText = m.replaceText || m.name;
-                        });
                         removeDuplicateMatches(matches);
                         
                         // Sort by priority, score
@@ -1644,6 +1640,7 @@ function endTime(t, message, indent) {
             var line = _self.doc.getLine(pos.row);
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             filteredMatches = result.matches.filter(function(m) {
+                m.replaceText = m.replaceText || m.name;
                 return m.replaceText.indexOf(prefix) === 0;
             });
             return filteredMatches;
