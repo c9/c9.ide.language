@@ -398,6 +398,7 @@ module.exports = {
      * @param {Number} cursorPos.row              The current cursor's row
      * @param {Number} cursorPos.column           The current cursor's column
      * @param {Object} options                    Options
+     * @param {String} options.path               The current file path.
      * @param {Object} options.node               The current AST node (if parse() is implemented and if parsed already, otherwise null)
      * @param {Function} callback                 The callback; must be called
      * @param {Error|String} callback.err         Any resulting error
@@ -423,6 +424,7 @@ module.exports = {
      * @param {Number} cursorPos.row                       The current cursor's row
      * @param {Number} cursorPos.column                    The current cursor's column
      * @param {Object} options                             Options
+     * @param {String} options.path                        The current file path.
      * @param {Object} options.node                        The current AST node (if parse() is implemented) 
      * @param {Function} callback                          The callback; must be called
      * @param {Error|String} callback.err                  Any resulting error
@@ -469,6 +471,7 @@ module.exports = {
      * @param {Number} cursorPos.row                   The current cursor's row
      * @param {Number} cursorPos.column                The current cursor's column
      * @param {Object} options                         Options
+     * @param {String} options.path                    The current file path.
      * @param {Object} options.node                    The current AST node (if parse() is implemented) 
      * @param {Function} callback                      The callback; must be called
      * @param {Error|String} callback.err              Any resulting error
@@ -498,6 +501,7 @@ module.exports = {
      * @param {Number} cursorPos.row         The current cursor's row
      * @param {Number} cursorPos.column      The current cursor's column
      * @param {Object} options               Options
+     * @param {String} options.path          The current file path.
      * @param {Object} options.node          The current AST node (if parse() is implemented) 
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
@@ -600,6 +604,7 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} options               Options
+     * @param {String} options.path          The current file path.
      * @param {Object} options.node          The current AST node (if parse() is implemented) 
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
@@ -707,6 +712,7 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} options               Options
+     * @param {String} options.path          The current file path.
      * @param {Object} options.node          The most recent completion AST node (if parse() is implemented) 
      * @param {Object} options.matches       The most recent completion matches
      * @param {String} options.path          The current path
@@ -787,6 +793,7 @@ module.exports = {
      * @param {Number} pos.row                        The current cursor's row
      * @param {Number} pos.column                     The current cursor's column
      * @param {Object} options                        Options
+     * @param {String} options.path                   The current file path.
      * @param {Object} options.node                   The current AST node (if parse() is implemented) 
      * @param {Function} callback                     The callback; must be called
      * @param {Error|String} callback.err             Any resulting error

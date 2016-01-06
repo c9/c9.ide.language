@@ -704,7 +704,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, {node: node}, handleCallbackError(function(result) {
+                                handler.getInspectExpression(part, ast, partPos, { node: node, path: _self.$path }, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
@@ -824,7 +824,7 @@ function endTime(t, message, indent) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
                     if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
-                        handler.onCursorMove(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.onCursorMove(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
                         }));
@@ -910,7 +910,7 @@ function endTime(t, message, indent) {
                     // triggered by the cursor move event
                     assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
                     asyncForEach(["tooltip", "highlightOccurrences"], function(method, nextMethod) {
-                        handler[method](part, ast, posInPart, { node: currentNode }, function(response) {
+                        handler[method](part, ast, posInPart, { node: currentNode, path: _self.$path }, function(response) {
                             result = processCursorMoveResponse(response, part, result);
                             nextMethod();
                         });
@@ -984,7 +984,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
@@ -1040,7 +1040,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
-                        handler.getQuickfixes(part, ast, partPos, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.getQuickfixes(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
@@ -1084,7 +1084,7 @@ function endTime(t, message, indent) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
-                        handler.getRefactorings(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRefactorings(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
                                 if (!result || result.isGeneric)
@@ -1121,7 +1121,7 @@ function endTime(t, message, indent) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
-                        handler.getRenamePositions(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRenamePositions(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
                                     result = response;
@@ -1481,6 +1481,10 @@ function endTime(t, message, indent) {
         _self.parse(part, function(ast) {
             endTime(tStart, "Complete: parser");
             _self.findNode(ast, pos, function(currentNode) {
+                var handlerOptions = {
+                    node: currentNode,
+                    path: _self.$path,
+                };
                 _self.asyncForEachHandler(
                     { part: part, method: "complete" },
                     function(handler, next) {
@@ -1491,7 +1495,7 @@ function endTime(t, message, indent) {
 
                         var originalLine2 = _self.doc.getLine(pos.row);
                         startOverrideLine();
-                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions, handledErr) {
+                        handler.complete(part, ast, partPos, handlerOptions, handleCallbackError(function(completions, handledErr) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
