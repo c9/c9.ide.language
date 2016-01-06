@@ -14,10 +14,10 @@ define(function(require, exports, module) {
         var emitter = handler.getEmitter();
         if (/\.$/.test(line)) {
             // Looks like a complete prediction for "currentIdentifier.", ignore!
-            emitter.emit("predict_called", { data: pos, options: options });
+            emitter.emit("predict_called", { data: pos });
             return callback();
         }
-        emitter.emit("complete_called", { data: pos, options: options });
+        emitter.emit("complete_called", { data: pos });
         callback();
     };
 });
