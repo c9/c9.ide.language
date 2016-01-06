@@ -136,7 +136,10 @@ module.exports = {
      *                                e.g. "c9.ide.language/python/worker/python_completer" to send/receive
      *                                events in name of the Python completer plugin.
      */
-    getEmitter: function(overridePath) {}, // implemented by worker
+    getEmitter: function(overridePath) {
+        // implemented by worker
+        throw new Error("getEmitter() is not available yet, please call after init()");
+    },
     
     // OVERRIDABLE ACCESORS
 

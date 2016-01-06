@@ -200,12 +200,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 before(function(done) {
                     language.getWorker(function(err, _worker) {
                         if (err) return done(err);
+                        worker = _worker;
                         language.registerLanguageHandler(
                             "plugins/c9.ide.language/language_test_helper",
-                            function(err) {
+                            function(err, handler) {
                                 if (err) return done(err);
-                                worker = _worker;
-                                worker.on("complete_called", function() {
+                                handler.on("complete_called", function() {
                                     completionCalls++;
                                 });
                                 done();
