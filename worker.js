@@ -1495,7 +1495,7 @@ function endTime(t, message, indent) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
-                            hadError = hadError || handledErr;
+                            hadError = !!(hadError || handledErr);
                             next();
                         }));
                         endOverrideLine(originalLine2);
