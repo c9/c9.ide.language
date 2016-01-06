@@ -425,7 +425,7 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", updateSettings, plugin);
             
-            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc"]
+            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc", "semi"]
             .forEach(function(s) {
                 worker.call(
                     "enableFeature",
