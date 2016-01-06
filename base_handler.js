@@ -609,6 +609,10 @@ module.exports = {
      * @param {Object} options               Options
      * @param {String} options.path          The current file path.
      * @param {Object} options.node          The current AST node (if parse() is implemented) 
+     * @param {Boolean} options.noDoc        Docs are not requested at this time and may
+     *                                       be left out as an optimization. Please set `noDoc: true`
+     *                                       for any completions where docs are left out so
+     *                                       another `complete()` request can be fired to retrieve their docs.
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result, an array of completion matches
@@ -622,6 +626,10 @@ module.exports = {
      *                                       The icon to use
      * @param {String} callback.result.meta  Additional information to show
      * @param {String} [callback.result.doc] Documentation to display
+     * @param {Boolean} [callback.result.noDoc]
+     *                                       Boolean indicating that documentation may be available for
+     *                                       this completion but was not included as options.noDoc was
+     *                                       set. See options.noDoc.
      * @param {String} [callback.result.docHead]
      *                                       Documentation heading to display
      * @param {Boolean} [callback.result.guessTooltip]

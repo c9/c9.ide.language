@@ -1404,6 +1404,7 @@ function endTime(t, message, indent) {
         for (var i = 0; i < matches.length - 1; i++) {
             var a = matches[i];
             var b = matches[i + 1];
+            
             if (a.name === b.name || (a.id || a.name) === (b.id || b.name)) {
                 // Duplicate!
                 if (a.isContextual && !b.isContextual)
@@ -1447,7 +1448,7 @@ function endTime(t, message, indent) {
                 return;
             }
             
-            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, function(result) {
+            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, event.data, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
@@ -1465,7 +1466,7 @@ function endTime(t, message, indent) {
     /**
      * Invoke parser and completion handlers to get a completion result.
      */
-    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, callback) {
+    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, options, callback) {
         var _self = this;
         var matches = [];
         var hadError = false;
@@ -1484,6 +1485,7 @@ function endTime(t, message, indent) {
                 var handlerOptions = {
                     node: currentNode,
                     path: _self.$path,
+                    noDoc: options.noDoc,
                 };
                 _self.asyncForEachHandler(
                     { part: part, method: "complete" },
@@ -1535,6 +1537,7 @@ function endTime(t, message, indent) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
+                            noDoc: event.data.noDoc,
                             hadError: hadError,
                             line: line,
                             path: _self.$path,
@@ -1570,7 +1573,7 @@ function endTime(t, message, indent) {
      */
     this.tryCachedCompletion = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
         var that = this;
-        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex);
+        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex, options);
         
         if (options.isUpdate) {
             // Updating our cache; return previous cache to update it
@@ -1604,6 +1607,7 @@ function endTime(t, message, indent) {
                 matches: that.completionCache.result.matches,
                 path: that.$path,
                 pos: pos,
+                noDoc: that.completionCache.result.noDoc,
                 deleteSuffix: options.deleteSuffix,
             });
         }
@@ -1670,8 +1674,8 @@ function endTime(t, message, indent) {
                     && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
                     return;
                 
-                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex);
-                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, function(result) {
+                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, event.data);
+                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, event.data, function(result) {
                     cache.result = result;
                     if (showEarly && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
@@ -1716,7 +1720,7 @@ function endTime(t, message, indent) {
      * @param overrideLine   A line to override the current line with while making the key
      * @param identifierRegex
      */
-    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex) {
+    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
         var doc = this.doc;
         var path = this.$path;
         var originalLine = doc.getLine(pos.row);
@@ -1738,12 +1742,14 @@ function endTime(t, message, indent) {
             pos: completePos,
             prefix: prefix,
             path: path,
+            noDoc: options.noDoc,
             matches: function(other) {
                 return other
                     && other.path === this.path
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
                     && other.value === this.value
+                    && (!other.noDoc || this.noDoc)
                     && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
                     && other.lines.length === completeLines.length
                     && other.lines[this.pos.row - 1] === completeLines[this.pos.row - 1]
