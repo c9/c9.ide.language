@@ -222,9 +222,9 @@ module.exports = {
      * @param {String[]} [options.args]         An array of args to pass to the executable.
      *                                          Use "$FILE" anywhere to get the path of the temporary file,
      *                                          if applicable.
-     * @param {"stdin"|"tempfile"} [options.mode="stdin"]
-     *                                          Pass the unsaved contents of the current file using a temporary
-     *                                          file or stdin.
+     * @param {"stdin"|"tempfile"|"local-tempfile"} [options.mode="stdin"]
+     *                                          Pass the unsaved contents of the current file using std, a temporary
+     *                                          file, or a temporary file placed in options.cwd.
      * @param {String} [options.path]           The path to the file to analyze (defaults to the current file),
      *                                          relative to the workspace.
      * @param {String} [options.cwd]            The working directory for the command (defaults to the path of the current file),
