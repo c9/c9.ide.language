@@ -290,6 +290,7 @@ define(function(require, exports, module) {
                         "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
                             type: "textbox",
                             path: "project/language/@ignoredMarkers",
+                            width: 300,
                             position: 11000
                         },
                     },
