@@ -11,12 +11,13 @@ define(function(require, exports, module) {
     
     handler.complete = function(doc, ast, pos, options, callback) {
         var line = doc.getLine(pos.row);
+        var emitter = handler.getEmitter();
         if (/\.$/.test(line)) {
             // Looks like a complete prediction for "currentIdentifier.", ignore!
-            handler.sender.emit("predict_called", { data: pos });
+            emitter.emit("predict_called", { data: pos });
             return callback();
         }
-        handler.sender.emit("complete_called", { data: pos });
+        emitter.emit("complete_called", { data: pos });
         callback();
     };
 });

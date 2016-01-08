@@ -704,7 +704,7 @@ function endTime(t, message, indent) {
                         asyncForEach(_self.handlers, function(handler, next) {
                             if (_self.isHandlerMatch(handler, part, "getInspectExpression")) {
                                 handler.language = part.language;
-                                handler.getInspectExpression(part, ast, partPos, {node: node}, handleCallbackError(function(result) {
+                                handler.getInspectExpression(part, ast, partPos, { node: node, path: _self.$path }, handleCallbackError(function(result) {
                                     if (result) {
                                         result.pos = syntaxDetector.posFromRegion(part.region, result.pos);
                                         lastResult = result || lastResult;
@@ -824,7 +824,7 @@ function endTime(t, message, indent) {
             asyncForEach(_self.handlers,
                 function(handler, next) {
                     if ((pos != _self.lastCurrentPosUnparsed || pos.force) && _self.isHandlerMatch(handler, part, "onCursorMove")) {
-                        handler.onCursorMove(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.onCursorMove(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             processCursorMoveResponse(response, part, result);
                             next();
                         }));
@@ -910,7 +910,7 @@ function endTime(t, message, indent) {
                     // triggered by the cursor move event
                     assert(!handler.onCursorMovedNode, "handler implements onCursorMovedNode; no longer exists");
                     asyncForEach(["tooltip", "highlightOccurrences"], function(method, nextMethod) {
-                        handler[method](part, ast, posInPart, { node: currentNode }, function(response) {
+                        handler[method](part, ast, posInPart, { node: currentNode, path: _self.$path }, function(response) {
                             result = processCursorMoveResponse(response, part, result);
                             nextMethod();
                         });
@@ -984,7 +984,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
@@ -1040,7 +1040,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getQuickfixes")) {
-                        handler.getQuickfixes(part, ast, partPos, { node: currentNode }, handleCallbackError(function(results) {
+                        handler.getQuickfixes(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
                             if (results)
                                 allResults = allResults.concat(results);
                             next();
@@ -1084,7 +1084,7 @@ function endTime(t, message, indent) {
                 var result;
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRefactorings")) {
-                        handler.getRefactorings(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRefactorings(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             if (response) {
                                 assert(!response.enableRefactorings, "Use refactorings instead of enableRefactorings");
                                 if (!result || result.isGeneric)
@@ -1121,7 +1121,7 @@ function endTime(t, message, indent) {
                 asyncForEach(_self.handlers, function(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "getRenamePositions")) {
                         assert(!handler.getVariablePositions, "handler implements getVariablePositions, should implement getRenamePositions instead");
-                        handler.getRenamePositions(part, ast, partPos, { node: currentNode }, handleCallbackError(function(response) {
+                        handler.getRenamePositions(part, ast, partPos, { node: currentNode, path: _self.$path }, handleCallbackError(function(response) {
                             if (response) {
                                 if (!result || result.isGeneric)
                                     result = response;
@@ -1404,6 +1404,7 @@ function endTime(t, message, indent) {
         for (var i = 0; i < matches.length - 1; i++) {
             var a = matches[i];
             var b = matches[i + 1];
+            
             if (a.name === b.name || (a.id || a.name) === (b.id || b.name)) {
                 // Duplicate!
                 if (a.isContextual && !b.isContextual)
@@ -1447,7 +1448,7 @@ function endTime(t, message, indent) {
                 return;
             }
             
-            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, function(result) {
+            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, event.data, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
@@ -1465,7 +1466,7 @@ function endTime(t, message, indent) {
     /**
      * Invoke parser and completion handlers to get a completion result.
      */
-    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, callback) {
+    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, options, callback) {
         var _self = this;
         var matches = [];
         var hadError = false;
@@ -1481,6 +1482,11 @@ function endTime(t, message, indent) {
         _self.parse(part, function(ast) {
             endTime(tStart, "Complete: parser");
             _self.findNode(ast, pos, function(currentNode) {
+                var handlerOptions = {
+                    node: currentNode,
+                    path: _self.$path,
+                    noDoc: options.noDoc,
+                };
                 _self.asyncForEachHandler(
                     { part: part, method: "complete" },
                     function(handler, next) {
@@ -1491,11 +1497,11 @@ function endTime(t, message, indent) {
 
                         var originalLine2 = _self.doc.getLine(pos.row);
                         startOverrideLine();
-                        handler.complete(part, ast, partPos, { node: currentNode }, handleCallbackError(function(completions, handledErr) {
+                        handler.complete(part, ast, partPos, handlerOptions, handleCallbackError(function(completions, handledErr) {
                             endTime(t, "Complete: " + handler.$source.replace("plugins/", ""), 1);
                             if (completions && completions.length)
                                 matches = matches.concat(completions);
-                            hadError = hadError || handledErr;
+                            hadError = !!(hadError || handledErr);
                             next();
                         }));
                         endOverrideLine(originalLine2);
@@ -1531,6 +1537,7 @@ function endTime(t, message, indent) {
                             pos: pos,
                             matches: matches,
                             isUpdate: event.data.isUpdate,
+                            noDoc: event.data.noDoc,
                             hadError: hadError,
                             line: line,
                             path: _self.$path,
@@ -1566,7 +1573,7 @@ function endTime(t, message, indent) {
      */
     this.tryCachedCompletion = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
         var that = this;
-        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex);
+        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex, options);
         
         if (options.isUpdate) {
             // Updating our cache; return previous cache to update it
@@ -1600,6 +1607,7 @@ function endTime(t, message, indent) {
                 matches: that.completionCache.result.matches,
                 path: that.$path,
                 pos: pos,
+                noDoc: that.completionCache.result.noDoc,
                 deleteSuffix: options.deleteSuffix,
             });
         }
@@ -1666,8 +1674,8 @@ function endTime(t, message, indent) {
                     && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
                     return;
                 
-                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex);
-                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, function(result) {
+                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, event.data);
+                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, event.data, function(result) {
                     cache.result = result;
                     if (showEarly && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
@@ -1712,7 +1720,7 @@ function endTime(t, message, indent) {
      * @param overrideLine   A line to override the current line with while making the key
      * @param identifierRegex
      */
-    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex) {
+    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
         var doc = this.doc;
         var path = this.$path;
         var originalLine = doc.getLine(pos.row);
@@ -1734,12 +1742,14 @@ function endTime(t, message, indent) {
             pos: completePos,
             prefix: prefix,
             path: path,
+            noDoc: options.noDoc,
             matches: function(other) {
                 return other
                     && other.path === this.path
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
                     && other.value === this.value
+                    && (!other.noDoc || this.noDoc)
                     && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
                     && other.lines.length === completeLines.length
                     && other.lines[this.pos.row - 1] === completeLines[this.pos.row - 1]
