@@ -287,16 +287,18 @@ define(function(require, exports, module) {
                             path: "project/language/@unusedFunctionArgs",
                             position: 9000
                         },
-                        // TODO: link to this file instead of having this silly setting here?
-                        "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>" : {
-                            type: "checkbox",
-                            path: "project/language/@eslintrc",
-                            position: 10000
-                        },
                         "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
                             type: "textbox",
                             path: "project/language/@ignoredMarkers",
                             position: 11000
+                        },
+                    },
+                    "Language Support": {
+                        position: 800,
+                        "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>" : {
+                            position: 100,
+                            type: "checkbox",
+                            path: "project/language/@eslintrc",
                         },
                     }
                 }
