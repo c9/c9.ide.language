@@ -492,7 +492,7 @@ define(function(require, exports, module) {
             popup.setRow(row);
 
             if (!popup.isOpen || popup.row > 0 && !popup.data.every(function(m, i) {
-                return matches[i] && matches[i].name === m.name;
+                return i > row || matches[i] && matches[i].name === m.name;
             }))
                 popup.setRow(0);
         }
