@@ -389,7 +389,10 @@ function endTime(t, message, indent) {
     
     this.isHandlerMatch = function(handler, part, method, ignoreSize) {
         if (!handler[method]) {
-            reportError(new Error("Handler " + handler.$source + " does not have method " + method));
+            reportError(new Error("Handler " + handler.$source + " does not have method " + method), {
+                keys: Object.keys(handler),
+                protoKeys: handler.__proto__ && Object.keys(handler.__proto__)
+            });
             return false;
         }
         if (handler[method].base_handler)
@@ -1827,7 +1830,9 @@ function endTime(t, message, indent) {
         }
     };
     
-    function reportError(exception) {
+    function reportError(exception, data) {
+        if (data)
+            exception.data = data;
         setTimeout(function() {
             throw exception; // throw bare exception so it gets reported
         });
