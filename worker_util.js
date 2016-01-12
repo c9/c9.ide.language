@@ -292,7 +292,6 @@ module.exports = {
             var stderr = tryParseJSON(event.data.result[2]);
             callback(event.data.result[0], stdout, stderr, {
                 serverTime: event.data.result[3],
-                size: (event.data.result[1] || "").length + (event.data.result[2] || "").length
             });
         });
         
