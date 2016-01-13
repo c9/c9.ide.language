@@ -57,6 +57,7 @@ define(function(require, exports, module) {
       
         var DEFAULT_ID_REGEX = completeUtil.DEFAULT_ID_REGEX;
         
+        var FETCH_DOC_DELAY = 1200;
         var SHOW_DOC_DELAY = 1500;
         var SHOW_DOC_DELAY_MOUSE_OVER = 100;
         var HIDE_DOC_DELAY = 1000;
@@ -96,6 +97,17 @@ define(function(require, exports, module) {
             isDrawDocInvokeScheduled = false;
         });
         var isDrawDocInvokeScheduled = false;
+        
+        var requestDocInvoke = lang.deferredCall(function() {
+            if (!isPopupVisible()) return;
+            isDocsRequested = true;
+            if (!eventMatches.some(function(m) {
+                return m.noDoc;
+            }))
+                return;
+            invoke(false, false, true);
+        });
+        var isDocsRequested;
         
         var undrawDocInvoke = lang.deferredCall(function() {
             if (!isPopupVisible()) {
@@ -226,7 +238,8 @@ define(function(require, exports, module) {
                     return;
                 }
                 
-                // updateDoc();
+                if (!isDocsRequested)
+                    requestDocInvoke.call();
                 if (!isDrawDocInvokeScheduled)
                     drawDocInvoke.schedule(SHOW_DOC_DELAY_MOUSE_OVER);
             }, false);
@@ -445,7 +458,9 @@ define(function(require, exports, module) {
                 aceBeforePatch.keyBinding.onTextInput = textInputBeforePatch;
             }
             commandKeyBeforePatch = textInputBeforePatch = null;
+            
             undrawDocInvoke.schedule(HIDE_DOC_DELAY);
+            requestDocInvoke.cancel();
             forceOpen = false;
         }
             
@@ -467,8 +482,19 @@ define(function(require, exports, module) {
             popup.calcPrefix = function(regex) {
                 return completeUtil.retrievePrecedingIdentifier(line, pos.column, regex);
             };
+            
+            setPopupDataKeepRow(matches);
+        }
+        
+        function setPopupDataKeepRow(matches) {
+            var row = popup.getRow();
             popup.setData(matches);
-            popup.setRow(0);
+            popup.setRow(row);
+
+            if (!popup.isOpen || popup.row > 0 && !popup.data.every(function(m, i) {
+                return i > row || matches[i] && matches[i].name === m.name;
+            }))
+                popup.setRow(0);
         }
         
         function cleanupMatches(matches, ace, pos, line) {
@@ -553,8 +579,11 @@ define(function(require, exports, module) {
                 }
                 else {
                     hideDocPopup();
-                    if (!isDrawDocInvokeScheduled || delayPopup)
+                    if (!isDrawDocInvokeScheduled || delayPopup) {
+                        if (!isDocsRequested)
+                            requestDocInvoke.schedule(FETCH_DOC_DELAY);
                         drawDocInvoke.schedule(SHOW_DOC_DELAY);
+                    }
                 }
                 docElement.innerHTML += selected.$doc + '</span>';
             }
@@ -569,6 +598,9 @@ define(function(require, exports, module) {
         }
         
         function showDocPopup() {
+            if (!isDocsRequested)
+                requestDocInvoke.call();
+            
             var rect = popup.container.getBoundingClientRect();
             if (!txtCompleterDoc.parentNode) {
                 document.body.appendChild(txtCompleterDoc);                
@@ -733,12 +765,13 @@ define(function(require, exports, module) {
          * @param {Boolean} deleteSuffix  true when the suffix of the current identifier
          *       may be overwritten
          */
-        function invoke(autoInvoke, deleteSuffix) {
+        function invoke(autoInvoke, deleteSuffix, requestDocs) {
             var tab = tabs.focussedTab;
             if (!tab || !language.isEditorSupported(tab))
                 return;
             
             var ace = lastAce = tab.editor.ace;
+            isDocsRequested = requestDocs;
             
             if (ace.inMultiSelectMode) {
                 var row = ace.selection.lead.row;
@@ -758,7 +791,8 @@ define(function(require, exports, module) {
                 pos: pos,
                 line: line,
                 forceBox: true,
-                deleteSuffix: true
+                deleteSuffix: true,
+                noDoc: !requestDocs && !isDocShown,
             }});
             if (autoInvoke)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
@@ -772,6 +806,7 @@ define(function(require, exports, module) {
             
             var pos = editor.ace.getCursorPosition();
             var line = editor.ace.getSession().getLine(pos.row);
+            isDocsRequested = !event.data.noDoc;
             
             editor.ace.removeEventListener("change", deferredInvoke);
             killCrashedCompletionInvoke.cancel();
@@ -782,9 +817,7 @@ define(function(require, exports, module) {
                 return;
     
             var matches = eventMatches = event.data.matches;
-            if (event.data.line !== line)
-                matches = filterMatches(matches, line, pos);
-                
+            matches = filterMatches(matches, line, pos);
             matches = cleanupMatches(matches, editor.ace, pos, line);
             
             if (matches.length === 1 && !event.data.forceBox) {
@@ -831,8 +864,8 @@ define(function(require, exports, module) {
             var line = ace.getSession().getLine(pos.row);
             var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
-            matches = cleanupMatches(eventMatches, ace, pos, line);
-            matches = filterMatches(matches, line, pos);
+            matches = filterMatches(eventMatches, line, pos);
+            matches = cleanupMatches(matches, ace, pos, line);
             if (matches.length) {
                 showCompletionBox({ace: ace}, matches, prefix, line);
             } else {
@@ -852,9 +885,10 @@ define(function(require, exports, module) {
             // Always prefer current identifier (similar to worker.js)
             var prefixLine = line.substr(0, pos.column);
             for (var i = 0; i < results.length; i++) {
+                var m = results[i];		
+                m.replaceText = m.replaceText || m.name;
                 if (results[i].isGeneric && results[i].$source !== "local")
                     continue;
-                var m = results[i];
                 var match = prefixLine.lastIndexOf(m.replaceText);
                 if (match > -1
                     && match === pos.column - m.replaceText.length
@@ -974,6 +1008,8 @@ define(function(require, exports, module) {
             lastUpDownEvent = null;
             forceOpen = null;
             $closeTrigger = null;
+            isDocShown = false;
+            isDocsRequested = false;
         });
         
         /***** Register and define API *****/
@@ -994,6 +1030,7 @@ define(function(require, exports, module) {
             
             /**
              * Force-invoke the completer immediately.
+             * @ignore
              */
             invoke: invoke,
             
@@ -1016,7 +1053,6 @@ define(function(require, exports, module) {
              * Close the completion popup.
              */
             closeCompletionBox: closeCompletionBox,
-            
             
             /**
              * Determines whether a completion popup is currently visible.

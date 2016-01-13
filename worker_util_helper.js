@@ -48,6 +48,7 @@ define(function(require, exports, module) {
                 worker.on("refreshAllMarkers", language.refreshAllMarkers.bind(language));
                 
                 worker.on("execFile", function(e) {
+                    e.data.options.cwd = e.data.options.cwd || c9.workspaceDir;
                     ensureConnected(
                         proc.execFile.bind(proc, e.data.path, e.data.options),
                         function(err, stdout, stderr) {
@@ -57,6 +58,41 @@ define(function(require, exports, module) {
                                 stdout: stdout,
                                 stderr: stderr
                             }});
+                        }
+                    );
+                });
+                
+                worker.on("spawn", function(e) {
+                    var id = e.data.id;
+                    e.data.options.cwd = e.data.options.cwd || c9.workspaceDir;
+                    ensureConnected(
+                        function(next) {
+                            proc.spawn(e.data.path, e.data.options, next);
+                        },
+                        function(err, child) {
+                            if (err)
+                                return worker.emit("spawnResult", { data: { id: id, err: err, }});
+                            
+                            forwardEvents(child, "child", ["exit", "error", "close", "disconnect", "message"]);
+                            forwardEvents(child.stdout, "stdout", ["close", "data", "end", "error", "readable"]);
+                            forwardEvents(child.stderr, "stderr", ["close", "data", "end", "error", "readable"]);
+                            worker.on("spawn_kill$" + id, kill);
+                            child.on("exit", function gc() {
+                                worker.off("spawn_kill$" + id, kill);
+                            });
+                            worker.emit("spawnResult", { data: { id: id, pid: child.pid }});
+                            
+                            function kill(e) {
+                                child.kill(e.signal);
+                            }
+                            
+                            function forwardEvents(source, sourceName, events) {
+                                events.forEach(function(event) {
+                                    source.on(event, function(e) {
+                                        worker.emit("spawnEvent$" + id + sourceName + event, { data: e });
+                                    });
+                                });
+                            }
                         }
                     );
                 });

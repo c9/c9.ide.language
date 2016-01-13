@@ -172,6 +172,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         });
         
         describe('ace', function() {
+            this.timeout(30000);
             before(function(done) {
                 apf.config.setProperty("allow-select", false);
                 apf.config.setProperty("allow-blur", false);
@@ -192,19 +193,30 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
             });
             
             describe("analysis", function(){
-                this.timeout(30000);
                 var jsTab;
                 var jsSession;
+                var completionCalls = 0;
 
                 before(function(done) {
-                    language.getWorker(function(err, value) {
-                        worker = value;
-                        done();
-                    });
+                    language.getWorker(function(err, _worker) {
+                        if (err) return done(err);
+                        worker = _worker;
+                        language.registerLanguageHandler(
+                            "plugins/c9.ide.language/language_test_helper",
+                            function(err, handler) {
+                                if (err) return done(err);
+                                handler.on("complete_called", function() {
+                                    completionCalls++;
+                                });
+                                done();
+                            });
+                        }
+                    );
                 });
                 
                 // Setup
                 beforeEach(function(done) {
+                    completionCalls = 0;
                     tabs.getTabs().forEach(function(tab) {
                         tab.close(true);
                     });
@@ -222,7 +234,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                                 done();
                             });
                         });
-                    }, 500);
+                    }, 0);
                 });
                 
                 // TODO: make sure this works in the ci server
@@ -239,7 +251,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it('shows a word completer popup on keypress', function(done) {
-                    jsSession.setValue("conny con");
+                    jsSession.setValue("conny; con");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("n");
                     afterCompleteOpen(function(el) {
@@ -451,12 +463,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it("shows no self-completion for 'var b'", function(done) {
+                it("shows no self-completion for 'var bre'", function(done) {
                     jsSession.setValue('var ');
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
-                    jsTab.editor.ace.onTextInput("b");
+                    jsTab.editor.ace.onTextInput("bre");
                     afterCompleteOpen(function(el) {
-                        assert(!el.textContent.match(/bb/));
+                        assert(!el.textContent.match(/bre\b/));
                         assert(el.textContent.match(/break/));
                         done();
                     });
@@ -468,6 +480,16 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.onTextInput("b");
                     afterCompleteOpen(function(el) {
                         assert(el.textContent.match(/blie/));
+                        done();
+                    });
+                });
+                
+                it("shows word completion for 'var bre'", function(done) {
+                    jsSession.setValue('// breedbeeld\nvar ');
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 2, column: 0 }, end: { row: 2, column: 0 } });
+                    jsTab.editor.ace.onTextInput("bre");
+                    afterCompleteOpen(function(el) {
+                        assert(el.textContent.match(/breedbeeld/));
                         done();
                     });
                 });
@@ -617,7 +639,171 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it("caches across expression prefixes", function(done) {
+                    jsSession.setValue("_collin; _c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry _co");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            // Normally typing "_corry _c" would show "_corry" in the completion,
+                            // but since JavaScript is supposed to have a getExpressionPrefixRegex set,
+                            // a cached results should be used that doesn't have "_corry" yet
+                            assert(!el.textContent.match(/_corry/));
+                            assert(el.textContent.match(/_collin/));
+                            done();
+                        });
+                    });
+                });
                 
+                it("caches across expression prefixes, including 'if(' and 'if ('", function(done) {
+                    jsSession.setValue("b_collin; b_c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry if(if (b_co");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            assert(!el.textContent.match(/b_corry/));
+                            assert(el.textContent.match(/b_collin/));
+                            done();
+                        });
+                    });
+                });
+                
+                it("doesn't cache across expression prefixes in assigments", function(done) {
+                    jsSession.setValue("_collin; _c");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("rry=_co");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
+                            assert(el.textContent.match(/_corry/));
+                            assert(el.textContent.match(/_collin/));
+                            done();
+                        });
+                    });
+                });
+                
+                it("doesn't cache with expression prefixes based on function names or params", function(done) {
+                    jsSession.setValue("ffarg; function ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("ff");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        assert(el.textContent.match(/ffarg/));
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("oo(ff");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
+                            // cache got cleared so we have farg here now
+                            assert(el.textContent.match(/ffoo/));
+                            assert(el.textContent.match(/ffarg/));
+                            complete.closeCompletionBox();
+                            jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                            jsTab.editor.ace.onTextInput("ort) ff");
+                            afterCompleteOpen(function(el) {
+                                assert.equal(completionCalls, 3);
+                                // cache got cleared so we have fort here now
+                                assert(el.textContent.match(/ffoo/));
+                                assert(el.textContent.match(/ffort/));
+                                assert(el.textContent.match(/ffarg/));
+                                done();
+                            });
+                        });
+                    });
+                });
+                
+                it("doesn't do prefix-caching outside of a function context", function(done) {
+                    jsSession.setValue("function foo() { ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("f");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("} f");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
+                            done();
+                        });
+                    });
+                });
+                
+                it("doesn't do prefix-caching after property access", function(done) {
+                    jsSession.setValue("console.l");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("g c");
+                        afterCompleteOpen(function(el) {
+                            assert(el.textContent.match(/console/), el.textContent);
+                            assert.equal(completionCalls, 2, "Should refetch after property access: " + completionCalls);
+                            done();
+                        });
+                    });
+                });
+                
+                it.skip('predicts console.log() when typing just consol', function(done) {
+                    jsSession.setValue("conso");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("l");
+                    worker.once("predict_called", function() {
+                        assert.equal(completionCalls, 1);
+                        afterCompleteOpen(function retry(el) {
+                            assert.equal(completionCalls, 1);
+                            if (!el.textContent.match(/log/))
+                                return afterCompleteOpen(retry);
+                            done();
+                        });
+                    });
+                });
+                
+                it('shows the current identifier as the top result', function(done) {
+                    jsSession.setValue("concat; conso; cons");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        assert(el.textContent.match(/conso(?!l).*console/));
+                        done();
+                    });
+                });
+                
+                it('shows the current identifier as the top result, and removes it as you keep typing', function(done) {
+                    jsSession.setValue("2; concat; conso; cons");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("o");
+                    afterCompleteOpen(function(el) {
+                        assert.equal(completionCalls, 1);
+                        assert(el.textContent.match(/conso(?!l).*console/));
+
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0 } });
+                        jsTab.editor.ace.onTextInput("l");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            assert(!el.textContent.match(/conso(?!l)/));
+                            assert(el.textContent.match(/console/));
+                            done();
+                        });
+                    });
+                });
             });
         });
         

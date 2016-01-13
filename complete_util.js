@@ -115,12 +115,7 @@ function canCompleteForChangedLine(oldLine, newLine, oldPos, newPos, identifierR
     if (oldPos.row !== newPos.row)
         return false;
         
-    if (newLine.indexOf(oldLine) !== 0)
-        return false;
-        
-    var oldPrefix = retrievePrecedingIdentifier(oldLine, oldPos.column, identifierRegex);
-    var newPrefix = retrievePrecedingIdentifier(newLine, newPos.column, identifierRegex);
-    return newLine.substr(0, newLine.length - newPrefix.length) === oldLine.substr(0, oldLine.length - oldPrefix.length);
+    return newLine.indexOf(oldLine.substr(0, oldPos.column)) === 0;
 }
 
 function precededByIdentifier(line, column, postfix, ace) {
