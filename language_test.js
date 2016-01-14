@@ -250,6 +250,19 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it('parses jsx', function(done) {
+                    jsSession.setValue("x = <a/>;");
+                    jsSession.on("changeAnnotation", function onAnnos() {
+                        var annos = jsSession.getAnnotations();
+                        if (!annos.length)
+                            return;
+                        jsSession.off("changeAnnotation", onAnnos);
+                        expect(annos).to.have.length(1);
+                        expect(annos[0].text).contain("x is not defined");
+                        done();
+                    });
+                });
+                
                 it('shows a word completer popup on keypress', function(done) {
                     jsSession.setValue("conny; con");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
