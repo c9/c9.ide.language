@@ -34,6 +34,7 @@ define(function(require, exports, module) {
             index: options.index || 50,
             width: 250,
             caption: "Outline",
+            buttonCSSClass: "outline",
             minWidth: 130,
             where: options.where || "right",
             autohide: true
