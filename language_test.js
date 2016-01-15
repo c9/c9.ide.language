@@ -64,6 +64,50 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.language.javascript.infer/jsinfer",
         {
             packagePath: "plugins/c9.ide.language.javascript.tern/tern",
+            plugins: [
+                {
+                    name: "angular",
+                    path: "tern/plugin/angular",
+                    enabled: true,
+                    hidden: false,
+                },
+                {
+                    name: "doc_comment",
+                    path: "tern/plugin/doc_comment",
+                    enabled: true,
+                    hidden: true,
+                },
+                {
+                    name: "es_modules",
+                    path: "tern/plugin/es_modules",
+                    enabled: true,
+                    hidden: true,
+                },
+                {
+                    name: "modules",
+                    path: "tern/plugin/modules",
+                    enabled: true,
+                    hidden: true,
+                },
+                {
+                    name: "node",
+                    path: "tern/plugin/node",
+                    enabled: true,
+                    hidden: false,
+                },
+                {
+                    name: "requirejs",
+                    path: "tern/plugin/requirejs",
+                    enabled: true,
+                    hidden: false,
+                },
+                {
+                    name: "architect_resolver",
+                    path: "./architect_resolver_worker",
+                    enabled: true,
+                    hidden: true,
+                },
+            ],
             defs: [{
                 name: "ecma5",
                 enabled: true,
