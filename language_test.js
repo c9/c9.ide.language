@@ -62,7 +62,37 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         "plugins/c9.ide.language.javascript/javascript",
         "plugins/c9.ide.language.javascript.eslint/eslint",
         "plugins/c9.ide.language.javascript.infer/jsinfer",
-        "plugins/c9.ide.language.javascript.tern/tern",
+        {
+            packagePath: "plugins/c9.ide.language.javascript.tern/tern",
+            defs: [{
+                name: "ecma5",
+                enabled: true,
+                experimental: false,
+                firstClass: true,
+                path: "lib/tern/defs/ecma5.json"
+            }, {
+                name: "jQuery",
+                enabled: true,
+                experimental: false,
+                path: "lib/tern/defs/jquery.json"
+            }, {
+                name: "browser",
+                enabled: true,
+                experimental: false,
+                firstClass: true,
+                path: "lib/tern/defs/browser.json"
+            }, {
+                name: "underscore",
+                enabled: false,
+                experimental: false,
+                path: "lib/tern/defs/underscore.json"
+            }, {
+                name: "chai",
+                enabled: false,
+                experimental: false,
+                path: "lib/tern/defs/chai.json"
+            }]
+        },
         "plugins/c9.ide.language.javascript.tern/architect_resolver",
         "plugins/c9.ide.keys/commands",
         "plugins/c9.fs/proc",
@@ -310,7 +340,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
                     afterCompleteDocOpen(function(el) {
-                        expect.html(el).text(/Prints to stdout/);
+                        expect.html(el).text(/Outputs a message/);
                         done();
                     });
                 });
