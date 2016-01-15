@@ -315,6 +315,23 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it('does continuous completion for CSS if you just typed one character', function(done) {
+                    tabs.openFile("/test.css", function(err, tab) {
+                        if (err) return done(err);
+                        
+                        tabs.focusTab(tab);
+                        // We get a tab, but it's not done yet, so we wait
+                        setTimeout(function() {
+                            tab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 4 }, end: { row: 1, column: 4 } });
+                            tab.editor.ace.onTextInput("f");
+                            afterCompleteOpen(function(el) {
+                                expect.html(el).text(/first-child/);
+                                done();
+                            });
+                        });
+                    });
+                });
+                
                 it('does continuous completion for CSS', function(done) {
                     tabs.openFile("/test.css", function(err, tab) {
                         if (err) return done(err);
