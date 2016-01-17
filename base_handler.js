@@ -239,26 +239,38 @@ module.exports = {
     },
     
     /**
-     * Returns a regular expression that matches strings that appear
-     * in the grammatical position of an expression *and* can prefix an expression.
+     * Extends the default caching strategy for code completion.
+     * Implementors should return a regular expression used to determine if
+     * whether completions can be cached. If the prefix of the current line
+     * matches this regular expression, this tells the completion engine that it
+     * is allowed to reuse any completions cached at the start of this prefix.
+     * Without this, caching also performed but only based on
+     * {@link #getIdentifierRegex()}.
+     * 
+     * As an example, consider a scenario where the user just typed
+     * 
+     * ```
+     * if (i
+     * ```
+     * 
+     * If completion proposals were suggested at the start of the line,
+     * and the complretion cache regex matches "if (", then Cloud9 will
+     * use those completions rather than recompute them. With this optimization,
+     * it's possible to use caching to such an extent that even for longer
+     * statements like `if (foo === bar`, completions only need to be computed
+     * once.
      * 
      * Warning: this is an expert feature that helps optimize the caching
      * strategy of the code completion engine. Implemented incorrectly, it can
      * make completions appear in places they shouldn't or may cause completions
      * to go missing.
      * 
-     * The intention of the returned regex is to match statements like `if (`.
-     * Normally, when a user types `i`, the code completio results are cached,
-     * but need to be recomputed when they type `if (i`. The expresssion
-     * prefix regex can be used to indicate that the cached results can safely
-     * be reused even in these situations. With this optimization, it's
-     * possible to use caching to such an extent that even for longer statements
-     * like `if (foo === bar`, completions only need to be computed once.
+     * 
      * 
      * Example implementation for JavaScript:
      * 
      * ```
-     * completer.getExpressionPrefixRegex = function() {
+     * completer.getCacheCompletionRegex = function() {
      *     // Match strings that can be an expression or its prefix
      *     return new RegExp(
      *         // 'if/while/for ('
@@ -278,7 +290,7 @@ module.exports = {
      * 
      * @return RegExp
      */
-    getExpressionPrefixRegex: function() {
+    getCacheCompletionRegex: function() {
         return null;
     },
 
