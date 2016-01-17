@@ -1591,7 +1591,7 @@ function endTime(t, message, indent) {
                 return this.completionPrediction;
         }
     
-        if (cacheKey.matches(this.completionCache) && !isRecompletionRequired()) {
+        if (cacheKey.matches(this.completionCache) && !isRecompletionRequired(this.completionCache)) {
             if (this.completionCache.result)
                 cacheHit();
             else
@@ -1599,10 +1599,13 @@ function endTime(t, message, indent) {
             return;
         }
     
-        if (this.completionPrediction && this.completionPrediction.result
-            && cacheKey.matches(this.completionPrediction)) {
+        if (cacheKey.matches(this.completionPrediction) && !isRecompletionRequired(this.completionPrediction)) {
             this.completionCache = this.completionPrediction;
-            return cacheHit();
+            if (this.completionCache.result)
+                cacheHit();
+            else
+                this.completionCache.resultCallbacks.push(cacheHit);
+            return;
         }
         
         return this.completionCache = cacheKey;
@@ -1620,11 +1623,11 @@ function endTime(t, message, indent) {
             });
         }
         
-        function isRecompletionRequired() {
+        function isRecompletionRequired(cache) {
             // HACK: recompute completions for identifiers of length 3+,
             //       since they're treated specially in tern
-            return that.$language === "javascript" && cacheKey.prefix.length >= 3
-                 && that.completionCache.prefix.length < 3;
+            return cache && that.$language === "javascript"
+                && cacheKey.prefix.length >= 3 && cache.prefix.length < 3;
         }
     };
     
@@ -1691,6 +1694,9 @@ function endTime(t, message, indent) {
                 var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, event.data);
                 _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, event.data, function(result) {
                     cache.result = result;
+                    cache.resultCallbacks.forEach(function(c) {
+                        c();
+                    });
                     if (showEarly && cacheKey.matches(_self.completionCache))
                         showPredictionsEarly(result);
                     if (result.hadError)
