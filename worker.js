@@ -1585,13 +1585,13 @@ function endTime(t, message, indent) {
         
         if (options.isUpdate) {
             // Updating our cache; return previous cache to update it
-            if (cacheKey.matches(this.completionCache))
+            if (cacheKey.isCompatible(this.completionCache))
                 return this.completionCache;
-            if (cacheKey.matches(this.completionPrediction))
+            if (cacheKey.isCompatible(this.completionPrediction))
                 return this.completionPrediction;
         }
     
-        if (cacheKey.matches(this.completionCache) && !isRecompletionRequired(this.completionCache)) {
+        if (cacheKey.isCompatible(this.completionCache) && !isRecompletionRequired(this.completionCache)) {
             if (this.completionCache.result)
                 cacheHit();
             else
@@ -1599,7 +1599,7 @@ function endTime(t, message, indent) {
             return;
         }
     
-        if (cacheKey.matches(this.completionPrediction) && !isRecompletionRequired(this.completionPrediction)) {
+        if (cacheKey.isCompatible(this.completionPrediction) && !isRecompletionRequired(this.completionPrediction)) {
             this.completionCache = this.completionPrediction;
             if (this.completionCache.result)
                 cacheHit();
@@ -1648,7 +1648,7 @@ function endTime(t, message, indent) {
     };
     
     /**
-     * Store cached completion.
+     * Predict the next completion, given the caching key of the last completion.
      */
     this.predictNextCompletion = function(cacheKey, pos, identifierRegex, expressionPrefixRegex, lastResult, options) {
         if (options.isUpdate)
@@ -1662,7 +1662,7 @@ function endTime(t, message, indent) {
         
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
-            function(handler, next) {
+            function preparePredictionInput(handler, next) {
                 var handlerOptions = {
                     matches: getFilteredMatches(),
                     path: _self.$path,
@@ -1697,7 +1697,7 @@ function endTime(t, message, indent) {
                     cache.resultCallbacks.forEach(function(c) {
                         c();
                     });
-                    if (showEarly && cacheKey.matches(_self.completionCache))
+                    if (showEarly && cacheKey.isCompatible(_self.completionCache))
                         showPredictionsEarly(result);
                     if (result.hadError)
                         _self.completionPrediction = null;
@@ -1763,7 +1763,7 @@ function endTime(t, message, indent) {
             prefix: prefix,
             path: path,
             noDoc: options.noDoc,
-            matches: function(other) {
+            isCompatible: function(other) {
                 return other
                     && other.path === this.path
                     && other.pos.row === this.pos.row
