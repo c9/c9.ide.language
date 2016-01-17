@@ -1435,27 +1435,27 @@ function endTime(t, message, indent) {
 
     this.complete = function(event) {
         var _self = this;
-        var data = event.data;
-        var pos = data.pos;
+        var options = event.data;
+        var pos = options.pos;
         
-        _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
+        _self.waitForCompletionSync(options, function onCompletionSync(identifierRegex) {
             var expressionPrefixRegex = _self.getCacheCompletionRegex(pos);
             var overrideLine = expressionPrefixRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
-            var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, expressionPrefixRegex, event.data);
+            var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, expressionPrefixRegex, options);
             if (!newCache) {
                 // Use existing cache
                 if (_self.completionCache.result)
-                    _self.predictNextCompletion(event, _self.completionCache, pos, identifierRegex, expressionPrefixRegex, _self.completionCache.result);
+                    _self.predictNextCompletion(_self.completionCache, pos, identifierRegex, expressionPrefixRegex, _self.completionCache.result, options);
                 return;
             }
             
-            _self.getCompleteHandlerResult(event, overridePos || pos, overrideLine, identifierRegex, event.data, function(result) {
+            _self.getCompleteHandlerResult(overridePos || pos, overrideLine, identifierRegex, options, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
-                _self.predictNextCompletion(event, newCache, pos, identifierRegex, expressionPrefixRegex, result);
+                _self.predictNextCompletion(newCache, pos, identifierRegex, expressionPrefixRegex, result, options);
             });
         });
     };
@@ -1469,7 +1469,7 @@ function endTime(t, message, indent) {
     /**
      * Invoke parser and completion handlers to get a completion result.
      */
-    this.getCompleteHandlerResult = function(event, pos, overrideLine, identifierRegex, options, callback) {
+    this.getCompleteHandlerResult = function(pos, overrideLine, identifierRegex, options, callback) {
         var _self = this;
         var matches = [];
         var hadError = false;
@@ -1544,13 +1544,13 @@ function endTime(t, message, indent) {
                         callback({
                             pos: pos,
                             matches: matches,
-                            isUpdate: event.data.isUpdate,
-                            noDoc: event.data.noDoc,
+                            isUpdate: options.isUpdate,
+                            noDoc: options.noDoc,
                             hadError: hadError,
                             line: line,
                             path: _self.$path,
-                            forceBox: event.data.forceBox,
-                            deleteSuffix: event.data.deleteSuffix
+                            forceBox: options.forceBox,
+                            deleteSuffix: options.deleteSuffix
                         }
                     );
                 });
@@ -1650,8 +1650,8 @@ function endTime(t, message, indent) {
     /**
      * Store cached completion.
      */
-    this.predictNextCompletion = function(event, cacheKey, pos, identifierRegex, expressionPrefixRegex, result) {
-        if (event.data.isUpdate)
+    this.predictNextCompletion = function(cacheKey, pos, identifierRegex, expressionPrefixRegex, lastResult, options) {
+        if (options.isUpdate)
             return;
         
         var _self = this;
@@ -1663,14 +1663,14 @@ function endTime(t, message, indent) {
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
             function(handler, next) {
-                var options = {
+                var handlerOptions = {
                     matches: getFilteredMatches(),
                     path: _self.$path,
                     language: _self.$language,
                     line: line,
                     identifierPrefix: prefix,
                 };
-                handler.predictNextCompletion(_self.doc, null, pos, options, handleCallbackError(function(result) {
+                handler.predictNextCompletion(_self.doc, null, pos, handlerOptions, handleCallbackError(function(result) {
                     if (result) {
                         predictedString = result.predicted;
                         showEarly = result.showEarly;
@@ -1691,8 +1691,8 @@ function endTime(t, message, indent) {
                     && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
                     return;
                 
-                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, event.data);
-                _self.getCompleteHandlerResult(event, predictedPos, predictedLine, identifierRegex, event.data, function(result) {
+                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, options);
+                _self.getCompleteHandlerResult(predictedPos, predictedLine, identifierRegex, options, function(result) {
                     cache.result = result;
                     cache.resultCallbacks.forEach(function(c) {
                         c();
@@ -1710,15 +1710,15 @@ function endTime(t, message, indent) {
             if (filteredMatches)
                 return filteredMatches;
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-            filteredMatches = result.matches.filter(function(m) {
+            filteredMatches = lastResult.matches.filter(function(m) {
                 m.replaceText = m.replaceText || m.name;
                 return m.replaceText.indexOf(prefix) === 0;
             });
             return filteredMatches;
         }
         
-        function showPredictionsEarly(result) {
-            var newMatches = result.matches.filter(function(m) { return m.isContextual; });
+        function showPredictionsEarly(prediction) {
+            var newMatches = prediction.matches.filter(function(m) { return m.isContextual; });
             if (!newMatches.length)
                 return;
             [].push.apply(_self.completionCache.result.matches, newMatches.map(function(m) {
@@ -1796,24 +1796,23 @@ function endTime(t, message, indent) {
      * If needed, wait a little while for any pending change events
      * if needed (these should normally come in just before the complete event)
      */
-    this.waitForCompletionSync = function(event, runCompletion) {
+    this.waitForCompletionSync = function(options, runCompletion) {
         var _self = this;
-        var data = event.data;
-        var pos = data.pos;
+        var pos = options.pos;
         var line = _self.doc.getLine(pos.row);
         this.waitForCompletionSyncThread = this.waitForCompletionSyncThread || 0;
         var threadId = ++this.waitForCompletionSyncThread;
         var identifierRegex = this.getIdentifierRegex(pos);
-        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
+        if (!completeUtil.canCompleteForChangedLine(line, options.line, pos, pos, identifierRegex)) {
             setTimeout(function() {
                 if (threadId !== _self.waitForCompletionSyncThread)
                     return;
                 line = _self.doc.getLine(pos.row);
-                if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
+                if (!completeUtil.canCompleteForChangedLine(line, options.line, pos, pos, identifierRegex)) {
                     setTimeout(function() {
                         if (threadId !== _self.waitForCompletionSyncThread)
                             return;
-                        if (!completeUtil.canCompleteForChangedLine(line, data.line, pos, pos, identifierRegex)) {
+                        if (!completeUtil.canCompleteForChangedLine(line, options.line, pos, pos, identifierRegex)) {
                             if (!line) { // sanity check
                                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
                             }
