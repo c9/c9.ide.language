@@ -681,7 +681,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 1);
                             // Normally typing "_corry _c" would show "_corry" in the completion,
-                            // but since JavaScript is supposed to have a getExpressionPrefixRegex set,
+                            // but since JavaScript is supposed to have a getCacheCompletionRegex set,
                             // a cached results should be used that doesn't have "_corry" yet
                             assert(!el.textContent.match(/_corry/));
                             assert(el.textContent.match(/_collin/));

@@ -259,12 +259,12 @@ module.exports = {
             // Special handling for completion predictions
             maxCallInterval = 0;
             options.overrideLineRow = myWorker.$lastCompleteRow;
-            options.overrideLine = myWorker.$overrideLine;
+            options.overrideLine = options.overrideLine || myWorker.$overrideLine;
         }
         else {
             // Ensure high fidelity for current line, which may have changed in the UI
             options.overrideLineRow = myWorker.$lastCompleteRow;
-            options.overrideLine = myWorker.doc.getLine(options.overrideLineRow);
+            options.overrideLine = options.overrideLine || myWorker.doc.getLine(options.overrideLineRow);
         }
         if (options.path && !options.path[0] === "/")
             return callback(new Error("Only workspace-relative paths are supported"));

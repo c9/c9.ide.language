@@ -260,7 +260,7 @@ function endTime(t, message, indent) {
 (function() {
     
     var identifierRegexes = {};
-    var expressionPrefixRegexes = {};
+    var cacheCompletionRegexes = {};
     
     this.enableFeature = function(name, value) {
         disabledFeatures[name] = !value;
@@ -785,9 +785,9 @@ function endTime(t, message, indent) {
         return identifierRegexes[part ? part.language : this.$language] || completeUtil.DEFAULT_ID_REGEX;
     };
     
-    this.getExpressionPrefixRegex = function(pos) {
+    this.getCacheCompletionRegex = function(pos) {
         var part = pos && this.getPart(pos);
-        return expressionPrefixRegexes[part ? part.language : this.$language] || completeUtil.DEFAULT_ID_REGEX;
+        return cacheCompletionRegexes[part ? part.language : this.$language] || completeUtil.DEFAULT_ID_REGEX;
     };
 
     /**
@@ -1362,12 +1362,12 @@ function endTime(t, message, indent) {
             this.sender.emit("setIdentifierRegex", { language: language, identifierRegex: handler.getIdentifierRegex() });
             identifierRegexes[language] = handler.getIdentifierRegex();
         }
-        if (handler.getExpressionPrefixRegex()) {
-            var regex = handler.getExpressionPrefixRegex();
+        if (handler.getCacheCompletionRegex()) {
+            var regex = handler.getCacheCompletionRegex();
             if (!/\$$/.test(regex.source))
                 regex = new RegExp(regex.source + "$");
-            this.sender.emit("setExpressionPrefixRegex", { language: language, expressionPrefixRegex: regex });
-            expressionPrefixRegexes[language] = regex;
+            this.sender.emit("setCacheCompletionRegex", { language: language, expressionPrefixRegex: regex });
+            cacheCompletionRegexes[language] = regex;
         }
         if (handler.getCompletionRegex())
             this.sender.emit("setCompletionRegex", { language: language, completionRegex: handler.getCompletionRegex() });
@@ -1439,7 +1439,7 @@ function endTime(t, message, indent) {
         var pos = data.pos;
         
         _self.waitForCompletionSync(event, function onCompletionSync(identifierRegex) {
-            var expressionPrefixRegex = _self.getExpressionPrefixRegex(pos);
+            var expressionPrefixRegex = _self.getCacheCompletionRegex(pos);
             var overrideLine = expressionPrefixRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
