@@ -138,7 +138,7 @@ define(function(require, exports, module) {
             if (matchIdRegex || complete.matchCompletionRegex(completionRegex, line, pos)) { 
                 if (!complete_util.precededByIdentifier(line, pos.column, ch, ace))
                     return false;
-                complete.deferredInvoke(ch === ".", ace);
+                complete.deferredInvoke(true, ace);
             }
             else if (ch === '"' || ch === "'") {
                 if (complete_util.isRequireJSCall(line, pos.column, "", ace, true))
