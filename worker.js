@@ -1486,9 +1486,14 @@ function endTime(t, message, indent) {
             endTime(tStart, "Complete: parser");
             _self.findNode(ast, pos, function(currentNode) {
                 var handlerOptions = {
-                    node: currentNode,
-                    path: _self.$path,
                     noDoc: options.noDoc,
+                    node: currentNode,
+                    language: _self.$language,
+                    path: _self.$path,
+                    line: line,
+                    get identifierPrefix() {
+                        return completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+                    },
                 };
                 _self.asyncForEachHandler(
                     { part: part, method: "complete" },
@@ -1650,11 +1655,18 @@ function endTime(t, message, indent) {
         var predictedString;
         var showEarly;
         var line = _self.doc.getLine(pos.row);
+        var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
         
         this.asyncForEachHandler(
             { method: "predictNextCompletion" },
             function(handler, next) {
-                var options = { matches: getFilteredMatches(), path: _self.$path, language: _self.$language };
+                var options = {
+                    matches: getFilteredMatches(),
+                    path: _self.$path,
+                    language: _self.$language,
+                    line: line,
+                    identifierPrefix: prefix,
+                };
                 handler.predictNextCompletion(_self.doc, null, pos, options, handleCallbackError(function(result) {
                     if (result) {
                         predictedString = result.predicted;
@@ -1667,7 +1679,6 @@ function endTime(t, message, indent) {
                 if (!predictedString)
                     return;
                 
-                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
                 var predictedLine = line.substr(0, pos.column - prefix.length)
                     + predictedString
                     + line.substr(pos.column);
