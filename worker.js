@@ -1689,15 +1689,17 @@ function endTime(t, message, indent) {
                     + predictedString
                     + line.substr(pos.column);
                 var predictedPos = { row: pos.row, column: pos.column - prefix.length + predictedString.length };
-                var lastPrediction = _self.completionPrediction;
-                if (lastPrediction && lastPrediction.line === predictedLine
-                    && lastPrediction.pos.row === predictedPos.row && lastPrediction.pos.column === predictedPos.column)
-                    return;
                 
-                var cache = _self.completionPrediction = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, options);
+                var predictionKey = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, options);
+                if (_self.completionPrediction && _self.completionPrediction.isCompatible(predictionKey))
+                    return;
+                if (_self.completionCache && _self.completionCache.isCompatible(predictionKey))
+                    return;
+                _self.completionPrediction = predictionKey;
+
                 _self.getCompleteHandlerResult(predictedPos, predictedLine, identifierRegex, options, function(result) {
-                    cache.result = result;
-                    cache.resultCallbacks.forEach(function(c) {
+                    predictionKey.result = result;
+                    predictionKey.resultCallbacks.forEach(function(c) {
                         c();
                     });
                     if (showEarly && cacheKey.isCompatible(_self.completionCache))
@@ -1750,7 +1752,7 @@ function endTime(t, message, indent) {
         var line = overrideLine != null ? overrideLine : originalLine;
         var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
         var suffix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-        var completeLine = removeExpressionPrefix(
+        var completeLine = removeCacheCompletionPrefix(
             line.substr(0, pos.column - prefix.length) + line.substr(pos.column + suffix.length));
         
         var completeLines = doc.$lines.slice();
@@ -1771,6 +1773,7 @@ function endTime(t, message, indent) {
                     && other.path === this.path
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
+                    && other.line === this.line
                     && (!other.noDoc || this.noDoc)
                     && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
                     && other.lines.length === completeLines.length
@@ -1782,14 +1785,14 @@ function endTime(t, message, indent) {
             }
         };
         
-        function removeExpressionPrefix(line) {
+        function removeCacheCompletionPrefix(line) {
             if (!expressionPrefixRegex)
                 return line;
             var match = expressionPrefixRegex.exec(line.substr(0, pos.column - prefix.length));
             if (!match)
                 return line;
             pos = { row: pos.row, column: pos.column - match[0].length };
-            return line.substr(line, line.length - match[0].length);
+            return line.substr(0, line.length - match[0].length);
         }
     };
     

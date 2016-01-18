@@ -11,6 +11,7 @@ define(function(require, exports, module) {
     
     handler.complete = function(doc, ast, pos, options, callback) {
         var emitter = handler.getEmitter();
+        console.log("Completion called for ", options.line);
         if (/\.$/.test(options.line)) {
             // Looks like a complete prediction for "currentIdentifier.", ignore!
             emitter.emit("complete_predict_called", { data: pos });

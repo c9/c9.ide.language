@@ -842,24 +842,31 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 });
                 
                 it('starts predicting a completion immediately after an assignment', function(done) {
+                    // We expect this behavior as infer_completer's predictNextCompletion()
+                    // tells worker we need completion here.
                     jsSession.setValue("foo ");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("=");
                     
                     testHandler.once("complete_called", function() {
                         assert.equal(completionCalls, 1);
-                        jsTab.editor.ace.onTextInput(" f");
-                        
-                        afterCompleteOpen(function(el) {
-                            assert.equal(completionCalls, 1);
-                            assert(el.textContent.match(/foo/));
-                            done();
-                        });
+                        jsTab.editor.ace.onTextInput(" ");
+                        // Wait and see if this triggers anything
+                        setTimeout(function() {
+                            jsTab.editor.ace.onTextInput("f");
+                            
+                            afterCompleteOpen(function(el) {
+                                assert.equal(completionCalls, 1);
+                                assert(el.textContent.match(/foo/));
+                                done();
+                            });
+                        }, 5);
                     });
                 });
                 
                 it('just invokes completion once for "v1 + 1 == v2 + v"', function(done) {
-                    jsSession.setValue("");
+                    jsSession.setValue("var v1; ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("v");
                     afterCompleteOpen(function(el) {
                         complete.closeCompletionBox();
@@ -888,40 +895,60 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                /*
-                it.only('just invokes completion once for "x1 + 1 == x2 + x", with some timeouts', function(done) {
-                    jsSession.setValue("");
+                it('just invokes completion once for "x1 + 1 == x2 + x", with some timeouts', function(done) {
+                    jsSession.setValue("var x1; ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("x");
-                    jsTab.editor.ace.onTextInput("1");
-                    jsTab.editor.ace.onTextInput(" ");
-                    jsTab.editor.ace.onTextInput("+");
-                    // Allow prediction to be triggered
-                    setTimeout(function() {
-                        jsTab.editor.ace.onTextInput(" ");
+                    afterCompleteOpen(function(el) {
                         jsTab.editor.ace.onTextInput("1");
                         jsTab.editor.ace.onTextInput(" ");
-                        jsTab.editor.ace.onTextInput("=");
-                        jsTab.editor.ace.onTextInput("=");
                         // Allow prediction to be triggered
                         setTimeout(function() {
-                            jsTab.editor.ace.onTextInput(" ");
-                            jsTab.editor.ace.onTextInput("x");
-                            afterCompleteOpen(function(el) {
-                                complete.closeCompletionBox();
-                                jsTab.editor.ace.onTextInput("2");
+                            jsTab.editor.ace.onTextInput("+");
+                            // Allow prediction to be triggered
+                            setTimeout(function() {
                                 jsTab.editor.ace.onTextInput(" ");
-                                jsTab.editor.ace.onTextInput("+");
+                                jsTab.editor.ace.onTextInput("1");
                                 jsTab.editor.ace.onTextInput(" ");
-                                jsTab.editor.ace.onTextInput("x");
-                                afterCompleteOpen(function(el) {
-                                    assert.equal(completionCalls, 1);
-                                    done();
-                                });
-                            });
+                                jsTab.editor.ace.onTextInput("=");
+                                jsTab.editor.ace.onTextInput("=");
+                                // Allow prediction to be triggered
+                                setTimeout(function() {
+                                    jsTab.editor.ace.onTextInput(" ");
+                                    jsTab.editor.ace.onTextInput("x");
+                                    afterCompleteOpen(function(el) {
+                                        complete.closeCompletionBox();
+                                        jsTab.editor.ace.onTextInput("2");
+                                        jsTab.editor.ace.onTextInput(" ");
+                                        jsTab.editor.ace.onTextInput("+");
+                                        jsTab.editor.ace.onTextInput(" ");
+                                        jsTab.editor.ace.onTextInput("x");
+                                        afterCompleteOpen(function(el) {
+                                            assert.equal(completionCalls, 1);
+                                            done();
+                                        });
+                                    });
+                                }, 5);
+                            }, 5);
                         }, 5);
-                    }, 5);
+                    });
                 });
-                */
+                
+                it('calls completion twice for "var y; ...", "var v; ..."', function(done) {
+                    jsSession.setValue("var y1; ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("y");
+                    afterCompleteOpen(function(el) {
+                        complete.closeCompletionBox();
+                        jsSession.setValue("var v1; ");
+                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                        jsTab.editor.ace.onTextInput("v");
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 2);
+                            done();
+                        });
+                    });
+                });
             });
         });
         
