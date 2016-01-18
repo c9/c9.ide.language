@@ -1329,7 +1329,8 @@ function endTime(t, message, indent) {
             handler.init(handleCallbackError(function() {
                 // Note: may not return for a while for asynchronous workers,
                 //       don't use this for queueing other tasks
-                handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
+                if (handler.handlesLanguage(_self.$language))
+                    handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
                 handler.$isInitCompleted = true;
                 callback();
             }));
@@ -1337,7 +1338,8 @@ function endTime(t, message, indent) {
         else if (onDocumentOpen) {
             // Note: may not return for a while for asynchronous workers,
             //       don't use this for queueing other tasks
-            handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
+            if (handler.handlesLanguage(_self.$language))
+                handler.onDocumentOpen(_self.$path, _self.doc, oldPath, function() {});
             callback();
         }
         else {
@@ -1376,11 +1378,15 @@ function endTime(t, message, indent) {
     };
 
     this.documentOpen = function(path, immediateWindow, language, document) {
+        // Note that we don't set this.language here, since this document
+        // may not have focus.
         this.$openDocuments["_" + path] = path;
         var _self = this;
         var code = this.$documentToString(document);
-        var doc = {getValue: function() {return code;} };
-        asyncForEach(this.handlers, function(handler, next) {
+        var doc = { getValue: function() { return code; } };
+        asyncForEach(_self.handlers, function(handler, next) {
+            if (!handler.handlesLanguage(language))
+                return next();
             handler.onDocumentOpen(path, doc, _self.path, next);
         });
     };
@@ -1388,9 +1394,9 @@ function endTime(t, message, indent) {
     this.documentClose = function(event) {
         var path = event.data;
         delete this.$openDocuments["_" + path];
-        asyncForEach(this.handlers, function(handler, next) {
+        this.asyncForEachHandler({ method: "onDocumentClose" }, function(handler, next) {
             handler.onDocumentClose(path, next);
-        });
+        }, function() {});
     };
 
     // For code completion
