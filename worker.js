@@ -192,9 +192,9 @@ var LanguageWorker = exports.LanguageWorker = function(sender) {
 function applyEventOnce(eventHandler, waitForMirror) {
     var timer;
     var mirror = this;
-    return function() {
-        var _arguments = arguments;
-        if (timer)
+    return function(e) {
+        var _arguments = [].slice.apply(arguments);
+        if (timer && !(e && e.data.predictOnly))
             clearTimeout(timer);
         timer = setTimeout(function() {
             if (waitForMirror && mirror.isPending())
