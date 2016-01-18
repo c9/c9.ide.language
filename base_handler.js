@@ -279,7 +279,9 @@ module.exports = {
      *         + "|\\b\\w+\\s+"
      *         // equality operators, operators such as + and -,
      *         // and opening brackets { and [
-     *         + "|(==|!=|[-+]=|[-+*%<>?!|&{[])\\s*)+"
+     *         + "|(==|!=|[-+]=|[-+*%<>?!|&{[])"
+     *         // spaces
+     *         + "|\\s)+"
      *     );
      * };
      * ```

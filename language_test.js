@@ -124,6 +124,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         var language = imports.language;
         var complete = imports["language.complete"];
         var worker;
+        var testHandler;
         
         util.setStaticPrefix("/static");
         complete.$setShowDocDelay(50);
@@ -196,6 +197,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 var jsTab;
                 var jsSession;
                 var completionCalls = 0;
+                var predictionCalls = 0;
 
                 before(function(done) {
                     language.getWorker(function(err, _worker) {
@@ -205,8 +207,12 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             "plugins/c9.ide.language/language_test_helper",
                             function(err, handler) {
                                 if (err) return done(err);
-                                handler.on("complete_called", function() {
+                                testHandler = handler;
+                                testHandler.on("complete_called", function() {
                                     completionCalls++;
+                                });
+                                testHandler.on("complete_predict_called", function() {
+                                    predictionCalls++;
                                 });
                                 done();
                             });
@@ -793,7 +799,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("conso");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
-                    worker.once("predict_called", function() {
+                    worker.once("complete_predict_called", function() {
                         assert.equal(completionCalls, 1);
                         afterCompleteOpen(function retry(el) {
                             assert.equal(completionCalls, 1);
@@ -834,6 +840,88 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         });
                     });
                 });
+                
+                it('starts predicting a completion immediately after an assignment', function(done) {
+                    jsSession.setValue("foo ");
+                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
+                    jsTab.editor.ace.onTextInput("=");
+                    
+                    testHandler.once("complete_called", function() {
+                        assert.equal(completionCalls, 1);
+                        jsTab.editor.ace.onTextInput(" f");
+                        
+                        afterCompleteOpen(function(el) {
+                            assert.equal(completionCalls, 1);
+                            assert(el.textContent.match(/foo/));
+                            done();
+                        });
+                    });
+                });
+                
+                it('just invokes completion once for "v1 + 1 == v2 + v"', function(done) {
+                    jsSession.setValue("");
+                    jsTab.editor.ace.onTextInput("v");
+                    afterCompleteOpen(function(el) {
+                        complete.closeCompletionBox();
+                        jsTab.editor.ace.onTextInput("1");
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("+");
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("1");
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("=");
+                        jsTab.editor.ace.onTextInput("=");
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("v");
+                        afterCompleteOpen(function(el) {
+                            complete.closeCompletionBox();
+                            jsTab.editor.ace.onTextInput("2");
+                            jsTab.editor.ace.onTextInput(" ");
+                            jsTab.editor.ace.onTextInput("+");
+                            jsTab.editor.ace.onTextInput(" ");
+                            jsTab.editor.ace.onTextInput("v");
+                            afterCompleteOpen(function(el) {
+                                assert.equal(completionCalls, 1);
+                                done();
+                            });
+                        });
+                    });
+                });
+                
+                /*
+                it.only('just invokes completion once for "x1 + 1 == x2 + x", with some timeouts', function(done) {
+                    jsSession.setValue("");
+                    jsTab.editor.ace.onTextInput("x");
+                    jsTab.editor.ace.onTextInput("1");
+                    jsTab.editor.ace.onTextInput(" ");
+                    jsTab.editor.ace.onTextInput("+");
+                    // Allow prediction to be triggered
+                    setTimeout(function() {
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("1");
+                        jsTab.editor.ace.onTextInput(" ");
+                        jsTab.editor.ace.onTextInput("=");
+                        jsTab.editor.ace.onTextInput("=");
+                        // Allow prediction to be triggered
+                        setTimeout(function() {
+                            jsTab.editor.ace.onTextInput(" ");
+                            jsTab.editor.ace.onTextInput("x");
+                            afterCompleteOpen(function(el) {
+                                complete.closeCompletionBox();
+                                jsTab.editor.ace.onTextInput("2");
+                                jsTab.editor.ace.onTextInput(" ");
+                                jsTab.editor.ace.onTextInput("+");
+                                jsTab.editor.ace.onTextInput(" ");
+                                jsTab.editor.ace.onTextInput("x");
+                                afterCompleteOpen(function(el) {
+                                    assert.equal(completionCalls, 1);
+                                    done();
+                                });
+                            });
+                        }, 5);
+                    }, 5);
+                });
+                */
             });
         });
         
