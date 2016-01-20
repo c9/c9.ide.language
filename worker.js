@@ -9,7 +9,7 @@
  * delegate messages it receives to the various handlers that have registered
  * themselves with the worker.
  */
-define(function(require, exports, module) {o
+define(function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
 var Mirror = require("ace/worker/mirror").Mirror;
