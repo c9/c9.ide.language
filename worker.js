@@ -1368,7 +1368,7 @@ function endTime(t, message, indent) {
             var regex = handler.getCacheCompletionRegex();
             if (!/\$$/.test(regex.source))
                 regex = new RegExp(regex.source + "$");
-            this.sender.emit("setCacheCompletionRegex", { language: language, expressionPrefixRegex: regex });
+            this.sender.emit("setCacheCompletionRegex", { language: language, cacheCompletionRegex: regex });
             cacheCompletionRegexes[language] = regex;
         }
         if (handler.getCompletionRegex())
@@ -1445,15 +1445,15 @@ function endTime(t, message, indent) {
         var pos = options.pos;
         
         _self.waitForCompletionSync(options, function doComplete(identifierRegex) {
-            var expressionPrefixRegex = _self.getCacheCompletionRegex(pos);
-            var overrideLine = expressionPrefixRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
+            var cacheCompletionRegex = _self.getCacheCompletionRegex(pos);
+            var overrideLine = cacheCompletionRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
-            var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, expressionPrefixRegex, options);
+            var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, cacheCompletionRegex, options);
             if (!newCache || options.predictOnly) {
                 // Use existing cache
                 if (options.predictOnly || _self.completionCache.result)
-                    _self.predictNextCompletion(_self.completionCache, pos, identifierRegex, expressionPrefixRegex, options);
+                    _self.predictNextCompletion(_self.completionCache, pos, identifierRegex, cacheCompletionRegex, options);
                 return;
             }
             
@@ -1462,7 +1462,7 @@ function endTime(t, message, indent) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
                 _self.storeCachedCompletion(newCache, identifierRegex, result);
-                _self.predictNextCompletion(newCache, pos, identifierRegex, expressionPrefixRegex, options);
+                _self.predictNextCompletion(newCache, pos, identifierRegex, cacheCompletionRegex, options);
             });
         });
     };
@@ -1587,9 +1587,9 @@ function endTime(t, message, indent) {
      * @return {Object} a caching key if a new cache needs to be prepared,
      *                  or null in case the previous cache could be used (cache hit)
      */
-    this.tryCachedCompletion = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
+    this.tryCachedCompletion = function(pos, overrideLine, identifierRegex, cacheCompletionRegex, options) {
         var that = this;
-        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, expressionPrefixRegex, options);
+        var cacheKey = this.getCompleteCacheKey(pos, overrideLine, identifierRegex, cacheCompletionRegex, options);
         
         if (options.isUpdate) {
             // Updating our cache; return previous cache to update it
@@ -1660,7 +1660,7 @@ function endTime(t, message, indent) {
     /**
      * Predict the next completion, given the caching key of the last completion.
      */
-    this.predictNextCompletion = function(cacheKey, pos, identifierRegex, expressionPrefixRegex, options) {
+    this.predictNextCompletion = function(cacheKey, pos, identifierRegex, cacheCompletionRegex, options) {
         if (options.isUpdate)
             return;
         
@@ -1697,7 +1697,7 @@ function endTime(t, message, indent) {
                     + line.substr(pos.column);
                 var predictedPos = { row: pos.row, column: pos.column - prefix.length + predictedString.length };
                 
-                var predictionKey = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, expressionPrefixRegex, options);
+                var predictionKey = _self.getCompleteCacheKey(predictedPos, predictedLine, identifierRegex, cacheCompletionRegex, options);
                 if (_self.completionPrediction && _self.completionPrediction.isCompatible(predictionKey))
                     return;
                 if (_self.completionCache && _self.completionCache.isCompatible(predictionKey))
@@ -1752,7 +1752,7 @@ function endTime(t, message, indent) {
      * @param overrideLine   A line to override the current line with while making the key
      * @param identifierRegex
      */
-    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, expressionPrefixRegex, options) {
+    this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, cacheCompletionRegex, options) {
         var doc = this.doc;
         var path = this.$path;
         var originalLine = doc.getLine(pos.row);
@@ -1793,9 +1793,9 @@ function endTime(t, message, indent) {
         };
         
         function removeCacheCompletionPrefix(line) {
-            if (!expressionPrefixRegex)
+            if (!cacheCompletionRegex)
                 return line;
-            var match = expressionPrefixRegex.exec(line.substr(0, pos.column - prefix.length));
+            var match = cacheCompletionRegex.exec(line.substr(0, pos.column - prefix.length));
             if (!match)
                 return line;
             pos = { row: pos.row, column: pos.column - match[0].length };
