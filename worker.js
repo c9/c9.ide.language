@@ -9,7 +9,7 @@
  * delegate messages it receives to the various handlers that have registered
  * themselves with the worker.
  */
-define(function(require, exports, module) {
+define(function(require, exports, module) {o
 
 var oop = require("ace/lib/oop");
 var Mirror = require("ace/worker/mirror").Mirror;
@@ -1751,7 +1751,7 @@ function endTime(t, message, indent) {
                     && other.path === this.path
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
-                    && other.line === other.line
+                    && other.line === this.line
                     && (!other.noDoc || this.noDoc)
                     && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
                     && other.lines.length === completeLines.length
