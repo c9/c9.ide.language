@@ -1757,7 +1757,7 @@ function endTime(t, message, indent) {
                     && other.path === this.path
                     && other.pos.row === this.pos.row
                     && other.pos.column === this.pos.column
-                    && other.value === this.value
+                    && other.line === this.line
                     && (!other.noDoc || this.noDoc)
                     && this.prefix.indexOf(other.prefix) === 0 // match if they're like foo and we're fooo
                     && other.lines.length === completeLines.length
@@ -1776,7 +1776,7 @@ function endTime(t, message, indent) {
             if (!match)
                 return line;
             pos = { row: pos.row, column: pos.column - match[0].length };
-            return line.substr(line, line.length - match[0].length);
+            return line.substr(0, line.length - match[0].length);
         }
     };
     
