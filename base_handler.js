@@ -95,22 +95,6 @@ module.exports = {
     },
     
     /**
-     * Utility function, used to retrigger completion,
-     * in case new information was collected and should
-     * be displayed, and assuming the popup is still open.
-     * 
-     * Should not be overridden by inheritors.
-     * 
-     * @deprecated Use worker_util#completeUpdate instead
-     * 
-     * @param {Object} pos   The position to retrigger this update
-     * @param {String} line  The line that this update was triggered for
-     */
-    completeUpdate: function(pos) {
-        throw new Error("Use worker_util.completeUpdate instead()"); // implemented by worker.completeUpdate
-    },
-    
-    /**
      * Get an event emitter for emitting and receiving
      * UI events.
      * 
