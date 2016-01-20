@@ -262,6 +262,10 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         var annos = jsSession.getAnnotations();
                         if (!annos.length)
                             return;
+                        if (annos.some(function(a) { // annotations for previous file
+                            return a.text.match(/language.*never used/);
+                        }))
+                            return;
                         jsSession.off("changeAnnotation", onAnnos);
                         expect(annos).to.have.length(1);
                         expect(annos[0].text).contain("x is not defined");
