@@ -1542,6 +1542,7 @@ function endTime(t, message, indent) {
                                 return 0;
                         });
                         endTime(tStart, "COMPLETED!");
+                        endOverrideLine(originalLine);
                         callback({
                             pos: pos,
                             matches: matches,
@@ -1825,6 +1826,7 @@ function endTime(t, message, indent) {
                         }
                         runCompletion(identifierRegex);
                     }, 20);
+                    return;
                 }
                 runCompletion(identifierRegex);
             }, 5);
