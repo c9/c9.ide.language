@@ -289,7 +289,7 @@ function endTime(t, message, indent) {
             handler.getEmitter = function(overridePath) {
                 return _self.$createEmitter(overridePath || path);
             };
-            _self.completionCache = _self.predictionCache = null;
+            _self.completionCache = _self.completionPrediction = null;
             _self.handlers.push(handler);
             _self.$initHandler(handler, null, true, function() {
                 // Note: may not return for a while for asynchronous workers,
@@ -1461,7 +1461,7 @@ function endTime(t, message, indent) {
             _self.getCompleteHandlerResult(overridePos || pos, overrideLine, identifierRegex, options, function(result) {
                 if (!result) return;
                 _self.sender.emit("complete", result);
-                _self.storeCachedCompletion(newCache, identifierRegex, result);
+                newCache.setResult(result);
                 _self.predictNextCompletion(newCache, pos, identifierRegex, cacheCompletionRegex, options);
             });
         });
@@ -1642,22 +1642,6 @@ function endTime(t, message, indent) {
     };
     
     /**
-     * Store cached completion.
-     */
-    this.storeCachedCompletion = function(cache, identifierRegex, result) {
-        cache.result = result;
-        cache.resultCallbacks.forEach(function(c) {
-            c();
-        });
-        if (this.completionCache !== cache && this.predictionCache !== cache)
-            return;
-        if (!completeUtil.canCompleteForChangedLine(cache.line, result.line, cache.pos, result.pos, identifierRegex))
-            return;
-        if (result.hadError)
-            this.completionCache = null;
-    };
-    
-    /**
      * Predict the next completion, given the caching key of the last completion.
      */
     this.predictNextCompletion = function(cacheKey, pos, identifierRegex, cacheCompletionRegex, options) {
@@ -1705,14 +1689,9 @@ function endTime(t, message, indent) {
                 _self.completionPrediction = predictionKey;
 
                 _self.getCompleteHandlerResult(predictedPos, predictedLine, identifierRegex, options, function(result) {
-                    predictionKey.result = result;
-                    predictionKey.resultCallbacks.forEach(function(c) {
-                        c();
-                    });
+                    predictionKey.setResult(result);
                     if (showEarly && cacheKey.isCompatible(_self.completionCache))
                         showPredictionsEarly(result);
-                    if (result.hadError)
-                        _self.completionPrediction = null;
                 });
             }
         );
@@ -1753,6 +1732,7 @@ function endTime(t, message, indent) {
      * @param identifierRegex
      */
     this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, cacheCompletionRegex, options) {
+        var that = this;
         var doc = this.doc;
         var path = this.$path;
         var originalLine = doc.getLine(pos.row);
@@ -1775,6 +1755,16 @@ function endTime(t, message, indent) {
             prefix: prefix,
             path: path,
             noDoc: options.noDoc,
+            setResult: function(result) {
+                this.result = result;
+                this.resultCallbacks.forEach(function(c) {
+                    c();
+                });
+                if (result.hadError && that.completionCache === cache)
+                    that.completionCache = null;
+                if (result.hadError && that.completionPrediction === cache)
+                    that.completionPrediction = null;
+            },
             isCompatible: function(other) {
                 return other
                     && other.path === this.path
