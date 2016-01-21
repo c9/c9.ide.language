@@ -711,7 +711,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         jsTab.editor.ace.onTextInput("rry if(if (b_co");
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 1);
-                            assert(!el.textContent.match(/b_corry/));
+                            assert(el.textContent.match(/b_corry/)); // local_completer secretly ran a second time
                             assert(el.textContent.match(/b_collin/));
                             done();
                         });

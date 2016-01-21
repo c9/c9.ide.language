@@ -17,6 +17,8 @@ var tree = require('treehugger/tree');
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var syntaxDetector = require("plugins/c9.ide.language/syntax_detector");
 var completeUtil = require("plugins/c9.ide.language/complete_util");
+var localCompleter = require("plugins/c9.ide.language.generic/local_completer");
+var openFilesCompleter = require("plugins/c9.ide.language.generic/open_files_local_completer");
 var base_handler = require("./base_handler");
 var assert = require("c9/assert");
 
@@ -1621,15 +1623,22 @@ function endTime(t, message, indent) {
         function cacheHit() {
             if (options.predictOnly)
                 return;
-            that.sender.emit("complete", {
-                line: overrideLine != null ? overrideLine : that.doc.getLine(pos.row),
-                forceBox: options.forceBox,
-                isUpdate: options.isUpdate,
-                matches: that.completionCache.result.matches,
-                path: that.$path,
-                pos: pos,
-                noDoc: that.completionCache.result.noDoc,
-                deleteSuffix: options.deleteSuffix,
+                
+            updateLocalCompletions(that.doc, that.$path, pos, that.completionCache.result.matches, function(err, matches) {
+                if (err) {
+                    console.error(err);
+                    matches = that.completionCache.result.matches;
+                }
+                that.sender.emit("complete", {
+                    line: overrideLine != null ? overrideLine : that.doc.getLine(pos.row),
+                    forceBox: options.forceBox,
+                    isUpdate: options.isUpdate,
+                    matches: matches,
+                    path: that.$path,
+                    pos: pos,
+                    noDoc: that.completionCache.result.noDoc,
+                    deleteSuffix: options.deleteSuffix,
+                });
             });
         }
         
@@ -1848,6 +1857,29 @@ function endTime(t, message, indent) {
             this.complete({data: {pos: pos, line: line, isUpdate: true, forceBox: true}});
         }
     };
+    
+    /**
+     * HACK: bypass completion caching for local completer, adding local
+     * completion results for each new letter typed. Collecting all
+     * local completions for the empty prefix wouldn't scale...
+     */
+    function updateLocalCompletions(doc, path, pos, matches, callback) {
+        if (matches.some(function(m) {
+            return m.isContextual;
+        }))
+            return callback(null, matches);
+
+        localCompleter.complete(doc, null, pos, null, function(err, results1) {
+            if (err) return callback(err);
+            openFilesCompleter.complete(doc, null, pos, { path: path }, function(err, results2) {
+                if (err) console.error(err);
+
+                callback(null, matches.filter(function(m) {
+                    return m.$source !== "local" && m.$source !== "open_files";
+                }).concat(results1, results2));
+            });
+        });
+    }
     
     function reportError(exception, data) {
         if (data)

@@ -881,9 +881,9 @@ define(function(require, exports, module) {
         
         function filterMatches(matches, line, pos) {
             var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
+            var defaultPrefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             var results = matches.filter(function(match) {
-                var idRegex = match.identifierRegex || identifierRegex;
-                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
+                var prefix = match.identifierRegex ? completeUtil.retrievePrecedingIdentifier(line, pos.column, match.identifierRegex) : defaultPrefix;
                 return match.name.indexOf(prefix) === 0;
             });
             
