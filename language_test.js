@@ -954,22 +954,20 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
-                it('starts predicting a completion immediately after a newline', function(done) {
+                it("doesn't start predicting completion immediately after a newline", function(done) {
                     // We expect this behavior as infer_completer's predictNextCompletion()
                     // tells worker we need completion here.
                     jsSession.setValue("var foo;");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("\n");
                     
-                    testHandler.once("complete_called", function() {
-                        assert.equal(completionCalls, 1);
-                        jsTab.editor.ace.onTextInput("f");
-                        afterCompleteOpen(function(el) {
+                    setTimeout(function() {
+                        jsTab.editor.ace.onTextInput("\nf");
+                        testHandler.once("complete_called", function() {
                             assert.equal(completionCalls, 1);
-                            assert(el.textContent.match(/foo/));
                             done();
                         });
-                    });
+                    }, 50);
                 });
             });
         });
