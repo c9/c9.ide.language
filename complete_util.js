@@ -93,10 +93,14 @@ function setStaticPrefix(url) {
  * (assuming you would filter them for things that no longer apply).
  */
 function canCompleteForChangedLine(oldLine, newLine, oldPos, newPos, identifierRegex) {
-    if (oldPos.row !== newPos.row)
+    if (newLine.indexOf(oldLine.substr(0, oldPos.column)) !== 0)
         return false;
-        
-    return newLine.indexOf(oldLine.substr(0, oldPos.column)) === 0;
+    
+    for (var i = oldPos.column; i < newPos.column; i++) {
+        if (!identifierRegex.test(newLine[i]))
+            return false;
+    }
+    return true;
 }
 
 function precededByIdentifier(line, column, postfix, ace) {
