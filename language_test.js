@@ -845,6 +845,27 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     });
                 });
                 
+                it("completes php variables in short php escapes", function(done) {
+                    tabs.openFile("/test_broken.php", function(err, _tab) {
+                        if (err) return done(err);
+                        var tab = _tab;
+                        tabs.focusTab(tab);
+                        var session = tab.document.getSession().session;
+                        
+                        session.setValue("<?php $foo = 1;  ?>");
+                        tab.editor.ace.selection.setSelectionRange({ start: { row: 0, column: 16 }, end: { row: 0, column: 16 } });
+                        tab.editor.ace.onTextInput("$");
+                        afterCompleteOpen(function(el) {
+                            complete.closeCompletionBox();
+                            tab.editor.ace.onTextInput("f");
+                            afterCompleteOpen(function(el) {
+                                assert(el.textContent.match(/foo/));
+                                done();
+                            });
+                        });
+                    });
+                });
+                
                 it('starts predicting a completion immediately after an assignment', function(done) {
                     // We expect this behavior as infer_completer's predictNextCompletion()
                     // tells worker we need completion here.
