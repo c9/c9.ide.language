@@ -81,7 +81,7 @@ define(function(require, exports, module) {
                || matchCompletionRegex(completionRegex, line, pos)
                ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
                (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
-                invoke({ autoInvoke: true });
+                invoke(true);
             }
             else {
                 closeCompletionBox();
@@ -105,7 +105,7 @@ define(function(require, exports, module) {
                 return m.noDoc;
             }))
                 return;
-            invoke({ requestDocs: true });
+            invoke(false, false, true);
         });
         var isDocsRequested;
         
@@ -761,26 +761,22 @@ define(function(require, exports, module) {
         /**
          * Trigger code completion by firing an event to the worker.
          * 
-         * @param {Object} options
-         * @param {Boolean} [options.autoInvoke]    completion was triggered automatically
-         * @param {Boolean} [options.deleteSuffix]  the suffix of the current identifier
-         *                                          may be overwritten
-         * @param {Boolean} [options.predictOnly]   only prediction is requested
+         * @param {Boolean} autoInvoke  true when completion was triggered automatically
+         * @param {Boolean} deleteSuffix  true when the suffix of the current identifier
+         *       may be overwritten
          */
-        function invoke(options) {
+        function invoke(autoInvoke, deleteSuffix, requestDocs) {
             var tab = tabs.focussedTab;
             if (!tab || !language.isEditorSupported(tab))
                 return;
             
             var ace = lastAce = tab.editor.ace;
-            options = options || {};
-            if (!options.predictOnly)
-                isDocsRequested = options.requestDocs;
+            isDocsRequested = requestDocs;
             
             if (ace.inMultiSelectMode) {
                 var row = ace.selection.lead.row;
                 // allow completion if all selections are empty and on the same line
-                var shouldClose = options.autoInvoke && !ace.selection.ranges.every(function(r) {
+                var shouldClose = autoInvoke && !ace.selection.ranges.every(function(r) {
                     return r.cursor.row == row && r.isEmpty();
                 });
                 if (shouldClose && !forceOpen || !sameMultiselectPrefix(ace))
@@ -796,10 +792,9 @@ define(function(require, exports, module) {
                 line: line,
                 forceBox: true,
                 deleteSuffix: true,
-                noDoc: !options.requestDocs && !isDocShown,
-                predictOnly: options.predictOnly,
+                noDoc: !requestDocs && !isDocShown,
             }});
-            if (options.autoInvoke)
+            if (autoInvoke)
                 killCrashedCompletionInvoke(CRASHED_COMPLETION_TIMEOUT);
         }
         
@@ -881,9 +876,9 @@ define(function(require, exports, module) {
         
         function filterMatches(matches, line, pos) {
             var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
-            var defaultPrefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             var results = matches.filter(function(match) {
-                var prefix = match.identifierRegex ? completeUtil.retrievePrecedingIdentifier(line, pos.column, match.identifierRegex) : defaultPrefix;
+                var idRegex = match.identifierRegex || identifierRegex;
+                var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
                 return match.name.indexOf(prefix) === 0;
             });
             
@@ -1036,7 +1031,6 @@ define(function(require, exports, module) {
             /**
              * Force-invoke the completer immediately.
              * @ignore
-             * @internal See {@link #deferredInvoke()}.
              */
             invoke: invoke,
             

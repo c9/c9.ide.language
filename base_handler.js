@@ -263,9 +263,7 @@ module.exports = {
      *         + "|\\b\\w+\\s+"
      *         // equality operators, operators such as + and -,
      *         // and opening brackets { and [
-     *         + "|(==|!=|[-+]=|[-+*%<>?!|&{[])"
-     *         // spaces
-     *         + "|\\s)+"
+     *         + "|(==|!=|[-+]=|[-+*%<>?!|&{[])\\s*)+"
      *     );
      * };
      * ```
@@ -605,12 +603,8 @@ module.exports = {
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
      * @param {Object} options               Options
-     * @param {String} options.path          The current file path
-     * @param {String} options.language      The current language 
+     * @param {String} options.path          The current file path.
      * @param {Object} options.node          The current AST node (if parse() is implemented) 
-     * @param {String} options.line          The current line
-     * @param {String} options.identifierPrefix
-     *                                       The current identifier up to the cursor position
      * @param {Boolean} options.noDoc        Docs are not requested at this time and may
      *                                       be left out as an optimization. Please set `noDoc: true`
      *                                       for any completions where docs are left out so
@@ -729,10 +723,7 @@ module.exports = {
      * @param {Object} options.node          The most recent completion AST node (if parse() is implemented) 
      * @param {Object} options.matches       The most recent completion matches
      * @param {String} options.path          The current path
-     * @param {String} options.language      The current language 
-     * @param {String} options.line          The current line
-     * @param {String} options.identifierPrefix
-     *                                       The current identifier up to the cursor position
+     * @param {String} options.language      The current language
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object} callback.result       The function's result, an array of completion matches
