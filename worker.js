@@ -1769,9 +1769,9 @@ function endTime(t, message, indent) {
                 this.resultCallbacks.forEach(function(c) {
                     c();
                 });
-                if (result.hadError && that.completionCache === cache)
+                if (result.hadError && that.completionCache === this)
                     that.completionCache = null;
-                if (result.hadError && that.completionPrediction === cache)
+                if (result.hadError && that.completionPrediction === this)
                     that.completionPrediction = null;
             },
             isCompatible: function(other) {
