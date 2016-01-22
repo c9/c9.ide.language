@@ -67,7 +67,7 @@ function findCompletions(prefix, allIdentifiers) {
     return matches;
 }
 
-function fetchText(path) {
+function fetchTextSync(path) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', staticPrefix + "/" + path, false);
     try {
@@ -81,6 +81,25 @@ function fetchText(path) {
         return xhr.responseText;
     else
         return false;
+}
+
+function fetchText(path, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', staticPrefix + "/" + path, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState !== 4)
+            return;
+        if (xhr.status !== 200)
+            return done(new Error(xhr.statusText));
+        done(null, xhr.responseText);
+    };
+    xhr.onerror = done;
+    xhr.send(null);
+    
+    function done(err, result) {
+        callback && callback(err, result);
+        callback = null;
+    }
 }
 
 function setStaticPrefix(url) {
@@ -189,6 +208,11 @@ exports.findCompletions = findCompletions;
  * @ignore
  */
 exports.fetchText = fetchText;
+
+/**
+ * @ignore
+ */
+exports.fetchTextSync = fetchTextSync;
 
 /**
  * @ignore
