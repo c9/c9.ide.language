@@ -141,8 +141,14 @@ define(function(require, exports, module) {
                 complete.deferredInvoke(true, ace);
             }
             else if (ch === '"' || ch === "'") {
+                // TODO: move this special handing into infer_completer's getCompletionRegex
                 if (complete_util.isRequireJSCall(line, pos.column, "", ace, true))
                     complete.deferredInvoke(true, ace);
+            }
+            else {
+                // No useful character was pressed, but maybe we can
+                // predict what the user wants to complete next?
+                setTimeout(complete.invoke.bind(complete, { predictOnly: true }));
             }
         }
         
@@ -179,6 +185,8 @@ define(function(require, exports, module) {
              * Set text to skip when typed in.
              * Used when automatically inserting text, but tolerating
              * users also typing it, e.g. when inserting a closing }.
+             * 
+             * @ignore not implemented
              * 
              * @param {String} input
              */
