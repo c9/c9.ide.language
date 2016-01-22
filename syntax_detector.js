@@ -155,8 +155,7 @@ function getContextSyntaxPart(doc, pos, originalSyntax) {
     for (var i = 0; i < regions.length; i++) {
         var region = regions[i];
         if ((pos.row > region.sl && pos.row < region.el) ||
-            (pos.row === region.sl && pos.column >= region.sc) ||
-            (pos.row === region.el && pos.column <= region.ec))
+            (pos.row === region.sl && pos.column >= region.sc && pos.column <= region.ec))
             return regionToCodePart(doc, region, i);
     }
     return null; // should never happen
