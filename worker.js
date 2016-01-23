@@ -1602,8 +1602,8 @@ function endTime(t, message, indent) {
         }
     
         if (cacheKey.isCompatible(this.completionCache) && !isRecompletionRequired(this.completionCache)) {
-            if (this.completionCache.result)
-                cacheHit();
+            if (this.completionCache)
+                cacheHit(this.completionCache);
             else
                 this.completionCache.resultCallbacks.push(cacheHit);
             return;
@@ -1611,8 +1611,8 @@ function endTime(t, message, indent) {
     
         if (cacheKey.isCompatible(this.completionPrediction) && !isRecompletionRequired(this.completionPrediction)) {
             this.completionCache = this.completionPrediction;
-            if (this.completionCache.result)
-                cacheHit();
+            if (this.completionCache)
+                cacheHit(this.completionCache);
             else
                 this.completionCache.resultCallbacks.push(cacheHit);
             return;
@@ -1620,14 +1620,14 @@ function endTime(t, message, indent) {
         
         return cacheKey;
             
-        function cacheHit() {
+        function cacheHit(cache) {
             if (options.predictOnly)
                 return;
                 
-            updateLocalCompletions(that.doc, that.$path, pos, that.completionCache.result.matches, function(err, matches) {
+            updateLocalCompletions(that.doc, that.$path, pos, cache.result.matches, function(err, matches) {
                 if (err) {
                     console.error(err);
-                    matches = that.completionCache.result.matches;
+                    matches = cache.result.matches;
                 }
                 that.sender.emit("complete", {
                     line: overrideLine != null ? overrideLine : that.doc.getLine(pos.row),
@@ -1636,7 +1636,7 @@ function endTime(t, message, indent) {
                     matches: matches,
                     path: that.$path,
                     pos: pos,
-                    noDoc: that.completionCache.result.noDoc,
+                    noDoc: cache.result.noDoc,
                     deleteSuffix: options.deleteSuffix,
                 });
             });
@@ -1767,7 +1767,7 @@ function endTime(t, message, indent) {
             setResult: function(result) {
                 this.result = result;
                 this.resultCallbacks.forEach(function(c) {
-                    c();
+                    c(this);
                 });
                 if (result.hadError && that.completionCache === this)
                     that.completionCache = null;
