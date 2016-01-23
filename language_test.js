@@ -198,7 +198,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
         var language = imports.language;
         var complete = imports["language.complete"];
         var worker;
-        var testHandler;
         
         util.setStaticPrefix("/static");
         complete.$setShowDocDelay(50);
@@ -271,7 +270,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                 var jsTab;
                 var jsSession;
                 var completionCalls = 0;
-                var predictionCalls = 0;
 
                 before(function(done) {
                     language.getWorker(function(err, _worker) {
@@ -281,12 +279,8 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             "plugins/c9.ide.language/language_test_helper",
                             function(err, handler) {
                                 if (err) return done(err);
-                                testHandler = handler;
-                                testHandler.on("complete_called", function() {
+                                handler.on("complete_called", function() {
                                     completionCalls++;
-                                });
-                                testHandler.on("complete_predict_called", function() {
-                                    predictionCalls++;
                                 });
                                 done();
                             });
@@ -335,10 +329,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.on("changeAnnotation", function onAnnos() {
                         var annos = jsSession.getAnnotations();
                         if (!annos.length)
-                            return;
-                        if (annos.some(function(a) { // annotations for previous file
-                            return a.text.match(/language.*never used/);
-                        }))
                             return;
                         jsSession.off("changeAnnotation", onAnnos);
                         expect(annos).to.have.length(1);
@@ -785,7 +775,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                         jsTab.editor.ace.onTextInput("rry if(if (b_co");
                         afterCompleteOpen(function(el) {
                             assert.equal(completionCalls, 1);
-                            assert(el.textContent.match(/b_corry/)); // local_completer secretly ran a second time
+                            assert(!el.textContent.match(/b_corry/));
                             assert(el.textContent.match(/b_collin/));
                             done();
                         });
@@ -877,7 +867,7 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                     jsSession.setValue("conso");
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("l");
-                    worker.once("complete_predict_called", function() {
+                    worker.once("predict_called", function() {
                         assert.equal(completionCalls, 1);
                         afterCompleteOpen(function retry(el) {
                             assert.equal(completionCalls, 1);
@@ -917,179 +907,6 @@ require(["lib/architect/architect", "lib/chai/chai", "plugins/c9.ide.language/co
                             done();
                         });
                     });
-                });
-                
-                it("completes php variables in short php escapes", function(done) {
-                    tabs.openFile("/test_broken.php", function(err, _tab) {
-                        if (err) return done(err);
-                        var tab = _tab;
-                        tabs.focusTab(tab);
-                        var session = tab.document.getSession().session;
-                        
-                        session.setValue("<?php $foo = 1;  ?>");
-                        tab.editor.ace.selection.setSelectionRange({ start: { row: 0, column: 16 }, end: { row: 0, column: 16 } });
-                        tab.editor.ace.onTextInput("$");
-                        afterCompleteOpen(function(el) {
-                            complete.closeCompletionBox();
-                            tab.editor.ace.onTextInput("f");
-                            afterCompleteOpen(function(el) {
-                                assert(el.textContent.match(/foo/));
-                                done();
-                            });
-                        });
-                    });
-                });
-                
-                it("completes php variables in long files", function(done) {
-                    tabs.openFile("/test_broken.php", function(err, _tab) {
-                        if (err) return done(err);
-                        var tab = _tab;
-                        tabs.focusTab(tab);
-                        var session = tab.document.getSession().session;
-                        
-                        var value = "<?php\n\n";
-                        for (var i = 0; i < 1000; i++) {
-                            value += "$foo_" + i + " = 42;\n";
-                        }
-                        value = value + "?>";
-                        session.setValue(value);
-                        
-                        tab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0 } });
-                        tab.editor.ace.onTextInput("$");
-                        afterCompleteOpen(function(el) {
-                            complete.closeCompletionBox();
-                            tab.editor.ace.onTextInput("foo_99");
-                            afterCompleteOpen(function(el) {
-                                assert(el.textContent.match(/foo_991/));
-                                done();
-                            });
-                        });
-                    });
-                });
-                
-                it('starts predicting a completion immediately after an assignment', function(done) {
-                    // We expect this behavior as infer_completer's predictNextCompletion()
-                    // tells worker we need completion here.
-                    jsSession.setValue("foo ");
-                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("=");
-                    
-                    testHandler.once("complete_called", function() {
-                        assert.equal(completionCalls, 1);
-                        jsTab.editor.ace.onTextInput(" ");
-                        // Wait and see if this triggers anything
-                        setTimeout(function() {
-                            jsTab.editor.ace.onTextInput("f");
-                            
-                            afterCompleteOpen(function(el) {
-                                assert.equal(completionCalls, 1);
-                                assert(el.textContent.match(/foo/));
-                                done();
-                            });
-                        }, 5);
-                    });
-                });
-                
-                it('just invokes completion once for "v1 + 1 == v2 + v"', function(done) {
-                    jsSession.setValue("var v1; ");
-                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("v");
-                    afterCompleteOpen(function(el) {
-                        complete.closeCompletionBox();
-                        jsTab.editor.ace.onTextInput("1");
-                        jsTab.editor.ace.onTextInput(" ");
-                        jsTab.editor.ace.onTextInput("+");
-                        jsTab.editor.ace.onTextInput(" ");
-                        jsTab.editor.ace.onTextInput("1");
-                        jsTab.editor.ace.onTextInput(" ");
-                        jsTab.editor.ace.onTextInput("=");
-                        jsTab.editor.ace.onTextInput("=");
-                        jsTab.editor.ace.onTextInput(" ");
-                        jsTab.editor.ace.onTextInput("v");
-                        afterCompleteOpen(function(el) {
-                            complete.closeCompletionBox();
-                            jsTab.editor.ace.onTextInput("2");
-                            jsTab.editor.ace.onTextInput(" ");
-                            jsTab.editor.ace.onTextInput("+");
-                            jsTab.editor.ace.onTextInput(" ");
-                            jsTab.editor.ace.onTextInput("v");
-                            afterCompleteOpen(function(el) {
-                                assert.equal(completionCalls, 1);
-                                done();
-                            });
-                        });
-                    });
-                });
-                
-                it('just invokes completion once for "x1 + 1 == x2 + x", with some timeouts', function(done) {
-                    jsSession.setValue("var x1; ");
-                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("x");
-                    afterCompleteOpen(function(el) {
-                        jsTab.editor.ace.onTextInput("1");
-                        jsTab.editor.ace.onTextInput(" ");
-                        // Allow prediction to be triggered
-                        setTimeout(function() {
-                            jsTab.editor.ace.onTextInput("+");
-                            // Allow prediction to be triggered
-                            setTimeout(function() {
-                                jsTab.editor.ace.onTextInput(" ");
-                                jsTab.editor.ace.onTextInput("1");
-                                jsTab.editor.ace.onTextInput(" ");
-                                jsTab.editor.ace.onTextInput("=");
-                                jsTab.editor.ace.onTextInput("=");
-                                // Allow prediction to be triggered
-                                setTimeout(function() {
-                                    jsTab.editor.ace.onTextInput(" ");
-                                    jsTab.editor.ace.onTextInput("x");
-                                    afterCompleteOpen(function(el) {
-                                        complete.closeCompletionBox();
-                                        jsTab.editor.ace.onTextInput("2");
-                                        jsTab.editor.ace.onTextInput(" ");
-                                        jsTab.editor.ace.onTextInput("+");
-                                        jsTab.editor.ace.onTextInput(" ");
-                                        jsTab.editor.ace.onTextInput("x");
-                                        afterCompleteOpen(function(el) {
-                                            assert.equal(completionCalls, 1);
-                                            done();
-                                        });
-                                    });
-                                }, 5);
-                            }, 5);
-                        }, 5);
-                    });
-                });
-                
-                it('calls completion twice for "var y; ...", "var v; ..."', function(done) {
-                    jsSession.setValue("var y1; ");
-                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("y");
-                    afterCompleteOpen(function(el) {
-                        complete.closeCompletionBox();
-                        jsSession.setValue("var v1; ");
-                        jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                        jsTab.editor.ace.onTextInput("v");
-                        afterCompleteOpen(function(el) {
-                            assert.equal(completionCalls, 2);
-                            done();
-                        });
-                    });
-                });
-                
-                it("doesn't start predicting completion immediately after a newline", function(done) {
-                    // We expect this behavior as infer_completer's predictNextCompletion()
-                    // tells worker we need completion here.
-                    jsSession.setValue("var foo;");
-                    jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
-                    jsTab.editor.ace.onTextInput("\n");
-                    
-                    setTimeout(function() {
-                        jsTab.editor.ace.onTextInput("\nf");
-                        testHandler.once("complete_called", function() {
-                            assert.equal(completionCalls, 1);
-                            done();
-                        });
-                    }, 50);
                 });
             });
         });
