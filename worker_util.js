@@ -206,7 +206,7 @@ module.exports = {
      *     "bash",
      *     {
      *         args: ["-n", "$FILE"],
-     *         useTempFile: true
+     *         mode: "stdin"
      *     },
      *     function(err, stdout, stderr) {
      *         console.log("Bash linting results:", stderr);
