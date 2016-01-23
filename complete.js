@@ -73,7 +73,7 @@ define(function(require, exports, module) {
             var ace = deferredInvoker.ace;
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getDocument().getLine(pos.row);
-            var identifierRegex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
+            var identifierRegex = getIdentifierRegex(null, ace);
             var completionRegex = getCompletionRegex(null, ace);
             if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
                || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
@@ -301,7 +301,7 @@ define(function(require, exports, module) {
             var session = ace.getSession();
             var line = session.getLine(pos.row);
             var doc = session.getDocument();
-            var idRegex = match.identifierRegex || getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
+            var idRegex = match.identifierRegex || getIdentifierRegex(null, ace);
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             var postfix = completeUtil.retrieveFollowingIdentifier(line, pos.column, idRegex) || "";
             
@@ -468,7 +468,7 @@ define(function(require, exports, module) {
             // Get context info
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
-            var idRegex = getIdentifierRegex(null, ace) || DEFAULT_ID_REGEX;
+            var idRegex = getIdentifierRegex(null, ace);
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             
             // Set the highlight metadata
@@ -659,7 +659,7 @@ define(function(require, exports, module) {
                 setTextInputToolTip(text);
                 var matched = false;
                 for (var i = 0; i < matches.length && !matched; i++) {
-                    var idRegex = matches[i].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
+                    var idRegex = matches[i].identifierRegex || getIdentifierRegex();
                     matched = idRegex.test(text);
                 }
                 var completionMatch = matchCompletionRegex(getCompletionRegex(), text, { column: text.length });
@@ -829,7 +829,7 @@ define(function(require, exports, module) {
                 replaceText(editor.ace, matches[0], event.data.deleteSuffix);
             }
             else if (matches.length > 0) {
-                var idRegex = matches[0].identifierRegex || getIdentifierRegex() || DEFAULT_ID_REGEX;
+                var idRegex = matches[0].identifierRegex || getIdentifierRegex();
                 var identifier = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
                 if (matches.length === 1 && (identifier === matches[0].replaceText || identifier + " " === matches[0].replaceText) && matches[0].replaceText)
                     closeCompletionBox();
@@ -847,7 +847,7 @@ define(function(require, exports, module) {
             
         function sameMultiselectPrefix(ace) {
             var commonPrefix;
-            var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
+            var idRegex = getIdentifierRegex();
             return ace.selection.ranges.every(function(range) {
                 var pos = range.cursor;
                 var line = ace.session.getLine(pos.row);
@@ -867,7 +867,7 @@ define(function(require, exports, module) {
                 return;
             var pos = ace.getCursorPosition();
             var line = ace.getSession().getLine(pos.row);
-            var idRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
+            var idRegex = getIdentifierRegex();
             var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, idRegex);
             matches = filterMatches(eventMatches, line, pos);
             matches = cleanupMatches(matches, ace, pos, line);
@@ -880,7 +880,7 @@ define(function(require, exports, module) {
         }
         
         function filterMatches(matches, line, pos) {
-            var identifierRegex = getIdentifierRegex() || DEFAULT_ID_REGEX;
+            var identifierRegex = getIdentifierRegex();
             var defaultPrefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
             var results = matches.filter(function(match) {
                 var prefix = match.identifierRegex ? completeUtil.retrievePrecedingIdentifier(line, pos.column, match.identifierRegex) : defaultPrefix;
@@ -939,7 +939,7 @@ define(function(require, exports, module) {
         }
         
         function getIdentifierRegex(language, ace) {
-            return idRegexes[language || getSyntax(ace || lastAce)];
+            return idRegexes[language || getSyntax(ace || lastAce)] || DEFAULT_ID_REGEX;
         }
         
         function inCommentOrString(ace, pos) {
