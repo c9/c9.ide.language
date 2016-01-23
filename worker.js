@@ -1602,7 +1602,7 @@ function endTime(t, message, indent) {
         }
     
         if (cacheKey.isCompatible(this.completionCache) && !isRecompletionRequired(this.completionCache)) {
-            if (this.completionCache)
+            if (this.completionCache.result)
                 cacheHit(this.completionCache);
             else
                 this.completionCache.resultCallbacks.push(cacheHit);
@@ -1611,7 +1611,7 @@ function endTime(t, message, indent) {
     
         if (cacheKey.isCompatible(this.completionPrediction) && !isRecompletionRequired(this.completionPrediction)) {
             this.completionCache = this.completionPrediction;
-            if (this.completionCache)
+            if (this.completionCache.result)
                 cacheHit(this.completionCache);
             else
                 this.completionCache.resultCallbacks.push(cacheHit);
