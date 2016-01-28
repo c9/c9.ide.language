@@ -1628,7 +1628,7 @@ function endTime(t, message, indent) {
             if (options.predictOnly)
                 return;
                 
-            updateLocalCompletions(that.doc, that.$path, pos, cache.result.matches, function(err, matches) {
+            updateLocalCompletions(that.doc, that.$path, pos, cache.result.matches, function sendCached(err, matches) {
                 if (err) {
                     console.error(err);
                     matches = cache.result.matches;
@@ -1771,7 +1771,7 @@ function endTime(t, message, indent) {
             setResult: function(result) {
                 this.result = result;
                 this.resultCallbacks.forEach(function(c) {
-                    c(this);
+                    c(that);
                 });
                 if (result.hadError && that.completionCache === this)
                     that.completionCache = null;
