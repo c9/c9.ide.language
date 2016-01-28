@@ -1554,7 +1554,6 @@ function endTime(t, message, indent) {
                                 return 0;
                         });
                         endTime(tStart, "COMPLETED!");
-                        endOverrideLine(originalLine);
                         callback({
                             pos: pos,
                             matches: matches,
@@ -1574,7 +1573,7 @@ function endTime(t, message, indent) {
         
         // HACK: temporarily override doc contents
         function startOverrideLine() {
-            if (overrideLine)
+            if (overrideLine != null)
                 _self.doc.$lines[pos.row] = overrideLine;
             
             _self.$overrideLine = overrideLine;
