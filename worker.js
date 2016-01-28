@@ -1745,7 +1745,7 @@ function endTime(t, message, indent) {
      * @param identifierRegex
      */
     this.getCompleteCacheKey = function(pos, overrideLine, identifierRegex, cacheCompletionRegex, options) {
-        var that = this;
+        var worker = this;
         var doc = this.doc;
         var path = this.$path;
         var originalLine = doc.getLine(pos.row);
@@ -1769,14 +1769,15 @@ function endTime(t, message, indent) {
             path: path,
             noDoc: options.noDoc,
             setResult: function(result) {
+                var cacheKey = this;
                 this.result = result;
                 this.resultCallbacks.forEach(function(c) {
-                    c(that);
+                    c(cacheKey);
                 });
-                if (result.hadError && that.completionCache === this)
-                    that.completionCache = null;
-                if (result.hadError && that.completionPrediction === this)
-                    that.completionPrediction = null;
+                if (result.hadError && worker.completionCache === this)
+                    worker.completionCache = null;
+                if (result.hadError && worker.completionPrediction === this)
+                    worker.completionPrediction = null;
             },
             isCompatible: function(other) {
                 return other
