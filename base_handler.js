@@ -623,8 +623,7 @@ module.exports = {
      * @param {String} callback.result.name
      *                                       The full name to show in the completion popup
      * @param {String} [callback.result.id]  The short name that identifies this completion
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}
-     *        [callback.result.icon]
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} [callback.result.icon]
      *                                       The icon to use
      * @param {String} callback.result.meta  Additional information to show
      * @param {String} [callback.result.doc] Documentation to display
@@ -877,8 +876,7 @@ module.exports = {
      * @param {Document} doc the Document object representing the source
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
-     * @param {Object} callback.result       The function's result
-     * @return a string value representing the new source code after formatting or null if not supported
+     * @param {String} callback.result       The source code after formatting
      */
     codeFormat: function(doc, callback) {
         callback();
@@ -903,8 +901,7 @@ module.exports = {
      *                                       The result row
      * @param {Number} [callback.results.column]
      *                                       The result column
-     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"}
-     *                 [callback.results.icon] 
+     * @param {"event"|"method"|"method2"|"package"|"property"|"property2"|"unknown"|"unknown2"} [callback.results.icon] 
      *                                       The icon to display (in case of multiple results)
      * @param {Boolean} [callback.results.isGeneric]
      *                                       Indicates that this is a generic, language-independent
