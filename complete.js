@@ -491,7 +491,7 @@ define(function(require, exports, module) {
             popup.setData(matches);
             popup.setRow(row);
 
-            if (!popup.isOpen || popup.row > 0 && !popup.data.every(function(m, i) {
+            if (!popup.isOpen || row >= matches.length || row > 0 && !popup.data.every(function(m, i) {
                 return i > row || matches[i] && matches[i].name === m.name;
             }))
                 popup.setRow(0);
