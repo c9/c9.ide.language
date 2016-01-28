@@ -561,12 +561,16 @@ function endTime(t, message, indent) {
         var _self = this;
         asyncForEach(_self.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
-                handler.codeFormat(_self.doc, handleCallbackError(function(newSource) {
+                handler.codeFormat(_self.doc, function(optionalErr, newSource) {
+                    if (optionalErr instanceof "string")
+                        newSource = optionalErr;
+                    else if (optionalErr)
+                        console.error(optionalErr.stack || optionalErr);
                     if (newSource)
                         return _self.sender.emit("code_format", newSource);
                     else
                         next();
-                }));
+                });
             }
             else
                 next();
