@@ -1827,11 +1827,12 @@ function endTime(t, message, indent) {
                     setTimeout(function() {
                         if (threadId !== _self.waitForCompletionSyncThread)
                             return;
+                        line = _self.doc.getLine(pos.row);
                         if (!completeUtil.canCompleteForChangedLine(line, options.line, pos, pos, identifierRegex)) {
                             if (!line) { // sanity check
                                 console.log("worker: seeing an empty line in my copy of the document, won't complete");
                             }
-                            return; // ugh give up already
+                            return console.log("worker: dropped completion request as my copy of the document said: " + line); // ugh give up already
                         }
                         runCompletion(identifierRegex);
                     }, 20);
