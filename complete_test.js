@@ -543,6 +543,29 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 });
             });
             
+            it("doesn't assume undeclared vars are functions", function(done) {
+                jsSession.setValue('window[imUndefined] = function(json) {};\n\
+                    var unassigned;\n\
+                    ');
+                jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
+                jsTab.editor.ace.onTextInput("u");
+                afterCompleteOpen(function(el) {
+                    assert(el.textContent.match(/unassigned/));
+                    assert(!el.textContent.match(/unassigned\(/));
+                    done();
+                });
+            });
+            
+            it("doesn't assume arrays are optional", function(done) {
+                jsSession.setValue('function myFun(arr){}\nvar a = []\nmyFun(a)\nmyF');
+                jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
+                jsTab.editor.ace.onTextInput("u");
+                afterCompleteDocOpen(function(el) {
+                    assert(el.textContent.match(/myFun\(arr.*Array/));
+                    done();
+                });
+            });
+            
             it("completes php variables in short php escapes", function(done) {
                 tabs.openFile("/test_broken.php", function(err, _tab) {
                     if (err) return done(err);

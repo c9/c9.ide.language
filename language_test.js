@@ -12,11 +12,6 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
         var assert = require("assert");
         var tabs = imports.tabManager;
         var complete = imports["language.complete"];
-        var afterNoCompleteOpen = helpers.afterNoCompleteOpen;
-        var afterCompleteDocOpen = helpers.afterCompleteDocOpen;
-        var afterCompleteOpen = helpers.afterCompleteOpen;
-        var isCompleterOpen = helpers.isCompleterOpen;
-        var getCompletionCalls = helpers.getCompletionCalls;
 
         describe("analysis", function(){
             var jsTab;
@@ -28,7 +23,6 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     tab.close(true);
                 });
                 // tab.close() isn't quite synchronous, wait for it :(
-                complete.closeCompletionBox();
                 setTimeout(function() {
                     tabs.openFile("/language.js", function(err, tab) {
                         if (err) return done(err);
@@ -94,29 +88,6 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                         assert(annos[0].text.match(/param2.*defined/));
                         done();
                     }
-                });
-            });
-            
-            it("doesn't assume undeclared vars are functions", function(done) {
-                jsSession.setValue('window[imUndefined] = function(json) {};\n\
-                    var unassigned;\n\
-                    ');
-                jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
-                jsTab.editor.ace.onTextInput("u");
-                afterCompleteOpen(function(el) {
-                    assert(el.textContent.match(/unassigned/));
-                    assert(!el.textContent.match(/unassigned\(/));
-                    done();
-                });
-            });
-            
-            it("doesn't assume arrays are optional", function(done) {
-                jsSession.setValue('function myFun(arr){}\nvar a = []\nmyFun(a)\nmyF');
-                jsTab.editor.ace.selection.setSelectionRange({ start: { row: 10, column: 0 }, end: { row: 10, column: 0 } });
-                jsTab.editor.ace.onTextInput("u");
-                afterCompleteDocOpen(function(el) {
-                    assert(el.textContent.match(/myFun\(arr.*Array/));
-                    done();
                 });
             });
             
