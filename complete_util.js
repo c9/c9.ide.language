@@ -85,7 +85,12 @@ function fetchTextSync(path) {
 
 function fetchText(path, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', staticPrefix + "/" + path, true);
+    try {
+        xhr.open('GET', staticPrefix + "/" + path, true);
+    } catch(e) {
+        // ms edge throws an error here
+        return done(e);
+    }
     xhr.onload = function (e) {
         if (xhr.readyState !== 4)
             return;
@@ -99,6 +104,10 @@ function fetchText(path, callback) {
     function done(err, result) {
         callback && callback(err, result);
         callback = null;
+        if (err) {
+            err.data = {path: path};
+            setTimeout(function() { throw err; });
+        }
     }
 }
 
