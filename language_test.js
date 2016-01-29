@@ -2,9 +2,7 @@
 
 "use client";
 
-define(function(require, exports, module) {
-    var base = require("./test_base");
-    
+require(["plugins/c9.ide.language/test_base"], function(base) {
     base.setup(function(imports, helpers) {
         var language = imports.language;
         var chai = require("lib/chai/chai");

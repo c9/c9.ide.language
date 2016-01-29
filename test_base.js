@@ -4,6 +4,7 @@ define(function(require, exports, module) {
     var expect = chai.expect;
     var assert = require("assert");
     var complete_util = require("plugins/c9.ide.language/complete_util");
+    complete_util.setStaticPrefix("/static");
     
     module.exports.setup = function(callback) {
         expect.setupArchitectTest(window.plugins = [
@@ -200,7 +201,6 @@ define(function(require, exports, module) {
             var completionCalls;
             var predictionCalls;
             
-            complete_util.setStaticPrefix("/static");
             complete.$setShowDocDelay(50);
             
             after(function() { clearTimeout(timer); });
@@ -214,7 +214,7 @@ define(function(require, exports, module) {
                     return getTabHtml(tab);
             });
             
-            describe("ace_setup", function() {
+            describe("tests", function() {
                 this.timeout(30000);
                 before(function(done) {
                     apf.config.setProperty("allow-select", false);
@@ -234,10 +234,7 @@ define(function(require, exports, module) {
                         done();
                     });
                 });
-            });
-            
-            describe("language_setup", function() {
-                this.timeout(30000);
+                
                 before(function(done) {
                     language.getWorker(function(err, worker) {
                         if (err) return done(err);
@@ -258,10 +255,23 @@ define(function(require, exports, module) {
                         );
                     });
                 });
-            });
+                
+                beforeEach(function() {
+                    completionCalls = predictionCalls = 0;
+                });
             
-            beforeEach(function() {
-                completionCalls = predictionCalls = 0;
+                callback(imports, {
+                    afterNoCompleteOpen: afterNoCompleteOpen,
+                    afterCompleteDocOpen: afterCompleteDocOpen,
+                    afterCompleteOpen: afterCompleteOpen,
+                    isCompleterOpen: isCompleterOpen,
+                    getCompletionCalls: function() {
+                        return completionCalls;
+                    },
+                    getPredictionCalls: function() {
+                        return predictionCalls;
+                    },
+                });
             });
     
             function afterNoCompleteOpen(callback) {
@@ -294,21 +304,8 @@ define(function(require, exports, module) {
                 var el = document.getElementsByClassName("ace_autocomplete")[0];
                 return el && el.style.display === "none";
             }
-            
-            callback(imports, {
-                afterNoCompleteOpen: afterNoCompleteOpen,
-                afterCompleteDocOpen: afterCompleteDocOpen,
-                afterCompleteOpen: afterCompleteOpen,
-                isCompleterOpen: isCompleterOpen,
-                getCompletionCalls: function() {
-                    return completionCalls;
-                },
-                getPredictionCalls: function() {
-                    return predictionCalls;
-                },
-            });
-            
-            onload && onload();
+                
+            window.onload && window.onload();
         }
     };
 });
