@@ -122,7 +122,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 });
             });
             
-            it("supports linting python", function(done) {
+            it.skip("supports linting python", function(done) {
                 tabs.openFile("/python/test_user.py", function(err, _tab) {
                     if (err) return done(err);
                     
