@@ -121,6 +121,29 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     }
                 });
             });
+            
+            it("supports linting python", function(done) {
+                tabs.openFile("/python/test_user.py", function(err, _tab) {
+                    if (err) return done(err);
+                    
+                    var tab = _tab;
+                    tabs.focusTab(tab);
+                    var session = tab.document.getSession().session;
+                    
+                    session.on("changeAnnotation", testAnnos);
+                    testAnnos();
+                    
+                    function testAnnos() {
+                        var annos = session.getAnnotations();
+                        if (!annos.length)
+                            return;
+                        session.off("changeAnnotation", testAnnos);
+                        assert(annos.length === 1);
+                        assert(annos[0].text.match(/bad_call/));
+                        done();
+                    }
+                });
+            });
         });
     });
 });

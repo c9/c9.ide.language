@@ -62,6 +62,10 @@ define(function(require, exports, module) {
             "plugins/c9.ide.language.javascript.eslint/eslint",
             "plugins/c9.ide.language.javascript.infer/jsinfer",
             {
+                packagePath: "plugins/c9.ide.language.python/python",
+                testing: true,
+            },
+            {
                 packagePath: "plugins/c9.ide.language.javascript.tern/tern",
                 plugins: [
                     {
