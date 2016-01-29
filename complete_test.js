@@ -739,7 +739,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 }, 50);
             });
             
-            it("completes python", function(done) {
+            it.skip("completes python", function(done) {
                 tabs.openFile("/python/test_user.py", function(err, _tab) {
                     if (err) return done(err);
                     var tab = _tab;
