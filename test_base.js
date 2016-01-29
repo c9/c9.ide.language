@@ -192,11 +192,8 @@ define(function(require, exports, module) {
         
         function main(options, imports, register) {
             var tabs = imports.tabManager;
-            var ace = imports.ace;
-            var Document = imports.Document;
             var language = imports.language;
             var complete = imports["language.complete"];
-            var testHandler;
             var timer;
             var completionCalls;
             var predictionCalls;
@@ -260,7 +257,7 @@ define(function(require, exports, module) {
                     completionCalls = predictionCalls = 0;
                 });
             
-                callback(imports, {
+                callback(null, imports, {
                     afterNoCompleteOpen: afterNoCompleteOpen,
                     afterCompleteDocOpen: afterCompleteDocOpen,
                     afterCompleteOpen: afterCompleteOpen,

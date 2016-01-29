@@ -3,7 +3,9 @@
 "use client";
 
 require(["plugins/c9.ide.language/test_base"], function(base) {
-    base.setup(function(imports, helpers) {
+    base.setup(function(err, imports, helpers) {
+        if (err) throw err;
+        
         var language = imports.language;
         var chai = require("lib/chai/chai");
         var expect = chai.expect;
@@ -14,8 +16,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
         var afterCompleteDocOpen = helpers.afterCompleteDocOpen;
         var afterCompleteOpen = helpers.afterCompleteOpen;
         var isCompleterOpen = helpers.isCompleterOpen;
-        var worker = imports.worker;
-        var testHandler = imports.testHandler;
+        var getCompletionCalls = helpers.getCompletionCalls;
 
         describe("analysis", function(){
             var jsTab;
@@ -488,12 +489,12 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("rry _co");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 1);
+                        assert.equal(getCompletionCalls(), 1);
                         // Normally typing "_corry _c" would show "_corry" in the completion,
                         // but since JavaScript is supposed to have a getCacheCompletionRegex set,
                         // a cached results should be used that doesn't have "_corry" yet
@@ -509,12 +510,12 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("rry if(if (b_co");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 1);
+                        assert.equal(getCompletionCalls(), 1);
                         assert(el.textContent.match(/b_corry/)); // local_completer secretly ran a second time
                         assert(el.textContent.match(/b_collin/));
                         done();
@@ -527,12 +528,12 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("rry=_co");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 2);
+                        assert.equal(getCompletionCalls(), 2);
                         assert(el.textContent.match(/_corry/));
                         assert(el.textContent.match(/_collin/));
                         done();
@@ -545,13 +546,13 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("ff");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     assert(el.textContent.match(/ffarg/));
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("oo(ff");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 2);
+                        assert.equal(getCompletionCalls(), 2);
                         // cache got cleared so we have farg here now
                         assert(el.textContent.match(/ffoo/));
                         assert(el.textContent.match(/ffarg/));
@@ -559,7 +560,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                         jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                         jsTab.editor.ace.onTextInput("ort) ff");
                         afterCompleteOpen(function(el) {
-                            assert.equal(completionCalls, 3);
+                            assert.equal(getCompletionCalls(), 3);
                             // cache got cleared so we have fort here now
                             assert(el.textContent.match(/ffoo/));
                             assert(el.textContent.match(/ffort/));
@@ -575,12 +576,12 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("f");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("} f");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 2);
+                        assert.equal(getCompletionCalls(), 2);
                         done();
                     });
                 });
@@ -591,13 +592,13 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("g c");
                     afterCompleteOpen(function(el) {
                         assert(el.textContent.match(/console/), el.textContent);
-                        assert.equal(completionCalls, 2, "Should refetch after property access: " + completionCalls);
+                        assert.equal(getCompletionCalls(), 2, "Should refetch after property access: " + getCompletionCalls());
                         done();
                     });
                 });
@@ -607,10 +608,10 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsSession.setValue("conso");
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("l");
-                worker.once("complete_predict_called", function() {
-                    assert.equal(completionCalls, 1);
+                imports.worker.once("complete_predict_called", function() {
+                    assert.equal(getCompletionCalls(), 1);
                     afterCompleteOpen(function retry(el) {
-                        assert.equal(completionCalls, 1);
+                        assert.equal(getCompletionCalls(), 1);
                         if (!el.textContent.match(/log/))
                             return afterCompleteOpen(retry);
                         done();
@@ -623,7 +624,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     assert(el.textContent.match(/conso(?!l).*console/));
                     done();
                 });
@@ -634,14 +635,14 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("o");
                 afterCompleteOpen(function(el) {
-                    assert.equal(completionCalls, 1);
+                    assert.equal(getCompletionCalls(), 1);
                     assert(el.textContent.match(/conso(?!l).*console/));
 
                     complete.closeCompletionBox();
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0 } });
                     jsTab.editor.ace.onTextInput("l");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 1);
+                        assert.equal(getCompletionCalls(), 1);
                         assert(!el.textContent.match(/conso(?!l)/));
                         assert(el.textContent.match(/console/));
                         done();
@@ -704,15 +705,15 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                 jsTab.editor.ace.onTextInput("=");
                 
-                testHandler.once("complete_called", function() {
-                    assert.equal(completionCalls, 1);
+                imports.testHandler.once("complete_called", function() {
+                    assert.equal(getCompletionCalls(), 1);
                     jsTab.editor.ace.onTextInput(" ");
                     // Wait and see if this triggers anything
                     setTimeout(function() {
                         jsTab.editor.ace.onTextInput("f");
                         
                         afterCompleteOpen(function(el) {
-                            assert.equal(completionCalls, 1);
+                            assert.equal(getCompletionCalls(), 1);
                             assert(el.textContent.match(/foo/));
                             done();
                         });
@@ -744,7 +745,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                         jsTab.editor.ace.onTextInput(" ");
                         jsTab.editor.ace.onTextInput("v");
                         afterCompleteOpen(function(el) {
-                            assert.equal(completionCalls, 1);
+                            assert.equal(getCompletionCalls(), 1);
                             done();
                         });
                     });
@@ -780,7 +781,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                                     jsTab.editor.ace.onTextInput(" ");
                                     jsTab.editor.ace.onTextInput("x");
                                     afterCompleteOpen(function(el) {
-                                        assert.equal(completionCalls, 1);
+                                        assert.equal(getCompletionCalls(), 1);
                                         done();
                                     });
                                 });
@@ -800,7 +801,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     jsTab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 0 }, end: { row: 1, column: 0} });
                     jsTab.editor.ace.onTextInput("v");
                     afterCompleteOpen(function(el) {
-                        assert.equal(completionCalls, 2);
+                        assert.equal(getCompletionCalls(), 2);
                         done();
                     });
                 });
@@ -815,8 +816,8 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 
                 setTimeout(function() {
                     jsTab.editor.ace.onTextInput("\nf");
-                    testHandler.once("complete_called", function() {
-                        assert.equal(completionCalls, 1);
+                    imports.testHandler.once("complete_called", function() {
+                        assert.equal(getCompletionCalls(), 1);
                         done();
                     });
                 }, 50);
