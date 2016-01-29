@@ -562,7 +562,7 @@ function endTime(t, message, indent) {
         asyncForEach(_self.handlers, function(handler, next) {
             if (_self.isHandlerMatch(handler, null, "codeFormat", true)) {
                 handler.codeFormat(_self.doc, function(optionalErr, newSource) {
-                    if (optionalErr instanceof "string")
+                    if (typeof optionalErr === "string")
                         newSource = optionalErr;
                     else if (optionalErr)
                         console.error(optionalErr.stack || optionalErr);
