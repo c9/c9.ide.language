@@ -738,6 +738,26 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     });
                 }, 50);
             });
+            
+            it("completes python", function(done) {
+                tabs.openFile("/python/test_user.py", function(err, _tab) {
+                    if (err) return done(err);
+                    var tab = _tab;
+                    tabs.focusTab(tab);
+                    var session = tab.document.getSession().session;
+                    
+                    session.setValue("import os; os");
+                    tab.editor.ace.selection.setSelectionRange({ start: { row: 0, column: 16 }, end: { row: 0, column: 16 } });
+                    imports.worker.once("python_completer_ready", function() {
+                        tab.editor.ace.onTextInput(".");
+                        afterCompleteOpen(function(el) {
+                            complete.closeCompletionBox();
+                            assert(el.textContent.match(/abort/));
+                            done();
+                        });
+                    });
+                });
+            });
         }); 
     });
 });
