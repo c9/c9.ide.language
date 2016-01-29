@@ -197,6 +197,8 @@ define(function(require, exports, module) {
             var complete = imports["language.complete"];
             var testHandler;
             var timer;
+            var completionCalls;
+            var predictionCalls;
             
             complete_util.setStaticPrefix("/static");
             complete.$setShowDocDelay(50);
@@ -212,7 +214,7 @@ define(function(require, exports, module) {
                     return getTabHtml(tab);
             });
             
-            describe("base_setup", function() {
+            describe("ace_setup", function() {
                 this.timeout(30000);
                 before(function(done) {
                     apf.config.setProperty("allow-select", false);
@@ -229,13 +231,37 @@ define(function(require, exports, module) {
                     
                     tabs.once("ready", function() {
                         tabs.getPanes()[0].focus();
-                        language.getWorker(function(err, _worker) {
-                            if (err) return done(err);
-                            imports.worker = _worker;
-                            done();
-                        });
+                        done();
                     });
                 });
+            });
+            
+            describe("language_setup", function() {
+                this.timeout(30000);
+                before(function(done) {
+                    language.getWorker(function(err, worker) {
+                        if (err) return done(err);
+                        imports.worker = worker;
+                        language.registerLanguageHandler(
+                            "plugins/c9.ide.language/language_test_helper",
+                            function(err, handler) {
+                                if (err) return done(err);
+                                imports.testHandler = handler;
+                                handler.on("complete_called", function() {
+                                    completionCalls++;
+                                });
+                                handler.on("complete_predict_called", function() {
+                                    predictionCalls++;
+                                });
+                                done();
+                            }
+                        );
+                    });
+                });
+            });
+            
+            beforeEach(function() {
+                completionCalls = predictionCalls = 0;
             });
     
             function afterNoCompleteOpen(callback) {
@@ -273,7 +299,13 @@ define(function(require, exports, module) {
                 afterNoCompleteOpen: afterNoCompleteOpen,
                 afterCompleteDocOpen: afterCompleteDocOpen,
                 afterCompleteOpen: afterCompleteOpen,
-                isCompleterOpen: isCompleterOpen
+                isCompleterOpen: isCompleterOpen,
+                getCompletionCalls: function() {
+                    return completionCalls;
+                },
+                getPredictionCalls: function() {
+                    return predictionCalls;
+                },
             });
             
             onload && onload();
