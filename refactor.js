@@ -76,7 +76,7 @@ define(function(require, exports, module) {
                             },
                             {
                                 yes: "Rename",
-                                no: "Abort",
+                                no: "Cancel",
                             }
                         );
                     } else {
