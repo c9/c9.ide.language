@@ -73,6 +73,10 @@ define(function(require, exports, module) {
                             },
                             function() { // no
                                 cancelRename();
+                            },
+                            {
+                                yes: "Rename",
+                                no: "Abort",
                             }
                         );
                     } else {
