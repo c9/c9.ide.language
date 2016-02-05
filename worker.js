@@ -629,7 +629,7 @@ function endTime(t, message, indent) {
                             return handler.analyze(part.getValue(), ast, handleCallbackError(doNext), minimalAnalysis);
                         }
                         
-                        handler.analyze(part.getValue(), ast, { minimalAnalysis: minimalAnalysis }, handleCallbackError(doNext));
+                        handler.analyze(part.getValue(), ast, { path: _self.$path, minimalAnalysis: minimalAnalysis }, handleCallbackError(doNext));
                         
                         function doNext(result) {
                             endTime(t, "Analyze: " + handler.$source.replace("plugins/", ""));

@@ -767,7 +767,7 @@ module.exports = {
      * @param {Function} callback                  The callback; must be called
      * @param {Error|String} callback.err          Any resulting error
      * @param {Object} options
-     * @param {Object} options
+     * @param {String} options.path                The current file path.
      * @param {Boolean} [options.minimalAnalysis]  Fast, minimal analysis is requested, e.g.
      *                                             for code completion or tooltips.
      * @param {Object[]} callback.result           The function's result, an array of error and warning markers
