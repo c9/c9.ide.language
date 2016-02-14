@@ -241,17 +241,17 @@ define(function(require, exports, module) {
             
             settings.once("read", function() {
                 settings.setDefaults("user/language", [
-                    ["hints", "true"],
-                    ["continuousCompletion", "true"],
-                    ["enterCompletion", "true"]
+                    ["hints", true],
+                    ["continuousCompletion", true],
+                    ["instanceHighlight", true],
+                    ["enterCompletion", true]
                 ]);
                 settings.setDefaults("project/language", [
                     ["warnLevel", "info"],
-                    ["instanceHighlight", "true"],
-                    ["undeclaredVars", "true"],
-                    ["eslintrc", "true"],
-                    ["semi", "true"],
-                    ["unusedFunctionArgs", "false"]
+                    ["undeclaredVars", true],
+                    ["eslintrc", true],
+                    ["semi", true],
+                    ["unusedFunctionArgs", false]
                 ]);
                 settings.on("user/language", updateSettings, plugin);
                 settings.on("project/language", updateSettings, plugin);
@@ -427,17 +427,16 @@ define(function(require, exports, module) {
             if (!worker)
                 return plugin.once("initWorker", updateSettings, plugin);
             
-            ["instanceHighlight", "unusedFunctionArgs", "undeclaredVars", "eslintrc", "semi"]
-            .forEach(function(s) {
-                worker.call(
-                    "enableFeature",
-                    [s, settings.getBool("project/language/@" + s)]
-                );
-            });
-            worker.call(
-                "enableFeature",
-                ["hints", settings.getBool("user/language/@hints")]
-            );
+            function updateFeatures(type, names) {
+                names.forEach(function(s) {
+                    worker.call(
+                        "enableFeature",
+                        [s, settings.getBool(type + "/language/@" + s)]
+                    );
+                });
+            }
+            updateFeatures("user", ["instanceHighlight", "hints"]);
+            updateFeatures("project", ["unusedFunctionArgs", "undeclaredVars", "eslintrc", "semi"]);
             worker.call("setWarningLevel", 
                 [settings.get("project/language/@warnLevel")]);
                 
