@@ -174,7 +174,7 @@ define(function(require, exports, module) {
             loaded = true;
             var id = "plugins/c9.ide.language/worker";
             if (options.workerPrefix)
-                var path = options.workerPrefix + "/" + id + ".js";
+                var path = options.workerPrefix.replace(/\/?$/, "/") + id + ".js";
             
             // Create main worker for language processing
             if (UI_WORKER) {
