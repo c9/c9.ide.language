@@ -164,11 +164,7 @@ define(function(require, exports, module) {
         }
         
         function initRenameUI(data, ace) {
-            // Temporarily disable these markers, to prevent weird slow-updating events whilst typing
-            marker.disableMarkerType('occurrence_main', ace);
-            marker.disableMarkerType('occurrence_other', ace);
             var cursor = ace.getCursorPosition();
-    
             var mainPos = data.pos;
             // Exclude the main position from others
             var others = data.others.filter(function (o) {
@@ -184,6 +180,9 @@ define(function(require, exports, module) {
                 });
                 return;
             }
+            // Temporarily disable these markers, to prevent weird slow-updating events whilst typing
+            marker.disableMarkerType('occurrence_main', ace);
+            marker.disableMarkerType('occurrence_other', ace);
             
             if (placeHolder)
                 return;
