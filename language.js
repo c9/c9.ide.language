@@ -517,7 +517,8 @@ define(function(require, exports, module) {
         }
     
         function registerLanguageHandler(modulePath, contents, callback, plugin) {
-            if (!callback && typeof contents === "function") {
+            if (typeof contents === "function") {
+                plugin = callback;
                 callback = contents;
                 contents = null;
             }
@@ -527,6 +528,9 @@ define(function(require, exports, module) {
                     if (e.data.path !== modulePath)
                         return;
                     worker.removeEventListener(reply);
+                    
+                    plugin && plugin.on("unload", unregisterLanguageHandler.bind(null, modulePath));
+                    
                     callback && callback(e.data.err, createEmitter(modulePath));
                 });
                 if (modulePath)
