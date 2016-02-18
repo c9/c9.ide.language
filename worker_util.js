@@ -251,7 +251,7 @@ module.exports = {
         
         var myWorker = worker.$lastWorker;
         options.command = command;
-        options.path = options.path || myWorker.$path.substr(1);
+        options.path = options.path || (myWorker.$path[0] === "/" ? myWorker.$path.substr(1) : myWorker.$path);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
         var maxCallInterval = options.maxCallInterval || 50;
@@ -266,7 +266,7 @@ module.exports = {
             options.overrideLineRow = myWorker.$lastCompleteRow;
             options.overrideLine = options.overrideLine || myWorker.doc.getLine(options.overrideLineRow);
         }
-        if (options.path && !options.path[0] === "/")
+        if (options.path && options.path[0] === "/")
             return callback(new Error("Only workspace-relative paths are supported"));
             
         // The jsonalyzer has a nice pipeline for invoking tools like this;
@@ -276,7 +276,7 @@ module.exports = {
             id: id,
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
-            filePath: "/" + options.path,
+            filePath: options.path[0] === "~" ? options.path : "/" + options.path,
             maxCallInterval: maxCallInterval,
             timeout: options.timeout || 30000,
             semaphore: "semaphore" in options
