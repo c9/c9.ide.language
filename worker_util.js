@@ -436,17 +436,44 @@ module.exports = {
     },
 
     /**
-     * Show an error popup in the IDE.
+     * Show an error popup in the IDE, using dialog.error.
+     * 
      * @param {String} message
      * @param {Number} [timeout]
+     * @return {Object} result
+     * @return {Function} result.hide   Hide the popup again
      */
-    showError: function(message, timeout) {
+    showError: function(message, timeout, info) {
         if (message.stack) {
             // Can't pass error object to UI
             console.error(message.stack);
             message = message.message;
         }
-        worker.sender.emit("showError", { message: message, timeout: timeout });
+        var id = msgId++;
+        var token;
+        worker.sender.once("showErrorResult", function onResult(e) {
+            token = e.token;
+        });
+        worker.sender.emit("showError", { message: message, timeout: timeout, id: id, info: info });
+        return {
+            hide: function hide() {
+                if (token)
+                    return worker.sender.emit("showError", { token: token });
+                setTimeout(hide, 50);
+            }
+        };
+    },
+
+    /**
+     * Show an info popup in the IDE, using dialog.info.
+     * 
+     * @param {String} message
+     * @param {Number} [timeout]
+     * @return {Object} result
+     * @return {Function} result.hide   Hide the popup again
+     */
+    showInfo: function(message, timeout) {
+        return this.showError(message, timeout, true);
     },
     
     /**

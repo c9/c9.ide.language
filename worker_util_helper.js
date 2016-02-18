@@ -23,6 +23,8 @@ define(function(require, exports, module) {
         var watcher = imports.watcher;
         var tree = imports.tree;
         var showError = imports["dialog.error"].show;
+        var showInfo = imports["dialog.info"].show;
+        var hideError = imports["dialog.error"].hide;
         var async = require("async");
         var syntaxDetector = require("./syntax_detector");
 
@@ -124,7 +126,15 @@ define(function(require, exports, module) {
                 });
 
                 worker.on("showError", function(e) {
-                    showError(e.data.message, e.data.timeout);
+                    if (e.info)
+                    var token = e.data.info
+                        ? showInfo(e.data.message, e.data.timeout)
+                        : showError(e.data.message, e.data.timeout);
+                    worker.emit("showErrorResult", { data: { token: token } });
+                });
+
+                worker.on("hideError", function(e) {
+                    hideError(e.data.token);
                 });
                 
                 worker.on("getTokens", function tryGetTokens(e) {
