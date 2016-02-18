@@ -6,7 +6,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "language", "proc", "fs", "tabManager", "save",
-        "watcher", "tree", "dialog.error"
+        "watcher", "tree", "dialog.error", "dialog.info"
     ];
     main.provides = ["language.worker_util_helper"];
     return main;
