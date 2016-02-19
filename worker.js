@@ -1750,7 +1750,7 @@ function endTime(t, message, indent) {
         var originalLine = doc.getLine(pos.row);
         var line = overrideLine != null ? overrideLine : originalLine;
         var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-        var suffix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+        var suffix = completeUtil.retrieveFollowingIdentifier(line, pos.column, identifierRegex);
         var completeLine = removeCacheCompletionPrefix(
             line.substr(0, pos.column - prefix.length) + line.substr(pos.column + suffix.length));
         
