@@ -67,6 +67,12 @@ module.exports = {
      * @internal
      */
     $disableZeroLengthCompletion: false,
+    
+    /**
+     * An identifier length at which completions should be recomputed.
+     * @internal
+     */
+    $recacheCompletionLength: null,
 
     // UTILITIES
 

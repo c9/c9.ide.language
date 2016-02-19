@@ -1651,10 +1651,15 @@ function endTime(t, message, indent) {
         }
         
         function isRecompletionRequired(cache) {
-            // HACK: recompute completions for identifiers of length 3+,
-            //       since they're treated specially in tern
-            return cache && that.$language === "javascript"
-                && cacheKey.prefix.length >= 3 && cache.prefix.length < 3;
+            // Force recomputing completions for identifiers of a certain length,
+            // like with tern, which shows different completions for longer prefixes
+            var recomputeLength = -1;
+            for (var i = 0; i < that.handlers.length; i++) {
+                if (that.handlers[i].$recacheCompletionLength && that.handlers[i].handlesLanguage(that.$language))
+                    recomputeLength = that.handlers[i].$recacheCompletionLength;
+            }
+            
+            return cacheKey.prefix.length >= recomputeLength && cache.prefix.length < recomputeLength;
         }
     };
     
