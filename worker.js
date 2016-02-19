@@ -993,7 +993,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path, language: _self.$language }, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
