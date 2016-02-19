@@ -77,10 +77,9 @@ define(function(require, exports, module) {
             var completionRegex = getCompletionRegex(null, ace);
             if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
                || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
-               || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex)
-               || matchCompletionRegex(completionRegex, line, pos)
-               ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
-               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
+               || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex))
+               || (matchCompletionRegex(completionRegex, line, pos) && (line[pos.column - 1].match(identifierRegex) || !line[pos.column].match(identifierRegex)))
+               || (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke({ autoInvoke: true });
             }
             else {
