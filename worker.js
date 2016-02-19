@@ -1384,7 +1384,7 @@ function endTime(t, message, indent) {
     };
 
     this.documentOpen = function(path, immediateWindow, language, document) {
-        // Note that we don't set this.language here, since this document
+        // Note that we don't set this.$language here, since this document
         // may not have focus.
         this.$openDocuments["_" + path] = path;
         var _self = this;
@@ -1452,7 +1452,7 @@ function endTime(t, message, indent) {
         
         _self.waitForCompletionSync(options, function doComplete(identifierRegex) {
             var cacheCompletionRegex = _self.getCacheCompletionRegex(pos);
-            var overrideLine = cacheCompletionRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
+            var overrideLine = cacheCompletionRegex && _self.tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
             var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, cacheCompletionRegex, options);
@@ -1473,11 +1473,16 @@ function endTime(t, message, indent) {
         });
     };
     
-    function tryShortenCompletionPrefix(line, offset, identifierRegex) {
+    this.tryShortenCompletionPrefix = function(line, offset, identifierRegex) {
+        for (var i = 0; i < this.handlers.length; i++) {
+            if (this.handlers[i].$disableZeroLengthCompletion && this.handlers[i].handlesLanguage(this.$language))
+                return;
+        }
+        
         // Instead of completing for "  i", complete for "  ", helping caching and reuse of completions
         if (identifierRegex.test(line[offset - 1] || "") && !identifierRegex.test(line[offset - 2] || ""))
             return line.substr(0, offset - 1) + line.substr(offset);
-    }
+    };
     
     /**
      * Invoke parser and completion handlers to get a completion result.

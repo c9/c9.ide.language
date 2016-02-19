@@ -61,6 +61,12 @@ module.exports = {
      * @type {Document}
      */
     doc: null,
+    
+    /**
+     * Indicates this completer cannot complete zero-length identifiers.
+     * @internal
+     */
+    $disableZeroLengthCompletion: false,
 
     // UTILITIES
 
