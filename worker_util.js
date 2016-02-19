@@ -250,7 +250,7 @@ module.exports = {
         
         var myWorker = worker.$lastWorker;
         options.command = command;
-        options.path = options.path || (myWorker.$path[0] === "/" ? myWorker.$path.substr(1) : myWorker.$path);
+        options.path = options.path || (myWorker.$path && myWorker.$path[0] === "/" ? myWorker.$path.substr(1) : myWorker.$path);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
         var maxCallInterval = options.maxCallInterval || 50;
@@ -275,7 +275,7 @@ module.exports = {
             id: id,
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
-            filePath: options.path[0] === "~" ? options.path : "/" + options.path,
+            filePath: options.path && (options.path[0] === "~" ? options.path : "/" + options.path),
             maxCallInterval: maxCallInterval,
             timeout: options.timeout || 30000,
             semaphore: "semaphore" in options
@@ -295,7 +295,7 @@ module.exports = {
         });
         
         function getRelativeDirname(file) {
-            return file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
+            return file && file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
         }
         
         function tryParseJSON(string) {
