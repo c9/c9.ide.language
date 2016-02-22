@@ -355,6 +355,9 @@ define(function(require, exports, module) {
                 newText: newText,
                 match: match
             });
+            
+            if (matchCompletionRegex(getCompletionRegex(), doc.getLine(pos.row), ace.getCursorPosition()))
+                deferredInvoke(true);
         }
         
         function showCompletionBox(editor, m, prefix, line) {
@@ -599,6 +602,8 @@ define(function(require, exports, module) {
         function showDocPopup() {
             if (!isDocsRequested)
                 requestDocInvoke.call();
+            if (matches[0] && matches[0].nodoc === "always")
+                return;
             
             var rect = popup.container.getBoundingClientRect();
             if (!txtCompleterDoc.parentNode) {
