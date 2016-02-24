@@ -96,6 +96,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 });
             });
             
+            /*
             it('does continuous completion for CSS if you just typed one character', function(done) {
                 tabs.openFile("/test.css", function(err, tab) {
                     if (err) return done(err);
@@ -129,6 +130,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     });
                 });
             });
+            */
             
             it('shows a word completer in an immediate tab', function(done) {
                 tabs.open(
