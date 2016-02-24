@@ -126,7 +126,6 @@ define(function(require, exports, module) {
                 });
 
                 worker.on("showError", function(e) {
-                    if (e.info)
                     var token = e.data.info
                         ? showInfo(e.data.message, e.data.timeout)
                         : showError(e.data.message, e.data.timeout);
