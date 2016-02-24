@@ -96,7 +96,41 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                 });
             });
             
-            /*
+            it('manages to succesfully install codeintel', function(done) {
+                this.timeout(5 * 60 * 1000);
+                tabs.openFile("/test.css", function(err, tab) {
+                    if (err) return done(err);
+                    
+                    tabs.focusTab(tab);
+                    
+                    language.getWorker(function(err, worker) {
+                        assert(!err, err);
+                        
+                        worker.on("codeintel_ready", function(e) {
+                            assert(!e.data.err, e.data.err);
+                            done();
+                        });
+                    });
+                });
+            });
+            
+            it('does continuous completion for CSS if you just typed one character', function(done) {
+                tabs.openFile("/test.css", function(err, tab) {
+                    if (err) return done(err);
+                    
+                    tabs.focusTab(tab);
+                    // We get a tab, but it's not done yet, so we wait
+                    setTimeout(function() {
+                        tab.editor.ace.selection.setSelectionRange({ start: { row: 1, column: 4 }, end: { row: 1, column: 4 } });
+                        tab.editor.ace.onTextInput("f");
+                        afterCompleteOpen(function(el) {
+                            expect.html(el).text(/first-child/);
+                            done();
+                        });
+                    });
+                });
+            });
+            
             it('does continuous completion for CSS if you just typed one character', function(done) {
                 tabs.openFile("/test.css", function(err, tab) {
                     if (err) return done(err);
@@ -130,7 +164,6 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                     });
                 });
             });
-            */
             
             it('shows a word completer in an immediate tab', function(done) {
                 tabs.open(
