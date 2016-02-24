@@ -1654,10 +1654,16 @@ function endTime(t, message, indent) {
             // Force recomputing completions for identifiers of a certain length,
             // like with tern, which shows different completions for longer prefixes
             var recomputeLength = -1;
+            var recomputeAtOffset1 = false;
             for (var i = 0; i < that.handlers.length; i++) {
                 if (that.handlers[i].$recacheCompletionLength && that.handlers[i].handlesLanguage(that.$language))
                     recomputeLength = that.handlers[i].$recacheCompletionLength;
+                if (that.handlers[i].$disableZeroLengthCompletion && that.handlers[i].handlesLanguage(that.$language))
+                    recomputeAtOffset1 = true;
             }
+            
+            if (recomputeAtOffset1 && cacheKey.prefix.length >= 1 && cache.prefix.length === 0)
+                return true;
             
             return cacheKey.prefix.length >= recomputeLength && cache.prefix.length < recomputeLength;
         }
