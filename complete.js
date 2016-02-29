@@ -77,10 +77,9 @@ define(function(require, exports, module) {
             var completionRegex = getCompletionRegex(null, ace);
             if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
                || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
-               || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex)
-               || matchCompletionRegex(completionRegex, line, pos)
-               ) || // TODO: && keyhandler.inCompletableCodeContext(line, pos.column)) ||
-               (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
+               || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex))
+               || (matchCompletionRegex(completionRegex, line, pos) && (line[pos.column - 1].match(identifierRegex) || !(line[pos.column] || "").match(identifierRegex)))
+               || (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
                 invoke({ autoInvoke: true });
             }
             else {
@@ -356,6 +355,9 @@ define(function(require, exports, module) {
                 newText: newText,
                 match: match
             });
+            
+            if (matchCompletionRegex(getCompletionRegex(), doc.getLine(pos.row), ace.getCursorPosition()))
+                deferredInvoke(true);
         }
         
         function showCompletionBox(editor, m, prefix, line) {
@@ -600,6 +602,8 @@ define(function(require, exports, module) {
         function showDocPopup() {
             if (!isDocsRequested)
                 requestDocInvoke.call();
+            if (matches[0] && matches[0].nodoc === "always")
+                return;
             
             var rect = popup.container.getBoundingClientRect();
             if (!txtCompleterDoc.parentNode) {

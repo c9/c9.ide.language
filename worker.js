@@ -993,7 +993,7 @@ function endTime(t, message, indent) {
             _self.findNode(ast, pos, function(currentNode) {
                 asyncForEach(_self.handlers, function jumptodefNext(handler, next) {
                     if (_self.isHandlerMatch(handler, part, "jumpToDefinition")) {
-                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path }, handleCallbackError(function(results) {
+                        handler.jumpToDefinition(part, ast, posInPart, { node: currentNode, path: _self.$path, language: _self.$language }, handleCallbackError(function(results) {
                             handler.path = _self.$path;
                             if (results)
                                 allResults = allResults.concat(results);
@@ -1384,7 +1384,7 @@ function endTime(t, message, indent) {
     };
 
     this.documentOpen = function(path, immediateWindow, language, document) {
-        // Note that we don't set this.language here, since this document
+        // Note that we don't set this.$language here, since this document
         // may not have focus.
         this.$openDocuments["_" + path] = path;
         var _self = this;
@@ -1452,7 +1452,7 @@ function endTime(t, message, indent) {
         
         _self.waitForCompletionSync(options, function doComplete(identifierRegex) {
             var cacheCompletionRegex = _self.getCacheCompletionRegex(pos);
-            var overrideLine = cacheCompletionRegex && tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
+            var overrideLine = cacheCompletionRegex && _self.tryShortenCompletionPrefix(_self.doc.getLine(pos.row), pos.column, identifierRegex);
             var overridePos = overrideLine != null && { row: pos.row, column: pos.column - 1 };
         
             var newCache = _self.tryCachedCompletion(overridePos || pos, overrideLine, identifierRegex, cacheCompletionRegex, options);
@@ -1473,11 +1473,16 @@ function endTime(t, message, indent) {
         });
     };
     
-    function tryShortenCompletionPrefix(line, offset, identifierRegex) {
+    this.tryShortenCompletionPrefix = function(line, offset, identifierRegex) {
+        for (var i = 0; i < this.handlers.length; i++) {
+            if (this.handlers[i].$disableZeroLengthCompletion && this.handlers[i].handlesLanguage(this.$language))
+                return;
+        }
+        
         // Instead of completing for "  i", complete for "  ", helping caching and reuse of completions
         if (identifierRegex.test(line[offset - 1] || "") && !identifierRegex.test(line[offset - 2] || ""))
             return line.substr(0, offset - 1) + line.substr(offset);
-    }
+    };
     
     /**
      * Invoke parser and completion handlers to get a completion result.
@@ -1646,10 +1651,21 @@ function endTime(t, message, indent) {
         }
         
         function isRecompletionRequired(cache) {
-            // HACK: recompute completions for identifiers of length 3+,
-            //       since they're treated specially in tern
-            return cache && that.$language === "javascript"
-                && cacheKey.prefix.length >= 3 && cache.prefix.length < 3;
+            // Force recomputing completions for identifiers of a certain length,
+            // like with tern, which shows different completions for longer prefixes
+            var recomputeLength = -1;
+            var recomputeAtOffset1 = false;
+            for (var i = 0; i < that.handlers.length; i++) {
+                if (that.handlers[i].$recacheCompletionLength && that.handlers[i].handlesLanguage(that.$language))
+                    recomputeLength = that.handlers[i].$recacheCompletionLength;
+                if (that.handlers[i].$disableZeroLengthCompletion && that.handlers[i].handlesLanguage(that.$language))
+                    recomputeAtOffset1 = true;
+            }
+            
+            if (recomputeAtOffset1 && cacheKey.prefix.length >= 1 && cache.prefix.length === 0)
+                return true;
+            
+            return cacheKey.prefix.length >= recomputeLength && cache.prefix.length < recomputeLength;
         }
     };
     
@@ -1750,7 +1766,7 @@ function endTime(t, message, indent) {
         var originalLine = doc.getLine(pos.row);
         var line = overrideLine != null ? overrideLine : originalLine;
         var prefix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
-        var suffix = completeUtil.retrievePrecedingIdentifier(line, pos.column, identifierRegex);
+        var suffix = completeUtil.retrieveFollowingIdentifier(line, pos.column, identifierRegex);
         var completeLine = removeCacheCompletionPrefix(
             line.substr(0, pos.column - prefix.length) + line.substr(pos.column + suffix.length));
         

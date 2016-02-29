@@ -251,12 +251,17 @@ define(function(require, exports, module) {
             pos.row = pos.row || 0;
             pos.column = pos.column || 0;
             if (path.substr(0, 2) === "//") {
-                // HACK: read file outside of vfs
-                return proc.execFile("cat", { args: [path.substr(1)] }, function(err, result) {
-                    if (err) return showError("Could not open refrenced file: " + path);
-                    
-                    openTab(result);
-                });
+                if (path.indexOf(c9.workspaceDir + "/") === 1)
+                    path = path.substr(c9.workspaceDir.length + 1);
+                else if (path.indexOf(c9.homeDir + "/") === 1)
+                    path = "~" + path.substr(c9.homeDir.length + 1);
+                else
+                    // HACK: read file outside of vfs roots
+                    return proc.execFile("cat", { args: [path.substr(1)] }, function(err, result) {
+                        if (err) return showError("Could not open refrenced file: " + path);
+                        
+                        openTab(result);
+                    });
             }
             if (path[0] !== "/" && path[0] !== "~") {
                 path = "/" + path;

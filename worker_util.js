@@ -24,7 +24,6 @@ var completeUtil = require("./complete_util");
 var MAX_MEMO_DICT_SIZE = 3000;
 var msgId = 0;
 var docCache = { row: null, entries: {} };
-var memoDict = [];
 
 module.exports = {
 
@@ -251,7 +250,7 @@ module.exports = {
         
         var myWorker = worker.$lastWorker;
         options.command = command;
-        options.path = options.path || myWorker.$path.substr(1);
+        options.path = options.path || (myWorker.$path && myWorker.$path[0] === "/" ? myWorker.$path.substr(1) : myWorker.$path);
         options.cwd = options.cwd || getRelativeDirname(options.path);
         options.maxBuffer = options.maxBuffer || 200 * 1024;
         var maxCallInterval = options.maxCallInterval || 50;
@@ -266,7 +265,7 @@ module.exports = {
             options.overrideLineRow = myWorker.$lastCompleteRow;
             options.overrideLine = options.overrideLine || myWorker.doc.getLine(options.overrideLineRow);
         }
-        if (options.path && !options.path[0] === "/")
+        if (options.path && options.path[0] === "/")
             return callback(new Error("Only workspace-relative paths are supported"));
             
         // The jsonalyzer has a nice pipeline for invoking tools like this;
@@ -276,7 +275,7 @@ module.exports = {
             id: id,
             handlerPath: "plugins/c9.ide.language.jsonalyzer/server/invoke_helper",
             method: "invoke",
-            filePath: "/" + options.path,
+            filePath: options.path && (options.path[0] === "~" ? options.path : "/" + options.path),
             maxCallInterval: maxCallInterval,
             timeout: options.timeout || 30000,
             semaphore: "semaphore" in options
@@ -296,7 +295,7 @@ module.exports = {
         });
         
         function getRelativeDirname(file) {
-            return file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
+            return file && file.replace(/([\/\\]|^)[^\/\\]+$/, "").replace(/^\//, "");
         }
         
         function tryParseJSON(string) {
@@ -436,17 +435,44 @@ module.exports = {
     },
 
     /**
-     * Show an error popup in the IDE.
+     * Show an error popup in the IDE, using dialog.error.
+     * 
      * @param {String} message
      * @param {Number} [timeout]
+     * @return {Object} result
+     * @return {Function} result.hide   Hide the popup again
      */
-    showError: function(message, timeout) {
+    showError: function(message, timeout, info) {
         if (message.stack) {
             // Can't pass error object to UI
             console.error(message.stack);
             message = message.message;
         }
-        worker.sender.emit("showError", { message: message, timeout: timeout });
+        var id = msgId++;
+        var token;
+        worker.sender.once("showErrorResult", function onResult(e) {
+            token = e.token;
+        });
+        worker.sender.emit("showError", { message: message, timeout: timeout, id: id, info: info });
+        return {
+            hide: function hide() {
+                if (token)
+                    return worker.sender.emit("showError", { token: token });
+                setTimeout(hide, 50);
+            }
+        };
+    },
+
+    /**
+     * Show an info popup in the IDE, using dialog.info.
+     * 
+     * @param {String} message
+     * @param {Number} [timeout]
+     * @return {Object} result
+     * @return {Function} result.hide   Hide the popup again
+     */
+    showInfo: function(message, timeout) {
+        return this.showError(message, timeout, true);
     },
     
     /**

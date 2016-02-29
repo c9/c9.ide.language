@@ -61,6 +61,18 @@ module.exports = {
      * @type {Document}
      */
     doc: null,
+    
+    /**
+     * Indicates this completer cannot complete zero-length identifiers.
+     * @internal
+     */
+    $disableZeroLengthCompletion: false,
+    
+    /**
+     * An identifier length at which completions should be recomputed.
+     * @internal
+     */
+    $recacheCompletionLength: null,
 
     // UTILITIES
 
@@ -892,6 +904,10 @@ module.exports = {
      * @param {Object} pos                   The current cursor position
      * @param {Number} pos.row               The current cursor's row
      * @param {Number} pos.column            The current cursor's column
+     * @param {Object} options               Options
+     * @param {String} options.path          The current file path.
+     * @param {Object} options.node          The current AST node (if parse() is implemented) 
+     * @param {String} options.language      The current language 
      * @param {Function} callback            The callback; must be called
      * @param {Error|String} callback.err    Any resulting error
      * @param {Object[]} callback.results    The results
