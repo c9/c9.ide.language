@@ -76,7 +76,6 @@ define(function(require, exports, module) {
             var identifierRegex = getIdentifierRegex(null, ace);
             var completionRegex = getCompletionRegex(null, ace);
             if (completeUtil.precededByIdentifier(line, pos.column, null, ace)
-               || (line[pos.column - 1] === '.' && (!line[pos.column] || !line[pos.column].match(identifierRegex)))
                || (line[pos.column - 1] && line[pos.column - 1].match(identifierRegex))
                || (matchCompletionRegex(completionRegex, line, pos) && (line[pos.column - 1].match(identifierRegex) || !(line[pos.column] || "").match(identifierRegex)))
                || (language.isInferAvailable() && completeUtil.isRequireJSCall(line, pos.column, "", ace))) {
