@@ -369,7 +369,7 @@ function endTime(t, message, indent) {
         if (window.require)
             window.require.modules[modulePath] = null;
         this.handlers = this.handlers.filter(function(h) {
-            return h !== modulePath;
+            return h.$source !== modulePath;
         });
         callback && callback();
     };
