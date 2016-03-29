@@ -270,9 +270,7 @@ define(function(require, exports, module) {
             textbox = plugin.getElement("textbox");
             winOutline = options.aml;
             
-            var key = commands.getHotkey("outline");
-            if (commands.platform == "mac")
-                key = apf.hotkeys.toMacNotation(key);
+            var key = commands.getPrettyHotkey("outline");
             textbox.setAttribute("initial-message", "Filter (" + key + ")");
         
             // Create the Ace Tree
