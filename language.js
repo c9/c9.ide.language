@@ -184,7 +184,7 @@ define(function(require, exports, module) {
             }
             else  {
                 try {
-                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins", "acorn", "tern"], id, "LanguageWorker", path);
+                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins", "acorn", "tern"], id, "LanguageWorker", "/static/lib/ace/lib/ace/worker/worker.js", path && [path]);
                 } catch (e) {
                     if (e.code === 18 && window.location && window.location.origin === "file://")
                         throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
@@ -295,8 +295,9 @@ define(function(require, exports, module) {
                         },
                     },
                     "Language Support": {
+                        position: 700,
                         "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>" : {
-                            position: 100,
+                            position: 210,
                             type: "checkbox",
                             path: "project/language/@eslintrc",
                         },
