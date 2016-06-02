@@ -18,7 +18,7 @@
  */
 define(function(require, exports, module) {
 
-var worker = require("./worker");
+var worker = require("plugins/c9.ide.language.core/worker");
 var completeUtil = require("./complete_util");
 
 var MAX_MEMO_DICT_SIZE = 3000;

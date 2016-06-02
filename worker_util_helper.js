@@ -26,7 +26,7 @@ define(function(require, exports, module) {
         var showInfo = imports["dialog.info"].show;
         var hideError = imports["dialog.error"].hide;
         var async = require("async");
-        var syntaxDetector = require("./syntax_detector");
+        var syntaxDetector = require("plugins/c9.ide.language.core/syntax_detector");
 
         var readFileQueue = [];
         var readFileBusy = false;
