@@ -129,7 +129,7 @@ module.exports = {
      * ```
      * 
      * @param {String} [overridePath] An optional path of the plugin for which to send/receive UI events,
-     *                                e.g. "c9.ide.language/python/worker/python_completer" to send/receive
+     *                                e.g. "c9.ide.language.python/worker/python_completer" to send/receive
      *                                events in name of the Python completer plugin.
      */
     getEmitter: function(overridePath) {

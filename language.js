@@ -172,7 +172,7 @@ define(function(require, exports, module) {
         function load() {
             if (loaded) return false;
             loaded = true;
-            var id = "plugins/c9.ide.language/worker";
+            var id = "plugins/c9.ide.language.core/worker";
             if (options.workerPrefix)
                 var path = options.workerPrefix.replace(/\/?$/, "/") + id + ".js";
             
