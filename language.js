@@ -6,7 +6,7 @@
 define(function(require, exports, module) {
     main.consumes = [
         "Plugin", "c9", "settings", "ace", "tabManager", "preferences",
-        "browsersupport", "commands", "error_handler"
+        "commands", "error_handler"
     ];
     main.provides = ["language"];
     return main;
@@ -19,7 +19,6 @@ define(function(require, exports, module) {
         var tabs = imports.tabManager;
         
         var prefs = imports.preferences;
-        var browsers = imports.browsersupport;
         var commands = imports.commands;
         var WorkerClient = require("ace/worker/worker_client").WorkerClient;
         var UIWorkerClient = require("ace/worker/worker_client").UIWorkerClient;
@@ -31,7 +30,7 @@ define(function(require, exports, module) {
         var UI_WORKER_DELAY = 3000; // longer delay to wait for plugins to load with require()
         var INITIAL_DELAY = 2000;
         var UI_WORKER = window.location && /[?&]noworker=(\w+)|$/.exec(window.location.search)[1]
-            || (browsers.getIEVersion() && browsers.getIEVersion() < 10) || options.useUIWorker;
+            || options.useUIWorker;
 
         var delayedTransfer;
         var lastWorkerMessage = {};

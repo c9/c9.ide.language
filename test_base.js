@@ -151,7 +151,6 @@ define(function(require, exports, module) {
             "plugins/c9.vfs.client/endpoint",
             "plugins/c9.ide.auth/auth",
             "plugins/c9.fs/fs",
-            "plugins/c9.ide.browsersupport/browsersupport",
             "plugins/c9.ide.ui/menus",
             {
                 packagePath: "plugins/c9.ide.immediate/immediate",
