@@ -15,6 +15,7 @@
         "core"
     ],
     "licenses": [
-        "SDK"
+        "SDK",
+        "MIT"
     ]
 }
