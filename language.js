@@ -541,6 +541,7 @@ define(function(require, exports, module) {
         function unregisterLanguageHandler(modulePath) {
             getWorker(function(err, worker) {
                 if (err) return console.error(err);
+                if (!worker.$worker) return; // already destroyed
                 worker.call("unregister", [modulePath]);
             });
         }
