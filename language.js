@@ -101,12 +101,14 @@ define(function(require, exports, module) {
                 if (worker.$doc) {
                     worker.$doc.off("change", onChange);
                     worker.$doc.off("changeMode", onChangeMode);
+                    worker.$doc.c9doc.tab.off("setPath", onChangeMode);
                     worker.$doc.selection.off("changeCursor", onCursorChange);
                 }
                 
                 worker.$doc = session;
                 
                 session.selection.on("changeCursor", onCursorChange);
+                session.c9doc.tab.on("setPath", onChangeMode);
                 session.on("changeMode", onChangeMode);
                 session.on("change", onChange);
             }
