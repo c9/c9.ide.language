@@ -39,8 +39,6 @@ define(function(require, exports, module) {
         var initedTabs;
         var ignoredMarkers;
         
-        /***** Initialization *****/
-        
         var plugin = new Plugin("Ajax.org", main.consumes);
         var emit = plugin.getEmitter();
         emit.setMaxListeners(50); // avoid warnings during initialization
@@ -138,7 +136,10 @@ define(function(require, exports, module) {
             clearTimeout(delayedTransfer);
             
             if (type === "switchFile" && value.length > BIG_FILE_LINES) {
-                delayedTransfer = setTimeout(notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value), BIG_FILE_DELAY);
+                delayedTransfer = setTimeout(
+                    notifyWorkerTransferData.bind(null, type, path, immediateWindow, syntax, value),
+                    BIG_FILE_DELAY
+                );
                 return delayedTransfer;
             }
 
@@ -152,7 +153,7 @@ define(function(require, exports, module) {
             if (options.workspaceDir === undefined)
                 console.error("[language] options.workspaceDir is undefined!");
             // background tabs=open document, foreground tab=switch to file
-            if (type == "switchFile" && worker.deltaQueue) {
+            if (type === "switchFile" && worker.deltaQueue) {
                 value = worker.$doc.$lines; // in case we are called async
                 worker.deltaQueue = null;
             }
@@ -183,12 +184,19 @@ define(function(require, exports, module) {
                 if (UI_WORKER === "sync")
                     worker.setEmitSync(true);
             }
-            else  {
+            else {
                 try {
-                    worker = new WorkerClient(["treehugger", "ace", "c9", "plugins", "acorn", "tern"], id, "LanguageWorker", "/static/lib/ace/lib/ace/worker/worker.js", path && [path]);
+                    worker = new WorkerClient(
+                        ["treehugger", "ace", "c9", "plugins", "acorn", "tern"],
+                        id,
+                        "LanguageWorker",
+                        "/static/lib/ace/lib/ace/worker/worker.js",
+                        path && [path]
+                    );
                 } catch (e) {
                     if (e.code === 18 && window.location && window.location.origin === "file://")
-                        throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
+                        throw new Error("Cannot load worker from file:// protocol, please host a server on localhost instead "
+                            + "or use ?noworker=1 to use a worker in the UI thread (can cause slowdowns)");
                     throw e;
                 }
                 worker.reportError = function(err) {
@@ -213,9 +221,9 @@ define(function(require, exports, module) {
             tabs.on("tabDestroy", function(e) {
                 var path = e.tab.path;
                 if (path)
-                    worker.emit("documentClose", {data: path});
+                    worker.emit("documentClose", { data: path });
                 var c9session = e.tab.document.getSession();
-                if (c9session && c9session.session == worker.$doc)
+                if (c9session && c9session.session === worker.$doc)
                     worker.$doc = null;
             }, plugin);
             
@@ -260,35 +268,35 @@ define(function(require, exports, module) {
     
             // Preferences
             prefs.add({
-                "Project" : {
-                    "Hints & Warnings" : {
+                "Project": {
+                    "Hints & Warnings": {
                         position: 700,
-                        "Warning Level" : {
-                           type: "dropdown",
-                           path: "project/language/@warnLevel",
-                           items: [
-                               { caption : "Error", value : "error" },
-                               { caption : "Warning", value : "warning" },
-                               { caption : "Info", value : "info" }
-                           ],
-                           position: 5000
+                        "Warning Level": {
+                            type: "dropdown",
+                            path: "project/language/@warnLevel",
+                            items: [
+                               { caption: "Error", value: "error" },
+                               { caption: "Warning", value: "warning" },
+                               { caption: "Info", value: "info" }
+                            ],
+                            position: 5000
                         },
-                        "Mark Missing Optional Semicolons" : {
+                        "Mark Missing Optional Semicolons": {
                             type: "checkbox",
                             path: "project/language/@semi",
                             position: 7000
                         },
-                        "Mark Undeclared Variables" : {
+                        "Mark Undeclared Variables": {
                             type: "checkbox",
                             path: "project/language/@undeclaredVars",
                             position: 8000
                         },
-                        "Mark Unused Function Arguments" : {
+                        "Mark Unused Function Arguments": {
                             type: "checkbox",
                             path: "project/language/@unusedFunctionArgs",
                             position: 9000
                         },
-                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>": {
                             type: "textbox",
                             path: "project/language/@ignoredMarkers",
                             width: 300,
@@ -297,7 +305,7 @@ define(function(require, exports, module) {
                     },
                     "Language Support": {
                         position: 700,
-                        "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>" : {
+                        "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>": {
                             position: 210,
                             type: "checkbox",
                             path: "project/language/@eslintrc",
@@ -307,34 +315,34 @@ define(function(require, exports, module) {
             }, plugin);
             
             prefs.add({
-                "Language" : {
+                "Language": {
                     position: 500,
-                    "Input" : {
+                    "Input": {
                         position: 100,
-                        "Complete As You Type" : {
+                        "Complete As You Type": {
                             type: "checkbox",
                             path: "user/language/@continuousCompletion",
                             position: 4000
                         },
-                        "Complete On Enter" : {
+                        "Complete On Enter": {
                             type: "checkbox",
                             path: "user/language/@enterCompletion",
                             position: 5000
                         },
-                        "Highlight Variable Under Cursor" : {
+                        "Highlight Variable Under Cursor": {
                             type: "checkbox",
                             path: "user/language/@instanceHighlight",
                             position: 6000
                         },
                     },
-                    "Hints & Warnings" : {
+                    "Hints & Warnings": {
                         position: 200,
-                        "Enable Hints and Warnings" : {
+                        "Enable Hints and Warnings": {
                             type: "checkbox",
                             path: "user/language/@hints",
                             position: 1000
                         },
-                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>" : {
+                        "Ignore Messages Matching <a href=\"http://en.wikipedia.org/wiki/Regular_expression\" target=\"blank\">Regex</a>": {
                             type: "textbox",
                             path: "user/language/@ignoredMarkers",
                             position: 3000
@@ -353,7 +361,7 @@ define(function(require, exports, module) {
                 isAvailable: function(editor) {
                     var ace = editor && editor.ace;
                     if (ace && ace.selection.isEmpty())
-                        return ace.expandSnippet({dryRun: true});
+                        return ace.expandSnippet({ dryRun: true });
                 },
             }, plugin);
         }
@@ -406,15 +414,17 @@ define(function(require, exports, module) {
             return isEditorSupported(tabs.focussedTab)
                 ? tabs.focussedTab
                 : tabs.getPanes().map(function(p) {
-                      return p.activeTab;
-                  }).filter(function(t) {
-                      return isEditorSupported(t);
-                  })[0];
+                    return p.activeTab;
+                }).filter(function(t) {
+                    return isEditorSupported(t);
+                })[0];
         }
         
+        var drawn;
         function draw() {
+            if (drawn) return;
             emit("draw");
-            draw = function() {};
+            drawn = true;
         }
         
         function getWorker(callback) {
@@ -525,6 +535,8 @@ define(function(require, exports, module) {
             }
             
             getWorker(function(err, worker) {
+                if (err) return console.error("Could not find worker", err);
+                
                 worker.on("registered", function reply(e) {
                     if (e.data.path !== modulePath)
                         return;
@@ -579,8 +591,6 @@ define(function(require, exports, module) {
             }
         }
         
-        /***** Lifecycle *****/
-        
         plugin.on("load", function() {
             load();
         });
@@ -600,9 +610,8 @@ define(function(require, exports, module) {
             isContinuousCompletionEnabledSetting = undefined;
             initedTabs = false;
             ignoredMarkers = undefined;
+            drawn = false;
         });
-        
-        /***** Register and define API *****/
         
         /**
          * The language foundation for Cloud9, controlling language
@@ -701,8 +710,6 @@ define(function(require, exports, module) {
             _events: []
         });
         
-        register(null, {
-            language: plugin
-        });
+        register(null, { language: plugin });
     }
 });
