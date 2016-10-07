@@ -9,7 +9,7 @@
         "url": "http://github.com/c9/c9.ide.language.git"
     },
     "plugins": {
-        "language": {},
+        "language": {}
     },
     "categories": [
         "core"
