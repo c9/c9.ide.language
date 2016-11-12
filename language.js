@@ -303,8 +303,8 @@ define(function(require, exports, module) {
                             position: 11000
                         },
                     },
-                    "Language Support": {
-                        position: 700,
+                    "JavaScript Support": {
+                        position: 1100,
                         "Customize JavaScript Warnings With <a href=\"http://eslint.org/docs/configuring/\" target=\"blank\">.eslintrc</a>": {
                             position: 210,
                             type: "checkbox",
