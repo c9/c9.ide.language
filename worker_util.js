@@ -23,7 +23,7 @@ var completeUtil = require("./complete_util");
 
 var MAX_MEMO_DICT_SIZE = 3000;
 var msgId = 0;
-var docCache = { row: null, entries: {} };
+var docCache = { row: null, entries: {}};
 
 module.exports = {
 

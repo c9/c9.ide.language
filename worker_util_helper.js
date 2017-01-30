@@ -129,7 +129,7 @@ define(function(require, exports, module) {
                     var token = e.data.info
                         ? showInfo(e.data.message, e.data.timeout)
                         : showError(e.data.message, e.data.timeout);
-                    worker.emit("showErrorResult", { data: { token: token } });
+                    worker.emit("showErrorResult", { data: { token: token }});
                 });
 
                 worker.on("hideError", function(e) {
@@ -304,7 +304,7 @@ define(function(require, exports, module) {
         function onWatchRemoved(e) {
             // HACK: check if someone removed my watcher
             if (watched[e.path])
-                watchDir({ data: { path: e.path } });
+                watchDir({ data: { path: e.path }});
         }
         
         function onWatchChange(e) {

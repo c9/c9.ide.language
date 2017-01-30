@@ -16,7 +16,7 @@ var staticPrefix = "";
 function retrievePrecedingIdentifier(line, offset, regex) {
     regex = regex || ID_REGEX;
     var buf = [];
-    for (var i = offset-1; i >= 0 && line; i--) {
+    for (var i = offset - 1; i >= 0 && line; i--) {
         if (regex.test(line[i]))
             buf.push(line[i]);
         else
@@ -53,7 +53,7 @@ function prefixBinarySearch(items, prefix) {
     }
     
     // Look back to make sure we haven't skipped any
-    while (middle > 0 && items[middle-1].indexOf(prefix) === 0)
+    while (middle > 0 && items[middle - 1].indexOf(prefix) === 0)
         middle--;
     return middle >= 0 ? middle : 0; // ensure we're not returning a negative index
 }
@@ -87,7 +87,7 @@ function fetchText(path, callback) {
     var xhr = new XMLHttpRequest();
     try {
         xhr.open('GET', staticPrefix + "/" + path, true);
-    } catch(e) {
+    } catch (e) {
         // ms edge throws an error here
         return done(e);
     }
@@ -105,7 +105,7 @@ function fetchText(path, callback) {
         callback && callback(err, result);
         callback = null;
         if (err) {
-            err.data = {path: path};
+            err.data = { path: path };
             setTimeout(function() { throw err; });
         }
     }
@@ -163,29 +163,29 @@ function inCompletableCodeContext(line, column, id, ace) {
     for (var i = 0; i < column; i++) {
         if (line[i] === '"' && !inMode)
             inMode = '"';
-        else if (line[i] === '"' && inMode === '"' && line[i-1] !== "\\")
+        else if (line[i] === '"' && inMode === '"' && line[i - 1] !== "\\")
             inMode = null;
         else if (line[i] === "'" && !inMode)
             inMode = "'";
-        else if (line[i] === "'" && inMode === "'" && line[i-1] !== "\\")
+        else if (line[i] === "'" && inMode === "'" && line[i - 1] !== "\\")
             inMode = null;
-        else if (line[i] === "/" && line[i+1] === "/") {
+        else if (line[i] === "/" && line[i + 1] === "/") {
             inMode = '//';
             i++;
         }
-        else if (line[i] === "/" && line[i+1] === "*" && !inMode) {
+        else if (line[i] === "/" && line[i + 1] === "*" && !inMode) {
             if (line.substr(i + 2, 6) === "global")
                 continue;
             inMode = '/*';
             i++;
         }
-        else if (line[i] === "*" && line[i+1] === "/" && inMode === "/*") {
+        else if (line[i] === "*" && line[i + 1] === "/" && inMode === "/*") {
             inMode = null;
             i++;
         }
         else if (line[i] === "/" && !inMode && isJavaScript)
             inMode = "/";
-        else if (line[i] === "/" && inMode === "/" && line[i-1] !== "\\")
+        else if (line[i] === "/" && inMode === "/" && line[i - 1] !== "\\")
             inMode = null;
     }
     return inMode != "/";

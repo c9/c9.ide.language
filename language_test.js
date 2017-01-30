@@ -13,7 +13,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
         var tabs = imports.tabManager;
         var complete = imports["language.complete"];
 
-        describe("analysis", function(){
+        describe("analysis", function() {
             var jsTab;
             var jsSession;
             
@@ -106,7 +106,7 @@ require(["plugins/c9.ide.language/test_base"], function(base) {
                         var annos = session.getAnnotations();
                         if (!annos.length)
                             return;
-                        annos.sort(function(a,b) {return a.row - b.row});
+                        annos.sort(function(a, b) {return a.row - b.row;});
                         session.off("changeAnnotation", testAnnos);
                         var foundBar;
                         var foundLoaded;
